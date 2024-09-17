@@ -9,6 +9,23 @@ Module CoinFlip.
 Import UnitaryOps.
 Import DensitySem.
 
+Open Scope ucom.
+
+Definition SWAP d a b : base_ucom d := CNOT a b; CNOT b a; CNOT a b.
+
+Lemma swap2: forall (psi phi: Vector 2), 
+  WF_Matrix psi -> 
+  WF_Matrix phi -> 
+  (uc_eval (SWAP 2 0 1)) × (psi ⊗ phi) =  (phi ⊗ psi).
+Proof.
+  intros.
+  simpl.
+  autorewrite with eval_db; simpl; try lia.
+  solve_matrix.
+Qed.
+  
+
+
 Open Scope com.
 
 Definition single_coin_flip : base_com 1 := H 0; measure 0.
@@ -22,7 +39,11 @@ Proof. Abort. (* Apparently wrong *)
 Lemma coin_flip_prob : 
   probability_of_outcome (c_eval single_coin_flip ∣0⟩)
    ∣1⟩ = (1 / 2)%R.
-Proof. Abort.
+Proof.
+  simpl. 
+  simpl; autorewrite with eval_db; simpl.
+Abort.
+
 
 
 Lemma coin_flip_twice_prob : 
