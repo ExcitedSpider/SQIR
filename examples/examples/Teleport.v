@@ -22,6 +22,16 @@ Definition epr00 : Vector 4 :=
              | _, _ => 0
              end.
 
+(* I did this! *)
+Lemma bell_correct: 
+  (@uc_eval 2 (bell 0 1)) × (∣0⟩ ⊗ ∣0⟩) = epr00.
+Proof.
+  unfold bell.
+  simpl.
+  autorewrite with eval_db. simpl.
+  solve_matrix.
+Qed.
+
 Lemma epr_correct : 
   forall (ψ : Vector 2), WF_Matrix ψ -> (@uc_eval 3 (bell 1 2)) × (ψ ⊗ ∣0⟩ ⊗ ∣0⟩) = ψ ⊗ epr00. 
 Proof.
@@ -37,14 +47,25 @@ Proof.
   intros.
   unfold teleport. simpl.
   autorewrite with eval_db. simpl.
+  Msimpl_light.
   solve_matrix.
+  (* Is there any auto rewrite? *)
   all: repeat (try rewrite Cmult_plus_distr_l; 
                try rewrite Cmult_plus_distr_r;
                try rewrite <- Copp_mult_distr_r;
                try rewrite <- Copp_mult_distr_l).
-  all: group_radicals.
+  all: group_radicals. 
   all: lca.
 Qed.  
+
+Check /√2.
+
+Example group_radicals_good:
+  /√2 * /√2 * /√2 * /√2 = 1 / 4.
+Proof.
+  group_radicals.
+  lca.
+Qed.
 
 End UTeleport.
 
@@ -64,9 +85,18 @@ Definition alice : base_com 3 := CNOT q a ; H q; measure a; measure q.
 Definition bob : base_com 3 := CNOT a b; CZ q b; reset a; reset q.
 Definition teleport : base_com 3 := bell; alice; bob.
 
-(* Short proof, but very very slow.
 
-Lemma teleport_correct : forall (ρ : Density 2),
+
+Example Msimpl_light_exp: 
+  I 4 ⊗ hadamard ⊗ I 1 = I 4 ⊗ hadamard.
+Proof.
+  Msimpl_light.
+  reflexivity.
+Qed.
+
+(* Short proof, but very very slow. *)
+
+(* Lemma teleport_correct : forall (ρ : Density 2),
   WF_Matrix ρ -> 
   c_eval teleport (ρ ⊗ ∣0⟩⟨0∣ ⊗ ∣0⟩⟨0∣) = (∣0⟩⟨0∣ ⊗ ∣0⟩⟨0∣ ⊗ ρ).
 Proof.
@@ -103,6 +133,8 @@ Proof.
   reflexivity.
 Qed.
 
+Print compose_super .
+
 Lemma teleport_correct : forall (ρ : Density 2),
   WF_Matrix ρ -> 
   c_eval teleport (ρ ⊗ ∣0⟩⟨0∣ ⊗ ∣0⟩⟨0∣) = (∣0⟩⟨0∣ ⊗ ∣0⟩⟨0∣ ⊗ ρ).
@@ -111,12 +143,11 @@ Proof.
   simpl. 
   repeat rewrite compose_super_eq. 
   repeat rewrite compose_super_assoc.
-  rewrite compose_super_eq. 
   unfold compose_super.
   unfold proj.
   autorewrite with eval_db; simpl.
   Msimpl_light.
-  replace (I 4) with (I 2 ⊗ I 2).
+  replace (I 4) with (I 2 ⊗ I 2). (* why do this*)
   2: { rewrite id_kron. reflexivity. }
   repeat (distribute_plus;
           repeat rewrite <- kron_assoc by auto with wf_db;
@@ -169,9 +200,45 @@ Local Open Scope C_scope.
 
 Definition epr00 : Vector 4 := / √ 2 .* ∣ 0, 0 ⟩ .+ / √ 2 .* ∣ 1, 1 ⟩.
 
+Inductive sigT (A : Type) (P : A -> Type) : Type :=
+  | existT : forall x : A, P x -> sigT A P.
+
+Definition sig_vector := sigT nat (fun n => Vector.t nat n).
+
+Example dependent_destruction : forall (A : Type) (P : A -> Type) (x y : A) (px : P x) (py : P y), 
+  existT A P x px = existT A P y py -> x = y.
+Proof.
+  intros.
+  (* ordinary destruct will not work. It lost the dependency information *)
+  (* destruct H. *)
+  dependent destruction H.
+  reflexivity.
+Qed.
+
 (* Alternative form of proportional for unscaled vectors. *)
 Definition proportional {m n : nat} (A B : Matrix m n) := 
   exists s, A = s .* B. 
+
+Example setoid_rewrite_cnot:
+(∣1⟩⟨1∣ ⊗ σx .+ ∣0⟩⟨0∣ ⊗ I 2) × ∣ 0 , 0 ⟩   = cnot × ∣ 0 , 0 ⟩.
+Proof.
+  rewrite cnot_decomposition.
+  easy.
+Qed.
+
+(* I did this *)
+Lemma bell_correct: forall (ψ : Vector (2^1)) (ψ' : Vector (2^3)),
+  WF_Matrix ψ -> 
+  bell / (ψ  ⊗ ∣ 0 , 0 ⟩) ⇩ ψ' -> ψ' = ψ ⊗ epr00.
+Proof.
+  intros.
+  dependent destruction H0.
+  dependent destruction H0_.
+  dependent destruction H0_0.
+  autorewrite with eval_db; simpl.
+  solve_matrix.
+Qed.
+
 
 Lemma teleport_correct : forall (ψ : Vector (2^1)) (ψ' : Vector (2^3)),
   WF_Matrix ψ ->
@@ -185,12 +252,15 @@ Proof.
   rename S2 into Bob.
   (* compute the result of the bell program *)
   assert (E00 : ψ' = ψ ⊗ epr00).
-  { clear Alice Bob.
+  { apply bell_correct; easy. }
+  (* { clear Alice Bob.
     repeat match goal with
     | H : _ / _ ⇩ _ |- _ => dependent destruction H
     end.
     autorewrite with eval_db; simpl.
     Msimpl.
+    (* TODO: why this not work? *)
+    (* rewrite cnot_decomposition. *)
     setoid_rewrite cnot_decomposition.
     restore_dims.
     rewrite kron_assoc by auto with wf_db. 
@@ -201,7 +271,7 @@ Proof.
     unfold epr00. 
     autorewrite with ket_db.
     reflexivity.
-  }
+  } *)
   subst. clear Bell.
   (* simplify the unitary part of the Alice program *)
   repeat match goal with
@@ -545,3 +615,4 @@ Proof.
 Qed.
 
 End NDTeleport.
+

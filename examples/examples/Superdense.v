@@ -21,12 +21,46 @@ Definition superdense_u (b1 b2 : bool) := bell00_u ; encode_u b1 b2; decode_u.
 Definition bool_to_nat (b : bool) : nat := if b then 1 else 0.
 Coercion bool_to_nat : bool >-> nat.
 
+
+Example eval_db_1: 
+  @uc_eval 1 (H 0) × @uc_eval 1 (H 0) × ∣ 0 ⟩ = ∣ 0 ⟩.
+Proof.
+  autorewrite with eval_db; simpl.
+  Msimpl.
+  solve_matrix.
+Qed.
+
+Print Rewrite HintDb eval_db.
+
+Definition c : nat := S O.
+Definition d : nat := S (S O).
+
+Example bdestruct_exp: c + 1 <=? 2 = true.
+Proof.
+  bdestruct (c + 1 <=? 2).
+  - (* if c + 1 <= 2*) easy.
+  - (* if c + 1 >= 2*) exfalso. lia.
+Qed.
+
+Example bdestruct_exp': forall x: nat, 
+  x + 1 <=? 2 = true -> x + 2 <=? 3 = true .
+Proof. 
+  intros.
+  bdestructΩ (x + 1 <=? 2).
+  destruct x.
+  - easy.
+  - simpl.
+    bdestructΩ (x + 2 <=? 2).
+Qed.
+
+
 Lemma superdense_correct : forall b1 b2, (uc_eval (superdense_u b1 b2)) × ∣ 0,0 ⟩ = ∣ b1,b2 ⟩.
 Proof.
   intros; simpl.
-  autorewrite with eval_db.
+  autorewrite with eval_db; Msimpl.
+  
   bdestructΩ (a + 1 <=? 2).
-  Msimpl.
+  (* unfold a, b; simpl. *)
   simpl. replace 4%nat with (2*2)%nat by lia.
   replace (∣1⟩⟨1∣ ⊗ σx .+ ∣0⟩⟨0∣ ⊗ I 2) with cnot by solve_matrix.
   destruct b1; destruct b2; autorewrite with eval_db; simpl; try lia.
@@ -74,10 +108,10 @@ Proof.
   - Msimpl. repeat rewrite Mmult_assoc.
     restore_dims; rewrite kron_mixed_product. 
     autorewrite with ket_db; auto with wf_db.
-    repeat rewrite kron_mixed_product. 
+    (* repeat rewrite kron_mixed_product. 
     autorewrite with ket_db; auto with wf_db.
     repeat rewrite kron_mixed_product.
-    autorewrite with ket_db; auto with wf_db.
+    autorewrite with ket_db; auto with wf_db. *)
     rewrite Mplus_assoc.
     rewrite (Mplus_comm _ _ (_ .* ∣ 1, 0 ⟩)).
     repeat rewrite <- Mplus_assoc.

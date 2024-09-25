@@ -17,6 +17,21 @@ Proof.
   lma'. simpl. auto with wf_db.
 Qed.
 
+(* Alternative Proof not using lma *)
+Lemma zero_3_f_to_vec' : 
+  ∣0,0,0⟩ = f_to_vec 3 (fun _ => false).
+Proof.
+  apply mat_equiv_eq.
+  (* ∣0,0,0⟩ is well formed *)
+  - auto with wf_db.
+  (* f_to_vec 3 (fun _ => false). is well formed*)
+  - unfold f_to_vec; simpl. auto with wf_db.
+  - (* The equivalence of matrices are defined by equivalence of all cells*)
+    by_cell.
+    (* Solve equations of complex numbers *)
+    all: lca.
+Qed.
+
 Lemma one_3_f_to_vec : 
   ∣1,0,0⟩ = f_to_vec 3 (fun n => n =? 0).
 Proof.

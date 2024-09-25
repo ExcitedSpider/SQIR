@@ -112,6 +112,8 @@ Qed.
 Lemma WF_ψg : WF_Matrix ψg.
 Proof.
   unfold ψg.
+  (* Why can't use auto with wf_db*)
+  (* wf_db only handles simple terms. psi g is too complicated *)
   apply WF_scale.
   apply WF_Msum.
   intros.
@@ -667,12 +669,20 @@ Local Opaque diff.
 
 Local Coercion Nat.b2n : bool >-> nat.
 Lemma Uf_action_on_ψg : forall (b : bool),
+(* 
+forall b : bool,
+  uc_eval Uf × pad_vector dim (ψg ⊗ ∣ b ⟩) = pad_vector dim (ψg ⊗ ∣ ¬ b ⟩)
+Why not proof 
+  Uf (ψg ⊗ ∣ b ⟩ = (ψg ⊗ ∣ ¬ b ⟩
+Then use some lemma to pad it with desired dimension?
+*)
   @Mmult _ _ 1 (uc_eval Uf) (@pad_vector (S n) dim (ψg ⊗ ∣ b ⟩)) =
     @pad_vector (S n) dim (ψg ⊗ ∣ negb b ⟩).
 Proof.
   intros. repeat rewrite pad_ancillae.
   unfold ψg.
-  restore_dims. distribute_scale.
+  restore_dims. 
+  distribute_scale.
   rewrite 2 kron_Msum_distr_r.
   replace (2 ^ n * 2)%nat with (2 ^ (S n))%nat by unify_pows_two.
   rewrite Nat.pow_1_l. 
@@ -688,8 +698,6 @@ Proof.
   specialize (Uf_implements_f i b Hi) as Hu.
   repeat rewrite pad_ancillae in Hu.
   rewrite fi, xorb_true_r in *.
-  unify_pows_two. rewrite Nat.add_1_r.
-  restore_dims.
   apply Hu.
   Msimpl. reflexivity.
 Qed.

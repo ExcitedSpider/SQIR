@@ -220,6 +220,7 @@ Proof.
   rewrite kron_plus_distr_r.
   repeat rewrite Mmult_plus_distr_l.
   distribute_scale.
+  Print distribute_scale.
   repeat rewrite Mscale_mult_dist_r.
   restore_dims.
   repeat rewrite kron_assoc by auto 10 with wf_db.
