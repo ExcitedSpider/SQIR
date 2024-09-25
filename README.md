@@ -1,10 +1,15 @@
 # Chew-Yi's Work
 
 - The [[4,2,2]] Error Correction Code
+
   examples/error-correction/FourQubitCode.v
+  
 - The Formalism of PauliGroup 
+
   examples/error-correction/PauliGroup.v
+
 - Other educational small examples
+
   See https://github.com/inQWIRE/SQIR/compare/main...ExcitedSpider:SQIR:main
 
 # SQIR & VOQC
