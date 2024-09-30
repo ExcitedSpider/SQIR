@@ -154,10 +154,8 @@ Definition code_space (c1 c2 c3 c4: C) :=
   / √ 2 * c3 .*  (∣ 1,0,1,0 ⟩ .+ ∣ 0,1,0,1 ⟩ ) .+ 
   / √ 2 * c4 .*  (∣ 1,1,0,0 ⟩ .+ ∣ 0,0,1,1 ⟩ ).
 
-(*
-  Correctness for encoding circuit
-*)
-Lemma encode_correct_wordy:
+(* Correctness for encoding circuit *)
+Lemma encode_correct:
   forall c1 c2 c3 c4: C,
   let state := two_qubit_system c1 c2 c3 c4 in 
   (@uc_eval dim encode) × (state ⊗ ∣ 0,0 ⟩) = 
