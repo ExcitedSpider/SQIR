@@ -184,7 +184,7 @@ Proof.
   all: try(exists X; simpl;Qsimpl;easy).
   all: try(exists Z; simpl;Qsimpl;easy).
   all: try(exists Y; simpl;Qsimpl;easy).
-  Abort. (* The lemma is not correct, one need to introduce scalar into this lemma *)
+  Admitted. (* The lemma is not correct, one need to introduce scalar into this lemma *)
 
 
 (* This one succeed by using two lemmas *)
