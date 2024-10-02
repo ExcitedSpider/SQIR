@@ -85,7 +85,7 @@ Proof.
   auto with wf_db.
 Qed.
 
-Lemma pauli_identity_correct:
+Lemma pauli_identity_correct_left:
   forall (a: pauli_group), multi_pauli ID a a.
 Proof.
   intros.
@@ -99,4 +99,18 @@ Proof.
     + apply pauli_op_wf.
   - apply pauli_op_wf.  
   - apply Mmult_1_l_mat_eq.
+Qed.
+
+Lemma pauli_identity_correct:
+  forall (a: pauli_group), multi_pauli a ID a.
+Proof.
+  intros.
+  apply PauliMultRel; simpl.
+  rewrite Mscale_1_l.
+  apply mat_equiv_eq.
+  - apply WF_mult.
+    + apply pauli_op_wf.
+    + auto with wf_db. 
+  - apply pauli_op_wf.  
+  - apply Mmult_1_r_mat_eq.
 Qed.
