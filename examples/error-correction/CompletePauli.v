@@ -148,4 +148,7 @@ Proof.
   solve_matrix.
 Qed.
 
-
+(* our definition of multi_pauli makes this hard *)
+(* Lemma pauli_associative:
+  forall (a b c: pauli_group), 
+    (multi_pauli a b c) -> ??? *)
