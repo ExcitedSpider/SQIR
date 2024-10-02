@@ -1,7 +1,6 @@
 Require Export SQIR.UnitaryOps.
 Require Export QuantumLib.Matrix.
 
-
 (* Formalize the pauli group . Not complete! need to include scalars *)
 
 Inductive Pauli : Type :=
@@ -64,4 +63,3 @@ Theorem pauli_identity_left : forall p : Pauli,
 Proof.
   intros. destruct p; solve_matrix.
 Qed.
-
