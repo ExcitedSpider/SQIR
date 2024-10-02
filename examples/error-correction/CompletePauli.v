@@ -114,3 +114,38 @@ Proof.
   - apply pauli_op_wf.  
   - apply Mmult_1_r_mat_eq.
 Qed.
+
+Definition inverse_op (op: pauli_op): pauli_op := 
+  match op with
+  | I => I
+  | X => X
+  | Y => Y
+  | Z => Z
+  end.
+
+Definition inverse_scala (op: scalar): scalar := 
+  match op with
+  | One => One
+  | Iphase => NegIphase
+  | NegOne => NegOne
+  | NegIphase => Iphase 
+  end.
+
+Definition pauli_inverse (p : pauli_group) : pauli_group :=
+  match p with
+  | PauliElem s op => PauliElem (inverse_scala s) (inverse_op op)
+  end.
+
+Lemma pauli_inverse_correct:
+  forall (a: pauli_group), exists (a': pauli_group),
+  multi_pauli a a' ID.
+Proof.
+  intros.
+  exists (pauli_inverse a). 
+  apply PauliMultRel. 
+  destruct a.
+  destruct s, p;
+  solve_matrix.
+Qed.
+
+
