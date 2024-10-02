@@ -60,13 +60,13 @@ Example negIX: pauli_to_matrix (NegIphase · X) = -Ci .* σx.
 Proof. reflexivity. Qed.
 
 (* The operation on the pauli group *)
-Inductive multi_pauli: pauli_group -> pauli_group -> pauli_group -> Prop := 
+Inductive pmult: pauli_group -> pauli_group -> pauli_group -> Prop := 
   | PauliMultRel: forall (a b c: pauli_group),
     (pauli_to_matrix a) × (pauli_to_matrix b) = pauli_to_matrix c ->
-    multi_pauli a b c.
+    pmult a b c.
 
 Lemma fact_square_x: 
-  multi_pauli (One · X)  (One · X) (One · I).
+  pmult (One · X)  (One · X) (One · I).
 Proof.
   apply PauliMultRel.
   simpl.
@@ -86,7 +86,7 @@ Proof.
 Qed.
 
 Lemma pauli_identity_correct_left:
-  forall (a: pauli_group), multi_pauli ID a a.
+  forall (a: pauli_group), pmult ID a a.
 Proof.
   intros.
   apply PauliMultRel.
@@ -102,7 +102,7 @@ Proof.
 Qed.
 
 Lemma pauli_identity_correct:
-  forall (a: pauli_group), multi_pauli a ID a.
+  forall (a: pauli_group), pmult a ID a.
 Proof.
   intros.
   apply PauliMultRel; simpl.
@@ -138,7 +138,7 @@ Definition pauli_inverse (p : pauli_group) : pauli_group :=
 
 Lemma pauli_inverse_correct:
   forall (a: pauli_group), exists (a': pauli_group),
-  multi_pauli a a' ID.
+  pmult a a' ID.
 Proof.
   intros.
   exists (pauli_inverse a). 
@@ -148,7 +148,65 @@ Proof.
   solve_matrix.
 Qed.
 
-(* our definition of multi_pauli makes this hard *)
-(* Lemma pauli_associative:
-  forall (a b c: pauli_group), 
-    (multi_pauli a b c) -> ??? *)
+
+Lemma pauli_closure:
+  forall a b,
+  exists (c: pauli_group), pmult a b c.
+Proof.
+  intros a b.
+  destruct a as [sa pa], b as [sb pb].
+  destruct sa, pa, sb, pb.
+  Abort. (* 256 cases. not feasible to prove directly *)
+
+Lemma scalar_closure:
+  forall a b,
+  exists (c: scalar), 
+    (scalar_to_complex a) * (scalar_to_complex b) = (scalar_to_complex c).
+Proof.
+  intros.
+  destruct a, b.
+  all: simpl.
+  all: try (exists One; simpl; lca).
+  all: try (exists Iphase; simpl; lca).
+  all: try (exists NegOne; simpl; lca).
+  all: try (exists NegIphase; simpl; lca).
+Qed.
+
+Lemma op_closure:
+  forall a b,
+  exists (c: pauli_op), 
+    (op_to_matrix a) × (op_to_matrix b) = (op_to_matrix c).
+Proof.
+  intros a b.
+  destruct a, b.
+  all: simpl.
+  all: try(exists I; simpl;Qsimpl;easy).
+  all: try(exists X; simpl;Qsimpl;easy).
+  all: try(exists Z; simpl;Qsimpl;easy).
+  all: try(exists Y; simpl;Qsimpl;easy).
+  Abort. (* The lemma is not correct, one need to introduce scalar into this lemma *)
+
+
+(* This one succeed by using two lemmas *)
+Lemma pauli_closure':
+  forall a b,
+  exists (c: pauli_group), pmult a b c.
+Proof.
+  intros a b.
+  destruct a as [sa pa], b as [sb pb].
+  specialize (scalar_closure sa sb) as [sc Hsc].
+  specialize (op_closure pa pb) as [pc Hpc].
+  exists (PauliElem sc pc).
+  apply PauliMultRel; simpl.
+  (* Search (_ × (_ .* _)). *)
+  repeat rewrite Mscale_mult_dist_r.
+  (* Search (_ .* (_ × _)). *)
+  rewrite Mscale_mult_dist_l.
+  rewrite Hpc.
+  rewrite Mscale_assoc.
+  rewrite <- Hsc.
+  (* Search ((_ * _) = (_ * _)). *)
+  rewrite Cmult_comm.
+  reflexivity.
+Qed.
+
