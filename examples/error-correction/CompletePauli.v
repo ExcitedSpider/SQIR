@@ -72,4 +72,31 @@ Proof.
   simpl.
   solve_matrix.
 Qed.
-  
+
+Definition ID := (One · I).
+
+Lemma pauli_op_wf: 
+  forall (a: pauli_group), WF_Matrix (pauli_to_matrix a).
+Proof.
+  intros.
+  destruct a.
+  destruct s, p;
+  simpl;
+  auto with wf_db.
+Qed.
+
+Lemma pauli_identity_correct:
+  forall (a: pauli_group), multi_pauli ID a a.
+Proof.
+  intros.
+  apply PauliMultRel.
+  simpl.
+  rewrite Mscale_1_l.
+  (* Search (Matrix.I _ = _). *)
+  apply mat_equiv_eq.
+  - apply WF_mult.
+    + auto with wf_db.
+    + apply pauli_op_wf.
+  - apply pauli_op_wf.  
+  - apply Mmult_1_l_mat_eq.
+Qed.
