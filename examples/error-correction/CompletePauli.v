@@ -60,6 +60,7 @@ Example negIX: pauli_to_matrix (NegIphase · X) = -Ci .* σx.
 Proof. reflexivity. Qed.
 
 (* The operation on the pauli group *)
+(* Define the operation as relation makes it so hard *)
 Inductive pmult: pauli_group -> pauli_group -> pauli_group -> Prop := 
   | PauliMultRel: forall (a b c: pauli_group),
     (pauli_to_matrix a) × (pauli_to_matrix b) = pauli_to_matrix c ->
@@ -172,19 +173,39 @@ Proof.
   all: try (exists NegIphase; simpl; lca).
 Qed.
 
+Ltac MRefl :=
+  simpl; Qsimpl; try reflexivity; try solve_matrix.
+
+Ltac MReflExists scale op :=
+  try (exists op, scale; MRefl).
+  
+
 Lemma op_closure:
   forall a b,
-  exists (c: pauli_op), 
-    (op_to_matrix a) × (op_to_matrix b) = (op_to_matrix c).
+  exists (c: pauli_op) (s: scalar), 
+    (op_to_matrix a) × (op_to_matrix b) = (scalar_to_complex s) .* (op_to_matrix c).
 Proof.
   intros a b.
   destruct a, b.
-  all: simpl.
-  all: try(exists I; simpl;Qsimpl;easy).
-  all: try(exists X; simpl;Qsimpl;easy).
-  all: try(exists Z; simpl;Qsimpl;easy).
-  all: try(exists Y; simpl;Qsimpl;easy).
-  Admitted. (* The lemma is not correct, one need to introduce scalar into this lemma *)
+  all: simpl; Qsimpl.
+  (* This is so painful. don't know how to revert `exists` *)
+  MReflExists One I.
+  MReflExists One X.
+  MReflExists One Y.
+  MReflExists One Z.
+  MReflExists One X.
+  MReflExists One I.
+  MReflExists Iphase Z.
+  MReflExists NegIphase Y.
+  MReflExists One Y.
+  MReflExists NegIphase Z.
+  MReflExists One I.
+  MReflExists Iphase X.
+  MReflExists One Z.
+  MReflExists Iphase Y.
+  MReflExists NegIphase X.
+  MReflExists One I.
+Qed.
 
 
 (* This one succeed by using two lemmas *)
@@ -196,7 +217,9 @@ Proof.
   destruct a as [sa pa], b as [sb pb].
   specialize (scalar_closure sa sb) as [sc Hsc].
   specialize (op_closure pa pb) as [pc Hpc].
-  exists (PauliElem sc pc).
+  destruct Hpc as [s Hpc].
+  specialize (scalar_closure sc s) as [sc' Hsc'].
+  exists (PauliElem sc' pc).
   apply PauliMultRel; simpl.
   (* Search (_ × (_ .* _)). *)
   repeat rewrite Mscale_mult_dist_r.
@@ -204,9 +227,49 @@ Proof.
   rewrite Mscale_mult_dist_l.
   rewrite Hpc.
   rewrite Mscale_assoc.
-  rewrite <- Hsc.
+  rewrite <- Hsc'.
   (* Search ((_ * _) = (_ * _)). *)
   rewrite Cmult_comm.
+  rewrite Hsc.
+  rewrite Mscale_assoc.
   reflexivity.
 Qed.
 
+Lemma pmult_assoc : forall a b ab c abc : pauli_group,
+  pmult a b ab ->
+  pmult ab c abc ->
+  exists bc, pmult b c bc /\ pmult a bc abc.
+Proof.
+  intros a b ab c abc HL HR.
+  specialize (pauli_closure' b c) as Hbc.
+  destruct Hbc as [bc Hbc].
+  exists bc.
+  split.
+  - assumption.
+  - apply PauliMultRel.
+    inversion Hbc; subst.
+    rewrite <- H; clear H Hbc.
+    inversion HR; subst.
+    rewrite <- H; clear H HR.
+    inversion HL; subst.
+    rewrite <- H; clear H HL.
+    repeat rewrite Mmult_assoc.
+    reflexivity.
+Qed.
+
+(* The pauli operator forms a group *)
+Theorem PauliGroupProperties:
+  (forall a, pmult ID a a) /\
+  (forall a, exists a', pmult a a' ID) /\
+  (forall a b, exists c, pmult a b c) /\ 
+  (forall a b ab c abc,
+    pmult a b ab ->
+    pmult ab c abc ->
+    exists bc, pmult b c bc /\ pmult a bc abc
+  ).
+Proof.
+  split. apply pauli_identity_correct_left.
+  split. apply pauli_inverse_correct.
+  split. apply pauli_closure'.
+  apply pmult_assoc.
+Qed.
