@@ -378,6 +378,41 @@ Proof.
     (* TODO: work on this later *)
 Admitted.
 
+(* A more focused example to show the problem *)
+Example contra_matrix_eq:
+  not (C1 .* Matrix.I 2 × (C1 .* Matrix.I 2) = C1 .* σx).
+Proof.
+  unfold not.
+  intros.
+  (* this can be used to simplyfy hypothesis*)
+  autorewrite with M_db_light M_db Q_db in H.
+  (* now we have H: Matrix.I 2 = σx *)
+  unfold σx, Matrix.I in H.
+  (* we have unfolded them into their function forms*)
+  (* It fails because functional_extensionality cannot apply to curreid funcs ? *)
+  Fail apply functional_extensionality in H.
+  Abort.
+
+(* Successful attempt, but too complicated for a simple fact. 
+   It requires mannuallu point out for what location, the two matrix are different
+   this will not scale well to prove pmult_prod_correct_l *)
+Example contra_matrix_eq':
+  not (C1 .* Matrix.I 2 × (C1 .* Matrix.I 2) = C1 .* σx).
+Proof.
+  unfold not.
+  intros.
+  (* this can be used to simplyfy hypothesis*)
+  autorewrite with M_db_light M_db Q_db in H.
+  assert (Matrix.I 2 0%nat 0%nat = σx 0%nat 0%nat). {
+    rewrite H.
+    reflexivity.
+  }
+  unfold Matrix.I in H0.
+  simpl in H0.
+  inversion H0; subst.
+  lra.
+Qed.
+
 Theorem pmul_prod_correct: forall (a b c: pauli),
   pmult a b c <-> (pmult_prod a b) = c. 
 Proof.
@@ -385,4 +420,5 @@ Proof.
   apply pmult_prod_correct_l.
   apply pmult_prod_correct_r.
 Qed.
+
 
