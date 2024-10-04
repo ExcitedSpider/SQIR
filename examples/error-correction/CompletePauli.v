@@ -22,8 +22,8 @@ Inductive scalar : Type :=
   | NegOne : scalar   (* -1 *)
   | NegIphase : scalar. (* -i *)
 
-Inductive pauli_group : Type :=
-  | PauliElem : scalar -> pauli_op -> pauli_group.
+Inductive pauli : Type :=
+  | PauliElem : scalar -> pauli_op -> pauli.
 
 (* Define a custom notation for elements of the Pauli group *)
 Notation "s · p" := (PauliElem s p) (at level 40, left associativity).
@@ -47,7 +47,7 @@ Definition op_to_matrix (p : pauli_op) : Square 2 :=
   | Z => σz
   end.
 
-Definition pauli_to_matrix (p: pauli_group): Square 2 := 
+Definition pauli_to_matrix (p: pauli): Square 2 := 
     match p with
       | PauliElem s op => (scalar_to_complex s) .* (op_to_matrix op)
     end.
@@ -61,8 +61,8 @@ Proof. reflexivity. Qed.
 
 (* The operation on the pauli group *)
 (* Define the operation as relation makes it so hard *)
-Inductive pmult: pauli_group -> pauli_group -> pauli_group -> Prop := 
-  | PauliMultRel: forall (a b c: pauli_group),
+Inductive pmult: pauli -> pauli -> pauli -> Prop := 
+  | PauliMultRel: forall (a b c: pauli),
     (pauli_to_matrix a) × (pauli_to_matrix b) = pauli_to_matrix c ->
     pmult a b c.
 
@@ -77,7 +77,7 @@ Qed.
 Definition ID := (One · I).
 
 Lemma pauli_op_wf: 
-  forall (a: pauli_group), WF_Matrix (pauli_to_matrix a).
+  forall (a: pauli), WF_Matrix (pauli_to_matrix a).
 Proof.
   intros.
   destruct a.
@@ -87,7 +87,7 @@ Proof.
 Qed.
 
 Lemma pauli_identity_correct_left:
-  forall (a: pauli_group), pmult ID a a.
+  forall (a: pauli), pmult ID a a.
 Proof.
   intros.
   apply PauliMultRel.
@@ -103,7 +103,7 @@ Proof.
 Qed.
 
 Lemma pauli_identity_correct:
-  forall (a: pauli_group), pmult a ID a.
+  forall (a: pauli), pmult a ID a.
 Proof.
   intros.
   apply PauliMultRel; simpl.
@@ -132,13 +132,13 @@ Definition inverse_scala (op: scalar): scalar :=
   | NegIphase => Iphase 
   end.
 
-Definition pauli_inverse (p : pauli_group) : pauli_group :=
+Definition pauli_inverse (p : pauli) : pauli :=
   match p with
   | PauliElem s op => PauliElem (inverse_scala s) (inverse_op op)
   end.
 
 Lemma pauli_inverse_correct:
-  forall (a: pauli_group), exists (a': pauli_group),
+  forall (a: pauli), exists (a': pauli),
   pmult a a' ID.
 Proof.
   intros.
@@ -152,7 +152,7 @@ Qed.
 
 Lemma pauli_closure:
   forall a b,
-  exists (c: pauli_group), pmult a b c.
+  exists (c: pauli), pmult a b c.
 Proof.
   intros a b.
   destruct a as [sa pa], b as [sb pb].
@@ -211,7 +211,7 @@ Qed.
 (* This one succeed by using two lemmas *)
 Lemma pauli_closure':
   forall a b,
-  exists (c: pauli_group), pmult a b c.
+  exists (c: pauli), pmult a b c.
 Proof.
   intros a b.
   destruct a as [sa pa], b as [sb pb].
@@ -235,7 +235,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma pmult_assoc : forall a b ab c abc : pauli_group,
+Lemma pmult_assoc : forall a b ab c abc : pauli,
   pmult a b ab ->
   pmult ab c abc ->
   exists bc, pmult b c bc /\ pmult a bc abc.
@@ -273,3 +273,116 @@ Proof.
   split. apply pauli_closure'.
   apply pmult_assoc.
 Qed.
+
+(* Definition inverse_scala (op: scalar): scalar := 
+  match op with
+  | One => One
+  | Iphase => NegIphase
+  | NegOne => NegOne
+  | NegIphase => Iphase 
+  end.
+
+Definition pauli_inverse (p : pauli) : pauli :=
+  match p with
+  | PauliElem s op => PauliElem (inverse_scala s) (inverse_op op)
+  end. *)
+
+(* 
+  =======================================================
+  Define pmult as a function
+  
+  We found reasoing pmult as a relation is tiresome.
+  So it is better that we define it as a function.
+  Fortunately, as we have proved many facts about pmult,
+  it will be much easier now.
+  =======================================================
+*)
+
+Definition op_prod(a b: pauli_op): (scalar * pauli_op) := 
+    match a, b with
+    | I, p => (One, p)
+    | p, I => (One, p)  
+    
+    | X, X => (One, I)
+    | Y, Y => (One, I) 
+    | Z, Z => (One, I)
+
+    | X, Y => (Iphase, Z) 
+    | Y, X => (NegIphase, Z)
+
+    | Y, Z => (Iphase, X)
+    | Z, Y => (NegIphase, X)
+
+    | Z, X => (Iphase, Y)
+    | X, Z => (NegIphase, Y) 
+  end.
+
+Definition scalar_prod(a b: scalar): scalar := 
+  match a, b with
+    | One, s => s
+    | s, One => s
+    | NegOne, Iphase => NegIphase
+    | Iphase, NegOne => NegIphase
+    | NegOne, NegOne => One
+    | NegOne, NegIphase => Iphase
+    | NegIphase, NegOne => Iphase
+    | Iphase, NegIphase => One
+    | NegIphase, Iphase => One
+    | Iphase, Iphase => NegOne
+    | NegIphase, NegIphase => NegOne
+  end.
+
+Definition combined_scalars (s1 s2 s3: scalar) : scalar := 
+  scalar_prod s1 (scalar_prod s2 s3).
+
+Definition pmult_prod (a b: pauli): pauli := 
+  match a, b with
+  | PauliElem sa pa, PauliElem sb pb => 
+      let (sab, pab) := (op_prod pa pb) in
+      let combined_scalar := combined_scalars sab sa sb in
+      PauliElem combined_scalar pab
+  end.
+
+(* verify our function version of pmult is correct *)
+Lemma pmult_prod_correct_r: forall (a b c: pauli),
+  (pmult_prod a b) = c -> pmult a b c. 
+Proof.
+  intros.
+  subst.
+  destruct a, b.
+  destruct s, p, s0, p0.
+  all:  simpl; apply PauliMultRel; simpl; Qsimpl.
+  (* this is not necessary but slightly improve performance *)
+  all: try (rewrite Mscale_mult_dist_r). 
+  all: try(Qsimpl; try(reflexivity)).
+  all: try(rewrite Mmult_1_l).
+  (* tried of finding patterns. *)
+  all: try(solve_matrix).
+Qed.
+
+Lemma pmult_prod_correct_l: forall (a b c: pauli),
+  pmult a b c -> (pmult_prod a b) = c. 
+Proof.
+  intros.
+  destruct a, b.
+  destruct s, p, s0, p0.
+  all: simpl.
+  - inversion H; subst.
+    simpl in H0.
+    destruct c.
+    destruct s, p.
+    + reflexivity.
+    + simpl in H0.
+    (* Apperantly, H0 is a contradiction in mathematical sense, 
+    but i don't know how to prove it *)
+    (* TODO: work on this later *)
+Admitted.
+
+Theorem pmul_prod_correct: forall (a b c: pauli),
+  pmult a b c <-> (pmult_prod a b) = c. 
+Proof.
+  split.
+  apply pmult_prod_correct_l.
+  apply pmult_prod_correct_r.
+Qed.
+
