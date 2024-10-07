@@ -317,7 +317,7 @@ Definition op_prod(a b: pauli_op): (scalar * pauli_op) :=
     | X, Z => (NegIphase, Y) 
   end.
 
-Definition scalar_prod(a b: scalar): scalar := 
+Definition s_prod(a b: scalar): scalar := 
   match a, b with
     | One, s => s
     | s, One => s
@@ -333,7 +333,7 @@ Definition scalar_prod(a b: scalar): scalar :=
   end.
 
 Definition combined_scalars (s1 s2 s3: scalar) : scalar := 
-  scalar_prod s1 (scalar_prod s2 s3).
+  s_prod s1 (s_prod s2 s3).
 
 Definition pmult_prod (a b: pauli): pauli := 
   match a, b with
@@ -342,6 +342,33 @@ Definition pmult_prod (a b: pauli): pauli :=
       let combined_scalar := combined_scalars sab sa sb in
       PauliElem combined_scalar pab
   end.
+
+Definition apply_s (s: scalar) (p: pauli): pauli :=
+  match p with
+    | PauliElem s0 op => PauliElem (s_prod s s0) op
+  end.
+
+Definition pmult_prod_alt (a b: pauli): pauli := 
+  match a, b with
+  | PauliElem sa pa, PauliElem sb pb => 
+      let (sab, pab) := (op_prod pa pb) in
+      (* let combined_scalar := combined_scalars sab sa sb in *)
+      apply_s sab (PauliElem (s_prod sa sb) pab)
+  end.
+
+Lemma pmult_prod_alt_correct:
+  forall a b,
+  pmult_prod_alt a b = pmult_prod a b.
+Proof.
+  intros.
+  destruct a, b.
+  simpl.
+  destruct s, s0.
+  all: simpl.
+  all: destruct p, p0.
+  all: simpl.
+  all: reflexivity.
+Qed. 
 
 (* verify our function version of pmult is correct *)
 Lemma pmult_prod_correct_r: forall (a b c: pauli),
@@ -413,13 +440,126 @@ Proof.
   lra.
 Qed.
 
-Theorem pmul_prod_correct: forall (a b c: pauli),
+Theorem pmul_prod_eq: forall (a b c: pauli),
   pmult a b c <-> (pmult_prod a b) = c. 
 Proof.
   split.
   apply pmult_prod_correct_l.
   apply pmult_prod_correct_r.
 Qed.
+
+(* 
+The commute / anticommute are two very important properties in stabilizer formalism. we want to show that scalar does not affect commute / anticommute relation.
+We also hope to inspect how our new defined prod function can simplify the proof.
+*)
+
+Inductive commute: pauli -> pauli -> Prop :=
+  | CommuteRel: forall (pa pb: pauli),
+    (pmult_prod pa pb) = (pmult_prod pb pa) -> commute pa pb.
+
+Lemma commute_self:
+  forall (p: pauli), commute p p.
+Proof.
+  intros.
+  apply CommuteRel. reflexivity.
+Qed.
+
+Lemma commute_identity:
+  forall (p: pauli), commute p ID.
+Proof.
+  intros.
+  apply CommuteRel.
+  simpl.
+  (* no need to work on relations anymore! 
+     just desctruct everything and let coq do the calculation.
+  *)
+  destruct p.
+  destruct p.
+  all: destruct s.
+  all: try(reflexivity).
+Qed.
+
+(* Can you think a better name *)
+Lemma scalar_does_not_affect_commute:
+  forall p1 p2 s1 s2, commute (One · p1) (One · p2) ->
+  commute (s1 · p1) (s2 · p2).
+Proof.
+  intros.
+  inversion H; subst.
+  apply CommuteRel.
+  simpl.
+  unfold combined_scalars.
+  destruct s1, s2, p1, p2.
+  (* some can be resolved by performing multiplication *)
+  all: try (reflexivity).
+  (* some can be resolved by contradiction *)
+  all: try (inversion H0).
+Qed.
+
+(* 
+the definition has a slight issue: it depends on how `apply_s` is defiend. Although `apply_s` is straightforward, but it is not certified. 
+*)
+Inductive anticommute: pauli -> pauli -> Prop :=
+  | AnticommuteRel: forall (pa pb: pauli),
+    (pmult_prod pa pb) = apply_s (NegOne) (pmult_prod pb pa) -> anticommute pa pb.
+
+Example anticommute_exp0:
+  anticommute (One · X) (One · Y).
+Proof.
+  apply AnticommuteRel.
+  reflexivity.
+Qed.
+
+Example anticommute_exp1:
+  anticommute (One · Y) (One · Z).
+Proof.
+  apply AnticommuteRel.
+  reflexivity.
+Qed.
+
+Example anticommute_exp2:
+  anticommute (One · X) (One · Z).
+Proof.
+  apply AnticommuteRel.
+  reflexivity.
+Qed.
+
+(* 
+  very similar to `scalar_does_not_affect_commute`
+  I wonder if there is a way to extract the same pattern
+  *)
+Lemma scalar_does_not_affect_anticommute:
+  forall p1 p2 s1 s2, anticommute (One · p1) (One · p2) ->
+  anticommute (s1 · p1) (s2 · p2).
+Proof.
+  intros.
+  inversion H; subst.
+  apply AnticommuteRel.
+  simpl.
+  unfold combined_scalars.
+  destruct s1, s2, p1, p2.
+  (* some can be resolved by performing multiplication *)
+  all: try (reflexivity).
+  (* some can be resolved by contradiction *)
+  all: try (inversion H0).
+Qed.
+
+(* 
+  At this point, it is guranteed that scalars do not affect us
+  to reasoing about (anti)commute. so we can throw them away.
+*)
+
+Example anticommute_exp3:
+  anticommute (NegIphase · X) (Iphase · Z).
+Proof.
+  apply scalar_does_not_affect_anticommute.
+  apply AnticommuteRel.
+  reflexivity.
+Qed.
+
+(* It seems that the proof of anticommute_exp3 is pretty mechanical.
+  we can work on some automation later. 
+*)
 
 (*
 ======================
