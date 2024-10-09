@@ -31,6 +31,15 @@ Notation "s · p" := (PauliElem s p) (at level 40, left associativity).
 Check One · X.
 Check Iphase · Z.
 
+Lemma pauli_eq_comp:
+  forall sa pa sb pb,
+  sa = sb -> pa = pb -> sa · pa = sb · pb.
+Proof.
+  intros.
+  subst.
+  reflexivity.
+Qed.
+
 Definition scalar_to_complex (s : scalar) : C :=
   match s with
   | One => 1
@@ -59,6 +68,154 @@ Proof. reflexivity. Qed.
 Example negIX: pauli_to_matrix (NegIphase · X) = -Ci .* σx.
 Proof. reflexivity. Qed.
 
+Lemma pauli_to_matrix_determinsitic: forall a b c,
+  pauli_to_matrix a = b ->
+  pauli_to_matrix a = c ->
+  b = c.
+Proof.
+  intros.
+  subst.
+  reflexivity.
+Qed.
+
+Lemma pauli_to_matrix_total: forall a,
+  exists b, pauli_to_matrix a = b.
+Proof.
+  intros.
+  destruct a.
+  simpl.
+  exists (scalar_to_complex s .* op_to_matrix p).
+  reflexivity.
+Qed.
+
+Check Matrix.I 2.
+
+Lemma square_2_eq_semantics : forall a b: Square 2,
+  a = b ->
+  a 0%nat 0%nat = b 0%nat 0%nat /\
+  a 0%nat 1%nat = b 0%nat 1%nat /\ 
+  a 1%nat 0%nat = b 1%nat 0%nat /\
+  a 1%nat 1%nat = b 1%nat 1%nat.
+Proof.
+  intros.
+  subst.
+  repeat (split).
+Qed.
+
+Example one_semantics:
+  Matrix.I 2 0%nat 0%nat = 1.
+Proof.
+  unfold Matrix.I.
+  simpl.
+  reflexivity.
+Qed.
+
+(* 
+Transform 
+(C1 .* Matrix.I 2) 0%nat 0%nat = (C1 .* σx) 0%nat 0%nat
+to 
+C1 * (Matrix.I 2 0%nat 0%nat) = ...
+*)
+
+(* I'm sure it is somewhere in SQIR *)
+Lemma scalar_asso_mapply:
+  forall (c: C) (m: Square 2) (i j: nat),
+  Nat.lt i 2%nat -> 
+  Nat.lt j 2%nat ->
+  (c .* m) i j = c * (m i j).
+Admitted. 
+
+Ltac contradict_c_eq H :=
+  field_simplify_eq in H;
+  inversion H as [HC];
+  contradict HC;
+  lra.
+  
+Lemma pauli_matrix_no_overlap : forall sa sb pa pb,
+  pauli_to_matrix (sa · pa) = pauli_to_matrix (sb · pb) ->
+  pa <> pb \/ sa <> sb ->
+  False.
+Proof.
+  intros.
+  destruct H0.
+  {
+    apply H0; clear H0.     
+    destruct sa, sb, pa, pb.
+    all: try(reflexivity).
+    all: try(
+      apply square_2_eq_semantics in H;
+      simpl in H;
+      unfold Matrix.I, σx, σz, σy in H;
+      destruct H as [H0 [H1 [H2 H3]]];
+      repeat (rewrite scalar_asso_mapply in H0, H1, H2, H3 by lia);
+      simpl in H0, H1, H2, H3
+    ).
+    all: try(contradict_c_eq H0).
+    all: try(contradict_c_eq H1).
+    all: try(contradict_c_eq H2).
+    all: try(contradict_c_eq H3).
+  }
+  {
+    apply H0; clear H0.     
+    destruct sa, sb, pa, pb.
+    all: try(reflexivity).
+    all: try(
+      apply square_2_eq_semantics in H;
+      simpl in H;
+      unfold Matrix.I, σx, σz, σy in H;
+      destruct H as [H0 [H1 [H2 H3]]];
+      repeat (rewrite scalar_asso_mapply in H0, H1, H2, H3 by lia);
+      simpl in H0, H1, H2, H3
+    ).
+    all: try(contradict_c_eq H0).
+    all: try(contradict_c_eq H1).
+    all: try(contradict_c_eq H2).
+    all: try(contradict_c_eq H3).
+  }
+Qed.
+
+Lemma pauli_to_matrix_comp: forall sa pa sb pb,
+  pauli_to_matrix (sa · pa) = pauli_to_matrix (sb · pb) ->
+  sa = sb /\ pa = pb.
+Proof.
+  intros.
+  split.
+  {
+    destruct sa, sb, pa, pb.
+    all: try(reflexivity).
+    all: exfalso; eapply pauli_matrix_no_overlap ; try(apply H); 
+      try(left; discriminate);
+      try(right;discriminate).
+  }
+  {
+    destruct sa, sb, pa, pb.
+    all: try(reflexivity).
+    all: exfalso; eapply pauli_matrix_no_overlap ; try(apply H); 
+      try(left; discriminate);
+      try(right;discriminate).
+  }
+Qed.
+
+
+Lemma pauli_to_matrix_injective: forall a b,
+  pauli_to_matrix a = pauli_to_matrix b <-> a = b.
+Proof.
+  split.
+  { 
+    intros.
+    destruct a, b.
+    apply pauli_to_matrix_comp in H.
+    destruct H.
+    subst.
+    reflexivity.
+  }
+  {
+    intros.
+    subst.
+    reflexivity.
+  }
+Qed.
+
 (* The operation on the pauli group *)
 (* Define the operation as relation makes it so hard *)
 Inductive pmult: pauli -> pauli -> pauli -> Prop := 
@@ -66,7 +223,7 @@ Inductive pmult: pauli -> pauli -> pauli -> Prop :=
     (pauli_to_matrix a) × (pauli_to_matrix b) = pauli_to_matrix c ->
     pmult a b c.
 
-Lemma fact_square_x: 
+Example fact_square_x: 
   pmult (One · X)  (One · X) (One · I).
 Proof.
   apply PauliMultRel.
@@ -343,6 +500,21 @@ Definition pmult_prod (a b: pauli): pauli :=
       PauliElem combined_scalar pab
   end.
 
+(* TODO: revise this later *)
+Lemma pmult_prod_is_Mmult:
+  forall a b, pauli_to_matrix (pmult_prod a b) = 
+    (pauli_to_matrix a) × (pauli_to_matrix b).
+Proof.
+  intros.
+  Check pauli_to_matrix_injective.
+  destruct a, b.
+  destruct s, p, s0, p0.
+  all: simpl; Qsimpl.
+  all: try(reflexivity).
+  all: try(solve_matrix).
+Qed.
+
+
 Definition apply_s (s: scalar) (p: pauli): pauli :=
   match p with
     | PauliElem s0 op => PauliElem (s_prod s s0) op
@@ -391,53 +563,10 @@ Lemma pmult_prod_correct_l: forall (a b c: pauli),
   pmult a b c -> (pmult_prod a b) = c. 
 Proof.
   intros.
-  destruct a, b.
-  destruct s, p, s0, p0.
-  all: simpl.
-  - inversion H; subst.
-    simpl in H0.
-    destruct c.
-    destruct s, p.
-    + reflexivity.
-    + simpl in H0.
-    (* Apperantly, H0 is a contradiction in mathematical sense, 
-    but i don't know how to prove it *)
-    (* TODO: work on this later *)
-Admitted.
-
-(* A more focused example to show the problem *)
-Example contra_matrix_eq:
-  not (C1 .* Matrix.I 2 × (C1 .* Matrix.I 2) = C1 .* σx).
-Proof.
-  unfold not.
-  intros.
-  (* this can be used to simplyfy hypothesis*)
-  autorewrite with M_db_light M_db Q_db in H.
-  (* now we have H: Matrix.I 2 = σx *)
-  unfold σx, Matrix.I in H.
-  (* we have unfolded them into their function forms*)
-  (* It fails because functional_extensionality cannot apply to curreid funcs ? *)
-  Fail apply functional_extensionality in H.
-  Abort.
-
-(* Successful attempt, but too complicated for a simple fact. 
-   It requires mannuallu point out for what location, the two matrix are different
-   this will not scale well to prove pmult_prod_correct_l *)
-Example contra_matrix_eq':
-  not (C1 .* Matrix.I 2 × (C1 .* Matrix.I 2) = C1 .* σx).
-Proof.
-  unfold not.
-  intros.
-  (* this can be used to simplyfy hypothesis*)
-  autorewrite with M_db_light M_db Q_db in H.
-  assert (Matrix.I 2 0%nat 0%nat = σx 0%nat 0%nat). {
-    rewrite H.
-    reflexivity.
-  }
-  unfold Matrix.I in H0.
-  simpl in H0.
-  inversion H0; subst.
-  lra.
+  inversion H; subst.
+  rewrite <- pmult_prod_is_Mmult in H0.
+  rewrite pauli_to_matrix_injective in H0.
+  assumption.
 Qed.
 
 Theorem pmul_prod_eq: forall (a b c: pauli),
