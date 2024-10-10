@@ -13,6 +13,12 @@ examples: FORCE
 	@dune build examples/examples
 	@dune build examples/ghz
 
+qec: FORCE
+	@dune build examples/error-correction
+
+stabilizer: FORCE
+	@dune build examples/stabilizer
+
 shor:
 	@dune build examples/shor
 
