@@ -117,13 +117,15 @@ to
 C1 * (Matrix.I 2 0%nat 0%nat) = ...
 *)
 
-(* I'm sure it is somewhere in SQIR *)
 Lemma scalar_asso_mapply:
   forall (c: C) (m: Square 2) (i j: nat),
   Nat.lt i 2%nat -> 
   Nat.lt j 2%nat ->
   (c .* m) i j = c * (m i j).
-Admitted. 
+Proof.
+  unfold scale.
+  reflexivity.
+Qed.  
 
 Ltac contradict_c_eq H :=
   field_simplify_eq in H;
@@ -506,7 +508,6 @@ Lemma pmult_prod_is_Mmult:
     (pauli_to_matrix a) × (pauli_to_matrix b).
 Proof.
   intros.
-  Check pauli_to_matrix_injective.
   destruct a, b.
   destruct s, p, s0, p0.
   all: simpl; Qsimpl.
