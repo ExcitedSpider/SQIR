@@ -88,3 +88,5 @@ Proof. Abort.
 To do this we want every function call has a probability.
 This sounds like something monadic.
 *)
+
+End CoinFlip.
