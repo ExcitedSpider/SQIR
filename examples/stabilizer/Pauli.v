@@ -493,8 +493,32 @@ match a, b with
   | NegIphase, NegIphase => NegOne
 end.
 
+Lemma s_prod_total:
+  forall s1 s2,
+  exists s3,
+  s_prod s1 s2 = s3.
+Proof.
+  intros.
+  destruct s1, s2.
+  all: simpl.
+  all: try(exists One; reflexivity).
+  all: try(exists Iphase ; reflexivity).
+  all: try(exists NegOne  ; reflexivity).
+  all: try(exists NegIphase  ; reflexivity).
+Qed.
+
 Definition combined_scalars (s1 s2 s3: scalar) : scalar := 
 s_prod s1 (s_prod s2 s3).
+
+Lemma combined_scalars_total:
+  forall s1 s2 s3,
+  exists s4,
+  combined_scalars s1 s2 s3 = s4.
+Proof.
+  intros.
+  unfold combined_scalars.
+  apply s_prod_total.
+Qed.
 
 Definition pmult_prod (a b: pauli): pauli := 
 match a, b with
@@ -603,7 +627,7 @@ intros.
 apply CommuteRel.
 simpl.
 (* no need to work on relations anymore! 
-   just desctruct everything and let coq do the calculation.
+   just destruct everything and let coq do the calculation.
 *)
 destruct p.
 destruct p.
