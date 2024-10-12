@@ -6,11 +6,29 @@
   
 - The Formalism of PauliGroup 
 
-  examples/error-correction/PauliGroup.v
+  examples/stabilizer
 
 - Other educational small examples
 
   See https://github.com/inQWIRE/SQIR/compare/main...ExcitedSpider:SQIR:main
+
+## Compile
+
+Install quantumlib
+
+```
+opam repo add coq-released https://coq.inria.fr/opam/released
+opam update
+opam install coq-quantumlib.1.5.1
+```
+
+Compile SQIR
+
+```bash
+make # compile SQIR core
+make stabilizer
+make qec 
+```
 
 # SQIR & VOQC
 
