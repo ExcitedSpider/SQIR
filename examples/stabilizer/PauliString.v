@@ -20,7 +20,7 @@ Notation "[]" := pnil.
 Fixpoint p_length (ps : pstring) : nat :=
 match ps with
 | pnil => 0
-| pcons _ tail => 1 + p_length tail
+| _::tail => 1 + p_length tail
 end.
 
 Example length_correct_exp0:
@@ -30,7 +30,7 @@ Proof. reflexivity. Qed.
 Fixpoint p_app (ps1 ps2 : pstring) : pstring :=
 match ps1 with
 | pnil => ps2
-| pcons head tail => pcons head (p_app tail ps2)
+| head::tail => head::(p_app tail ps2)
 end.
 
 Lemma length_app_correct: 
@@ -57,6 +57,7 @@ Inductive pauli_n: Type :=
 
 Notation "s · p" := (PauliElemN s p) (at level 40, left associativity).
 
+(* A question: Should I define this as only allowing the same length ptring to be mutiplied? *)
 Fixpoint pstring_prod (p1 p2 : pstring) : scalar * pstring :=
   match p1, p2 with
   | pnil, p => (One, p)
@@ -64,7 +65,7 @@ Fixpoint pstring_prod (p1 p2 : pstring) : scalar * pstring :=
   | op1::ps1, op2:: ps2 =>
       let (s_op, res_op) := op_prod op1 op2 in
       let (s_ps, res_ps) := pstring_prod ps1 ps2 in
-      (s_prod s_op s_ps, pcons res_op res_ps)
+      (s_prod s_op s_ps, res_op :: res_ps)
   end.
 
     
