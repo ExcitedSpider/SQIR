@@ -528,17 +528,84 @@ match a, b with
     PauliElem combined_scalar pab
 end.
 
+Lemma s_prod_identity:
+  forall s, s_prod s One = s.
+Proof.
+  intros.
+  destruct s.
+  all: simpl; reflexivity.
+Qed.
+
+Lemma s_prod_correct:
+  forall s0 s1,
+  scalar_to_complex (s_prod s0 s1) = scalar_to_complex s0 * scalar_to_complex s1.
+Proof.
+  intros.
+  destruct s0, s1.
+  all: simpl; lca.
+Qed.
+
+Lemma combinded_scalars_correct:
+  forall s0 s1 s2,
+  scalar_to_complex (combined_scalars s0 s1 s2) = 
+    scalar_to_complex s0 *
+    scalar_to_complex s1 *
+    scalar_to_complex s2.
+Proof.
+  intros.
+  unfold combined_scalars.
+  repeat rewrite s_prod_correct.
+  lca.
+Qed.
+
+Lemma op_prod_total:
+  forall op1 op2,
+  exists prod_s prod_op,
+  op_prod op1 op2 = (prod_s, prod_op).
+Proof.
+  intros.
+  remember (op_prod op1 op2).
+  destruct p.
+  exists s, p.
+  reflexivity.
+Qed.
+
+Lemma op_prod_correct:
+  forall op1 op2,
+  exists prod_s prod_op,
+  op_prod op1 op2 = (prod_s, prod_op) /\
+  (op_to_matrix op1) × (op_to_matrix op2) = (scalar_to_complex prod_s) .* (op_to_matrix prod_op).
+Proof. 
+  intros.
+  specialize (op_prod_total op1 op2) as [s [p H]].
+  exists s, p.
+  split.
+  - assumption.
+  - destruct op1, op2.
+    all: simpl in H; inversion H; subst.
+    all: simpl; Qsimpl.
+    all: try(reflexivity).
+    all: solve_matrix. (* these facts can be lemmas? *) 
+Qed.
+
 (* TODO: revise this later *)
 Lemma pmult_prod_is_Mmult:
 forall a b, pauli_to_matrix (pmult_prod a b) = 
   (pauli_to_matrix a) × (pauli_to_matrix b).
 Proof.
-intros.
-destruct a, b.
-destruct s, p, s0, p0.
-all: simpl; Qsimpl.
-all: try(reflexivity).
-all: try(solve_matrix).
+  intros.
+  destruct a, b.
+  specialize (op_prod_correct p p0) as [s_prod [op_prod [Heq H]]].
+  unfold pmult_prod.
+  rewrite Heq.
+  unfold pauli_to_matrix .
+  distribute_scale.
+  rewrite H.
+  rewrite Mscale_assoc.
+  rewrite combinded_scalars_correct.
+  assert (scalar_to_complex s_prod * scalar_to_complex s * scalar_to_complex s0 = scalar_to_complex s * scalar_to_complex s0 * scalar_to_complex s_prod) by lca.
+  rewrite H0.
+  reflexivity.
 Qed.
 
 
