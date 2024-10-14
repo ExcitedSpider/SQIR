@@ -4,7 +4,7 @@ Import Pauli.
 
 (*
 ================================
-First we define the pauli string
+the pauli string
 ================================
 *)
 
@@ -103,4 +103,76 @@ Proof.
   reflexivity.
 Qed.
 
+Fixpoint pstring_to_matrix(p: pstring): Square (2^(p_length p)) :=
+  match p with
+  | pnil => Matrix.I 1
+  | head::tail => (pauli_to_matrix (PauliElem One head)) ⊗ pstring_to_matrix(tail)
+  end.
+
+Example pstring_to_matrix_exp0:
+  pstring_to_matrix (Y::I::Z::Y::[]) = σy ⊗ Matrix.I 2 ⊗ σz ⊗ σy.
+Proof.
+  simpl.
+  repeat (rewrite Mscale_1_l).
+  rewrite kron_1_r.
+  repeat (restore_dims;
+  rewrite kron_assoc by auto with wf_db).
+  easy.
+Qed.
+
+Definition dimOf(p: pauli_n): nat :=
+  match p with
+  | PauliElemN _ p => (p_length p)
+  end.
+
+Definition paulin_to_matrix(p: pauli_n): Square (2^(dimOf p)) :=
+  match p with
+  | PauliElemN s p => (scalar_to_complex s) .* (pstring_to_matrix p)
+  end.
+
+Lemma nil_pstring_semantics:
+  forall pstr, p_length pstr = 0%nat  -> pstring_to_matrix pstr = Matrix.I 1.
+Proof.
+  intros.
+  destruct pstr.
+  - reflexivity.
+  - inversion H.
+Qed.  
+
+
+Example pauli_n_prod_correct_exp:
+  let s1 := (One · (Z::X::X::I::[])) in
+  let s2 := (One · (X::X::Y::Y::[])) in
+  paulin_to_matrix (s1 ◦ s2) = paulin_to_matrix s1 × paulin_to_matrix s2.
+Proof.
+  intros.
+  simpl.
+  Msimpl.
+  solve_matrix.
+Qed.
+
+
+  (* Use explicit Mmult because Coq cannot figure out the correct dimension *)
+Theorem pauli_n_prod_correct: forall (p1 p2: pauli_n) dim,
+  dimOf p1 = dimOf p2 ->
+  dimOf p1 = dim ->
+  (@Mmult (2^dim) (2^dim) (2^dim)) (paulin_to_matrix p1) (paulin_to_matrix p2) = paulin_to_matrix (p1 ◦ p2).
+Proof.
+  intros p1.
+  destruct p1 as [s pstr].
+  induction pstr.
+  - intros.
+    simpl in H.
+    destruct p2.
+    unfold dimOf in H; simpl in H.
+    symmetry in H.
+    apply nil_pstring_semantics in H.
+    simpl. 
+    rewrite H; clear H.
+    simpl in H0; subst.
+    unfold combined_scalars.
+    rewrite s_prod_identity.
+    rewrite s_prod_correct.
+    Fail rewrite Mscale_mult_dist_r.
+Abort.
 
