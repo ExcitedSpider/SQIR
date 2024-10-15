@@ -57,7 +57,9 @@ Inductive pauli_n: Type :=
 
 Notation "s · p" := (PauliElemN s p) (at level 40, left associativity).
 
-(* A question: Should I define this as only allowing the same length ptring to be mutiplied? *)
+(* Need to revise this to force the two pstring have the same length
+  refer to `Mmult`
+*)
 Fixpoint pstring_prod (p1 p2 : pstring) : scalar * pstring :=
   match p1, p2 with
   | pnil, p => (One, p)
@@ -109,6 +111,7 @@ Fixpoint pstring_to_matrix(p: pstring): Square (2^(p_length p)) :=
   | head::tail => (pauli_to_matrix (PauliElem One head)) ⊗ pstring_to_matrix(tail)
   end.
 
+
 Example pstring_to_matrix_exp0:
   pstring_to_matrix (Y::I::Z::Y::[]) = σy ⊗ Matrix.I 2 ⊗ σz ⊗ σy.
 Proof.
@@ -151,6 +154,12 @@ Proof.
   solve_matrix.
 Qed.
 
+Lemma dim_0_semantics:
+  forall s p,
+    dimOf (s · p) = 0%nat ->
+    paulin_to_matrix (s · p) = (scalar_to_complex s) .* Matrix.I 1.
+Admitted. 
+
 
   (* Use explicit Mmult because Coq cannot figure out the correct dimension *)
 Theorem pauli_n_prod_correct: forall (p1 p2: pauli_n) dim,
@@ -162,6 +171,42 @@ Proof.
   destruct p1 as [s pstr].
   induction pstr.
   - intros.
+    simpl in H, H0.
+    symmetry in H.
+    destruct p2.
+    inversion H.
+    (* This line rewrites the phantom dimension paramter
+        which does not appears in the goal.
+       This is by the design of SQIR.  *)
+    rewrite H2; rewrite <- H0.
+    apply dim_0_semantics in H.
+    assert (paulin_to_matrix (s · []) = (scalar_to_complex s) .* Matrix.I 1). 
+    { apply dim_0_semantics; simpl; easy. }
+    rewrite H.
+    rewrite H1.
+    simpl.
+    unfold combined_scalars.
+    (* any autorewrite db ?? *)
+    rewrite s_prod_identity.
+    rewrite s_prod_correct.
+    rewrite Mscale_mult_dist_r.
+    rewrite Mscale_mult_dist_l.
+    rewrite Mscale_assoc.
+    rewrite Cmult_comm.
+    replace (Matrix.I 1 × Matrix.I 1) with (Matrix.I 1) by solve_matrix.
+    apply nil_pstring_semantics in H2.
+    rewrite H2.
+    easy.
+  - intros.
+    destruct p2 as [s0 p2].
+    destruct p2.
+    + Abort. (* similar to the basic branch *) 
+   
+
+
+
+  (* - intros.
+    subst.
     simpl in H.
     destruct p2.
     unfold dimOf in H; simpl in H.
@@ -174,5 +219,5 @@ Proof.
     rewrite s_prod_identity.
     rewrite s_prod_correct.
     Fail rewrite Mscale_mult_dist_r.
-Abort.
+Abort. *)
 

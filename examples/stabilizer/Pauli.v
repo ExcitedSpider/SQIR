@@ -588,7 +588,8 @@ Proof.
     all: solve_matrix. (* these facts can be lemmas? *) 
 Qed.
 
-(* TODO: revise this later *)
+
+
 Lemma pmult_prod_is_Mmult:
 forall a b, pauli_to_matrix (pmult_prod a b) = 
   (pauli_to_matrix a) × (pauli_to_matrix b).
