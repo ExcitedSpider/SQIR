@@ -154,16 +154,16 @@ Proof.
     all: try easy.
 Qed.
 
+(* Have some troubles proving function inequalities*)
+(* But this is a known simple fact in math that all pauli operators are orthogonal*)
+(* So we skip this proof *)
 Lemma pauli_comb_unique:
   forall sa opa sb opb,
   scalar_to_complex sa .* op_to_matrix opa =
   scalar_to_complex sb .* op_to_matrix opb ->
   sa = sb /\ opa = opb.
 Proof. Admitted.
-Search scalar_to_complex.
-(* Have some troubles proving function inequalities*)
-(* But this is a known simple fact in math that all pauli operators are orthogonal*)
-(* So we skip this proof *)
+
 
 Lemma pauli_to_matrix_correct:
   forall p s op, 
