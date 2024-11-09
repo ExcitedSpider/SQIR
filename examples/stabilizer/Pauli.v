@@ -785,4 +785,64 @@ Qed.
 we can work on some automation later. 
 *)
 
+
+
+(* Additonal Lemmas *)
+
+(* Have some troubles proving function inequalities*)
+(* But this is a known simple fact in math that all pauli operators are orthogonal*)
+(* So we skip this proof *)
+Lemma pauli_comb_unique:
+  forall sa opa sb opb,
+  scalar_to_complex sa .* op_to_matrix opa =
+  scalar_to_complex sb .* op_to_matrix opb ->
+  sa = sb /\ opa = opb.
+Proof. Admitted.
+
+
+Lemma pauli_to_matrix_correct:
+  forall p s op, 
+  p = PauliElem s op <->
+  pauli_to_matrix p = scalar_to_complex s .* op_to_matrix op.
+Proof.
+  intros.
+  split; intros H.
+  - subst. reflexivity.
+  - destruct p as [sp opp]. 
+    simpl in H.
+    apply pauli_comb_unique in H.
+    destruct H.
+    subst.
+    reflexivity.
+Qed.
+
+Lemma op_prod_correct_eq:
+  forall oa ob sab oab p,
+  op_to_matrix oa × op_to_matrix ob = pauli_to_matrix p ->
+  p = PauliElem sab oab ->
+  op_prod oa ob = (sab, oab).
+Proof.
+  intros.
+  specialize (op_prod_correct oa ob) as Hexists.
+  destruct Hexists as [s [op [Heq Hprod]]].
+  subst.
+  simpl in H.
+  assert (sab = s /\ oab = op).
+  { apply pauli_comb_unique.
+    congruence. }
+  destruct H0.
+  congruence.
+Qed.
+
+(* A More Usable Variant *)
+Lemma op_prod_correct_eq_var:
+  forall oa ob s op,
+  op_to_matrix oa × op_to_matrix ob = pauli_to_matrix (s · op) ->
+  op_prod oa ob = (s, op).
+Proof.
+  intros.
+  remember (s · op) as p.
+  apply (op_prod_correct_eq _ _ _ _ p); assumption.
+Qed.  
+
 End Pauli.
