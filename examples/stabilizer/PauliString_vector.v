@@ -199,6 +199,17 @@ Proof.
   congruence.
 Qed.
 
+(* A More Usable Variant *)
+Lemma op_prod_correct_eq_var:
+  forall oa ob s op,
+  op_to_matrix oa × op_to_matrix ob = pauli_to_matrix (s · op) ->
+  op_prod oa ob = (s, op).
+Proof.
+  intros.
+  remember (s · op) as p.
+  apply (op_prod_correct_eq _ _ _ _ p); assumption.
+Qed.  
+
 
 Lemma pvec_head:
   forall (n: nat) (va vb: PauliVector (S n)) s v hab sab,
@@ -310,6 +321,73 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma pvec_prod_correct_ind_correct:
+  forall (n: nat) (ls1 ls2: PauliVector (S n))
+  tl1 h1 tl2 h2 sprod vprod stl vtl,
+  (h1::tl1) = ls1 ->
+  (h2::tl2) = ls2 ->
+  (sprod, vprod) = pvec_prod ls1 ls2 ->
+  (stl, vtl) = pvec_prod tl1 tl2 ->
+  pvec_to_matrix tl1 × pvec_to_matrix tl2 =
+     scalar_to_complex stl .* pvec_to_matrix vtl ->
+  pvec_to_matrix ls1 × pvec_to_matrix ls2 = scalar_to_complex sprod .* pvec_to_matrix vprod.
+Proof.
+  intros.
+  remember (pvec_prod tl1 tl2) as ptl.
+  destruct ptl.
+  remember (op_prod h1 h2) as phd.
+  destruct phd as [shd ohd].
+  rewrite <- H, <- H0.
+  simpl; Qsimpl.
+  rewrite H3.
+  clear H3.
+  rewrite Mscale_kron_dist_r.
+  specialize (op_prod_clousre_pauli h1 h2) as H3.
+  destruct H3 as [hp H3].
+  rewrite H3.
+  destruct hp as [sh oh]; simpl.
+  rewrite Mscale_kron_dist_l.
+  rewrite Mscale_assoc.
+  rewrite <- Mscale_kron_dist_l.
+  subst.
+  destruct H2. 
+  assert (H4: scalar_to_complex stl * scalar_to_complex sh = scalar_to_complex sprod).
+  {
+    apply s_prod_correct_eq.
+    rewrite s_prod_comm.
+    symmetry.
+    eapply pvec_prod_scalar_comb.
+    - apply H1.
+    - easy.
+    - easy.
+    - simpl.
+      symmetry; eapply op_prod_correct_eq_var.
+      apply H3.
+    - simpl. apply Heqptl. 
+  }
+  rewrite H4. 
+  rewrite Mscale_kron_dist_l.
+  assert (H5: op_to_matrix oh ⊗ pvec_to_matrix vtl = pvec_to_matrix vprod).
+  {
+    symmetry.
+    apply pvec_to_matrix_one_step.
+    - eapply pvec_head.
+      apply H1.
+      simpl.
+      apply op_prod_correct_eq_var in H3.
+      rewrite H3 in Heqphd.
+      inversion Heqphd; subst.
+      symmetry.
+      apply H3.
+    - eapply pvec_tail.
+      apply H1.
+      simpl.
+      apply Heqptl.
+  }
+  rewrite H5.
+  reflexivity.
+Qed.
+
 Lemma pvec_prod_correct:
   forall (n: nat) (p1 p2: PauliVector n) sc vecc, 
   (sc, vecc) = pvec_prod p1 p2 ->
@@ -325,61 +403,46 @@ Proof.
     simpl.
     solve_matrix.
   - intros. 
-    assert (p2 = Vector.hd p2 :: Vector.tl p2) by apply eta.
+    assert (H0: p2 = Vector.hd p2 :: Vector.tl p2) by apply eta.
     rewrite H0.
     remember (pvec_prod p1 (Vector.tl p2)) as rest.
     destruct rest as [stl vectl].
     specialize (IHp1 (Vector.tl p2) stl vectl Heqrest) as H1. 
     clear IHp1.
-    simpl; Qsimpl.
-    rewrite H1.
-    rewrite Mscale_kron_dist_r.
-    specialize (op_prod_clousre_pauli h (hd p2)) as H2.
-    destruct H2 as [hx].
-    rewrite H2.
-    destruct hx; simpl.
-    rewrite Mscale_kron_dist_l.
-    rewrite Mscale_assoc.
-    rewrite <- Mscale_kron_dist_l.
-    assert (H4: scalar_to_complex stl * scalar_to_complex s = scalar_to_complex sc).
-    {
-      apply s_prod_correct_eq.
-      rewrite s_prod_comm.
+    eapply pvec_prod_correct_ind_correct.
+    + remember (h::p1) as p1f. 
       symmetry.
-      eapply pvec_prod_scalar_comb.
-      - apply H.
-      - easy.
-      - easy.
-      - simpl.
-        symmetry; eapply op_prod_correct_eq.
-        apply H2.
-        instantiate (1 := p).
-        reflexivity.
-      - apply Heqrest. 
-    }
-    rewrite H4. 
-    rewrite Mscale_kron_dist_l.
-    assert (H5: op_to_matrix p ⊗ pvec_to_matrix vectl = pvec_to_matrix vecc).
-    {
-      symmetry.
-      apply pvec_to_matrix_one_step.
-      assert (op_prod h (hd p2) = (s, p)).
-      - eapply op_prod_correct_eq.
-        + apply H2.
-        + reflexivity. 
-      - eapply pvec_head.
-        + apply H.
-        + simpl. symmetry. apply H3.
-      - eapply pvec_tail.
-        + apply H.
-        + simpl. apply Heqrest.
-    }
-    rewrite H5.
-    reflexivity.
-Qed.
+      apply Heqp1f.
+    + rewrite <- H0. reflexivity.
+    + rewrite <- H0. assumption.
+    + apply Heqrest.
+    + assumption.
+Qed.  
 
+(* multiplication on pauli string respects with matrix multiplication *)
 Theorem p_prod_correct:
   forall (n: nat) (p1 p2: PString n), 
   (pstr_to_matrix p1) × (pstr_to_matrix p2) = pstr_to_matrix (p_prod p1 p2).
-Proof. Abort. (* TBD *)
-    
+Proof.
+  intros.
+  destruct p1 as [sp1 ls1].
+  destruct p2 as [sp2 ls2].
+  unfold pstr_to_matrix.
+  rewrite Mscale_mult_dist_l.
+  rewrite Mscale_mult_dist_r.
+  rewrite Mscale_assoc.
+  remember (p_prod (sp1, ls1) (sp2, ls2)) as ps.
+  destruct ps.
+  unfold p_prod in Heqps.
+  remember (pvec_prod ls1 ls2) as pv.
+  destruct pv as (sp, vp). 
+  inversion Heqps; subst.
+  (* !Important *)
+  apply pvec_prod_correct in Heqpv.
+  rewrite Heqpv.
+  rewrite Mscale_assoc.
+  rewrite combinded_scalars_correct.
+  rewrite Cmult_comm.
+  rewrite Cmult_assoc.
+  reflexivity.
+Qed.
