@@ -284,6 +284,20 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma op_prod_clousre_pauli: 
+  forall (oa ob: pauli_op),
+  exists (p: pauli),
+  (op_to_matrix oa) × (op_to_matrix ob) = pauli_to_matrix p.
+Proof.
+  intros.
+  specialize (op_closure oa ob) as Heop.
+  destruct Heop as [c [s Hep]].
+  exists (PauliElem s c).
+  simpl.
+  rewrite <- Hep.
+  reflexivity.
+Qed.
+
 
 Lemma pvec_prod_correct:
   forall (n: nat) (p1 p2: PauliVector n) sc vecc, 
@@ -303,23 +317,13 @@ Proof.
     assert (p2 = Vector.hd p2 :: Vector.tl p2) by apply eta.
     rewrite H0.
     remember (pvec_prod p1 (Vector.tl p2)) as rest.
-    destruct rest as [stl vectl]. 
-    assert (
-      pvec_to_matrix p1 × pvec_to_matrix (Vector.tl p2) = scalar_to_complex stl .* pvec_to_matrix vectl
-    ). { apply IHp1. assumption. }
+    destruct rest as [stl vectl].
+    specialize (IHp1 (Vector.tl p2) stl vectl Heqrest) as H1. 
     clear IHp1.
-    simpl.
-    Qsimpl.
+    simpl; Qsimpl.
     rewrite H1.
     rewrite Mscale_kron_dist_r.
-    assert (H2: exists p, op_to_matrix h × op_to_matrix (hd p2) = pauli_to_matrix p). 
-    {
-      remember (op_closure h (hd p2)).
-      destruct e as [c [s Hsc]].
-      exists (PauliElem s c).
-      simpl.
-      assumption. 
-    }
+    specialize (op_prod_clousre_pauli h (hd p2)) as H2.
     destruct H2.
     rewrite H2.
     assert (H3: exists sx opx, pauli_to_matrix x = (scalar_to_complex sx) .* (op_to_matrix opx)).
