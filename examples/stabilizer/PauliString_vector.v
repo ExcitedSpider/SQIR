@@ -298,6 +298,17 @@ Proof.
   reflexivity.
 Qed.
 
+(* assert (H3: exists sx opx, pauli_to_matrix x = (scalar_to_complex sx) .* (op_to_matrix opx)). *)
+Lemma pauli_construct:
+  forall (p: pauli),
+  exists s op,
+  pauli_to_matrix p = (scalar_to_complex s) .* (op_to_matrix op).
+Proof.
+  intros.
+  destruct p as [sp opp].
+  exists sp, opp.
+  reflexivity.
+Qed.
 
 Lemma pvec_prod_correct:
   forall (n: nat) (p1 p2: PauliVector n) sc vecc, 
@@ -324,21 +335,14 @@ Proof.
     rewrite H1.
     rewrite Mscale_kron_dist_r.
     specialize (op_prod_clousre_pauli h (hd p2)) as H2.
-    destruct H2.
+    destruct H2 as [hx].
     rewrite H2.
-    assert (H3: exists sx opx, pauli_to_matrix x = (scalar_to_complex sx) .* (op_to_matrix opx)).
-    {
-       destruct x.
-       exists s, p.
-       reflexivity.
-    }
-    destruct H3. destruct H3.
-    rewrite H3.
-    repeat rewrite <- Mscale_kron_dist_l.
+    destruct hx; simpl.
+    rewrite Mscale_kron_dist_l.
     rewrite Mscale_assoc.
-    assert (H4: scalar_to_complex stl * scalar_to_complex x0 = scalar_to_complex sc).
+    rewrite <- Mscale_kron_dist_l.
+    assert (H4: scalar_to_complex stl * scalar_to_complex s = scalar_to_complex sc).
     {
-      rename x0 into sx.
       apply s_prod_correct_eq.
       rewrite s_prod_comm.
       symmetry.
@@ -347,30 +351,25 @@ Proof.
       - easy.
       - easy.
       - simpl.
-        rewrite <- pauli_to_matrix_correct in H3.
-        symmetry.
-        eapply op_prod_correct_eq.
-        + apply H2.
-        + apply H3.
-      - simpl.
-        apply Heqrest. 
+        symmetry; eapply op_prod_correct_eq.
+        apply H2.
+        instantiate (1 := p).
+        reflexivity.
+      - apply Heqrest. 
     }
     rewrite H4. 
     rewrite Mscale_kron_dist_l.
-    assert (H5: op_to_matrix x1 ⊗ pvec_to_matrix vectl = pvec_to_matrix vecc).
+    assert (H5: op_to_matrix p ⊗ pvec_to_matrix vectl = pvec_to_matrix vecc).
     {
       symmetry.
       apply pvec_to_matrix_one_step.
-      rename x1 into oph.
-      rename x0 into sh.
-      assert (op_prod h (hd p2) = (sh, oph)).
+      assert (op_prod h (hd p2) = (s, p)).
       - eapply op_prod_correct_eq.
         + apply H2.
-        + rewrite pauli_to_matrix_correct. 
-          assumption.
+        + reflexivity. 
       - eapply pvec_head.
         + apply H.
-        + simpl. symmetry. apply H5.
+        + simpl. symmetry. apply H3.
       - eapply pvec_tail.
         + apply H.
         + simpl. apply Heqrest.
