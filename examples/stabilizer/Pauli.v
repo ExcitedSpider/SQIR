@@ -785,6 +785,31 @@ Qed.
 we can work on some automation later. 
 *)
 
+Example ix_ineq: Matrix.I 2 <> σx.
+Proof.
+  unfold not.
+  intros H.
+  assert (Hcontra: Matrix.I 2 0%nat 0%nat = σx 0%nat 0%nat).
+  { rewrite H. reflexivity. }
+  unfold Matrix.I in Hcontra.
+  simpl in Hcontra.
+  inversion Hcontra.
+  contradict H1.
+  lra.
+Qed.
+
+Example iy_ineq: Matrix.I 2 <> σy.
+Proof.
+  unfold not.
+  intros H.
+  assert (Hcontra: Matrix.I 2 0%nat 0%nat = σy 0%nat 0%nat).
+  { rewrite H. reflexivity. }
+  unfold Matrix.I in Hcontra.
+  simpl in Hcontra.
+  inversion Hcontra.
+  contradict H1.
+  lra.
+Qed.
 
 
 (* Additonal Lemmas *)
@@ -792,12 +817,22 @@ we can work on some automation later.
 (* Have some troubles proving function inequalities*)
 (* But this is a known simple fact in math that all pauli operators are orthogonal*)
 (* So we skip this proof *)
-Lemma pauli_comb_unique:
+Lemma pauli_orthogonal:
   forall sa opa sb opb,
   scalar_to_complex sa .* op_to_matrix opa =
   scalar_to_complex sb .* op_to_matrix opb ->
   sa = sb /\ opa = opb.
-Proof. Admitted.
+Proof. 
+  intros.
+  destruct sa, sb, opa, opb.
+  all: simpl in H; try easy.
+  all: contradict H; Qsimpl.
+  apply ix_ineq.
+  apply iy_ineq.
+  (* There are 238 cases just like ix_ineq and iy_ineq *)
+  (* Let me write a ltac later *)
+  Admitted. 
+ 
 
 
 Lemma pauli_to_matrix_correct:
@@ -810,7 +845,7 @@ Proof.
   - subst. reflexivity.
   - destruct p as [sp opp]. 
     simpl in H.
-    apply pauli_comb_unique in H.
+    apply pauli_orthogonal in H.
     destruct H.
     subst.
     reflexivity.
@@ -828,7 +863,7 @@ Proof.
   subst.
   simpl in H.
   assert (sab = s /\ oab = op).
-  { apply pauli_comb_unique.
+  { apply pauli_orthogonal.
     congruence. }
   destruct H0.
   congruence.

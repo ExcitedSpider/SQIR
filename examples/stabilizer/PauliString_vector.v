@@ -389,3 +389,4 @@ Proof.
   rewrite Cmult_assoc.
   reflexivity.
 Qed.
+
