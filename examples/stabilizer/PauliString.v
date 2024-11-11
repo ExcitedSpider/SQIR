@@ -4,10 +4,10 @@ Import Pauli.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 
-Definition PauliVector n := Vector.t PauliOp n.
+Module PauliString.
 
-Definition a: PauliVector 3 := X :: Y :: Z :: [].
-Definition empty: PauliVector 0 := [].
+
+Definition PauliVector n := Vector.t PauliOp n.
 
 Fixpoint pvec_prod {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
   (* Looks like dark magic *)
@@ -388,3 +388,4 @@ Proof.
   reflexivity.
 Qed.
 
+End PauliString.
