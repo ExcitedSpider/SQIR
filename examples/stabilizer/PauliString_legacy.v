@@ -4,7 +4,7 @@ Import Pauli.
 
 (*
 ================================
-the pauli string
+the PauliTerm string
 ================================
 *)
 
@@ -13,7 +13,7 @@ Use the Coq's list libs or QuantumLib.Vector
 - The type carries the length of the list.
 - For Coq's list, it needs to assume the same lengths.
 
-Notation pstring n := list pauli_op
+Notation pstring n := list PauliOp
 
 https://coq.inria.fr/doc/master/stdlib/Stdlib.Vectors.Vector.html
 
@@ -25,7 +25,7 @@ Keep doc of everything, particularly of the desgin, how proofs differ from manua
 *)
 Inductive pstring : Type := 
 | pnil:  pstring
-| pcons: pauli_op -> pstring -> pstring.
+| pcons: PauliOp -> pstring -> pstring.
 
 Definition p_string_example := (pcons X pnil).
 
@@ -63,19 +63,19 @@ Proof. reflexivity. Qed.
 
 (*
 ================================
-The n-qubit pauli group
+The n-qubit PauliTerm group
 ================================
 *)
 
 Inductive pauli_n: Type :=
-  | PauliElemN : scalar-> pstring -> pauli_n.
+  | PauliElemN : Scalar-> pstring -> pauli_n.
 
 Notation "s · p" := (PauliElemN s p) (at level 40, left associativity).
 
 (* Need to revise this to force the two pstring have the same length
   refer to `Mmult`
 *)
-Fixpoint pstring_prod (p1 p2 : pstring) : scalar * pstring :=
+Fixpoint pstring_prod (p1 p2 : pstring) : Scalar * pstring :=
   match p1, p2 with
   | pnil, p => (One, p)
   | p, pnil => (One, p)
@@ -123,7 +123,7 @@ Qed.
 Fixpoint pstring_to_matrix(p: pstring): Square (2^(p_length p)) :=
   match p with
   | pnil => Matrix.I 1
-  | head::tail => (pauli_to_matrix (PauliElem One head)) ⊗ pstring_to_matrix(tail)
+  | head::tail => (pauli_to_matrix (ScaledOp One head)) ⊗ pstring_to_matrix(tail)
   end.
 
 

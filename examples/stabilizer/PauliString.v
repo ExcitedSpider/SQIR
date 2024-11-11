@@ -4,16 +4,14 @@ Import Pauli.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 
-Definition v : Vector.t R 3 := 1::2::3::[].
-
-Definition PauliVector n := Vector.t pauli_op n.
+Definition PauliVector n := Vector.t PauliOp n.
 
 Definition a: PauliVector 3 := X :: Y :: Z :: [].
 Definition empty: PauliVector 0 := [].
 
-Fixpoint pvec_prod {n: nat} (a b : PauliVector n) : scalar * PauliVector n :=
+Fixpoint pvec_prod {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
   (* Looks like dark magic *)
-  match a in Vector.t _ n return Vector.t _ n -> scalar * PauliVector n  with 
+  match a in Vector.t _ n return Vector.t _ n -> Scalar * PauliVector n  with 
   | ha :: ta => fun b => 
     let hb := Vector.hd b in
     let tb := Vector.tl b in 
@@ -31,7 +29,7 @@ Proof.
 Qed.
 
 (* The Pauli String *)
-Definition PString (n : nat) : Set := scalar * PauliVector n.
+Definition PString (n : nat) : Set := Scalar * PauliVector n.
 
 Definition p_prod {n: nat} (a b: PString n) : PString n :=
   let (sa, va) := a in
@@ -48,11 +46,11 @@ Proof.
   reflexivity.
 Qed.
 
-(* Translate a pauli vector into a matrix *)
+(* Translate a PauliTerm vector into a matrix *)
 Fixpoint pvec_to_matrix {n:nat} (p: PauliVector n) : Square (2^n) :=
 match p with
 | [] => Matrix.I 1
-| x::xs => (pauli_to_matrix (PauliElem One x)) ⊗ (pvec_to_matrix xs)
+| x::xs => (pauli_to_matrix (ScaledOp One x)) ⊗ (pvec_to_matrix xs)
 end.
 
 Example pvec_interpret:
@@ -97,7 +95,7 @@ Lemma p_prod_one_step:
   p1 = h1::tl1 ->
   p2 = h2::tl2 ->
   (pvec_to_matrix p1) × (pvec_to_matrix p2) = 
-    (pauli_to_matrix (PauliElem One h1) × pauli_to_matrix (PauliElem One h2))
+    (pauli_to_matrix (ScaledOp One h1) × pauli_to_matrix (ScaledOp One h2))
     ⊗ ((pvec_to_matrix tl1) × (pvec_to_matrix tl2)).
 Proof.
   intros.
@@ -113,7 +111,7 @@ inversion H as [HC];
 contradict HC;
 lra. *)
 
-Lemma scalar_to_complex_deterministic: forall (a b: scalar),
+Lemma scalar_to_complex_deterministic: forall (a b: Scalar),
   scalar_to_complex a = scalar_to_complex b ->
   a = b.
 Proof.
@@ -130,7 +128,7 @@ Qed.
 
 
 (* Move these four to Pauli.v *)
-Lemma s_prod_correct_eq: forall (a b c: scalar),
+Lemma s_prod_correct_eq: forall (a b c: Scalar),
   s_prod a b = c <->
   (scalar_to_complex a ) * (scalar_to_complex b) = (scalar_to_complex c).
 Proof.
@@ -142,7 +140,7 @@ Proof.
     assumption.
 Qed.
 
-Lemma s_prod_comm: forall (a b c: scalar),
+Lemma s_prod_comm: forall (a b c: Scalar),
   s_prod a b = c <->
   s_prod b a = c.
 Proof.
@@ -239,14 +237,14 @@ Proof.
 Qed.
 
 Lemma op_prod_clousre_pauli: 
-  forall (oa ob: pauli_op),
-  exists (p: pauli),
+  forall (oa ob: PauliOp),
+  exists (p: PauliTerm),
   (op_to_matrix oa) × (op_to_matrix ob) = pauli_to_matrix p.
 Proof.
   intros.
   specialize (op_closure oa ob) as Heop.
   destruct Heop as [c [s Hep]].
-  exists (PauliElem s c).
+  exists (ScaledOp s c).
   simpl.
   rewrite <- Hep.
   reflexivity.
@@ -254,7 +252,7 @@ Qed.
 
 (* assert (H3: exists sx opx, pauli_to_matrix x = (scalar_to_complex sx) .* (op_to_matrix opx)). *)
 Lemma pauli_construct:
-  forall (p: pauli),
+  forall (p: PauliTerm),
   exists s op,
   pauli_to_matrix p = (scalar_to_complex s) .* (op_to_matrix op).
 Proof.
@@ -362,7 +360,7 @@ Proof.
     + assumption.
 Qed.  
 
-(* multiplication on pauli string respects with matrix multiplication *)
+(* multiplication on PauliTerm string respects with matrix multiplication *)
 Theorem p_prod_correct:
   forall (n: nat) (p1 p2: PString n), 
   (pstr_to_matrix p1) × (pstr_to_matrix p2) = pstr_to_matrix (p_prod p1 p2).
