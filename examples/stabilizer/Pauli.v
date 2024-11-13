@@ -1,7 +1,7 @@
 Require Export SQIR.UnitaryOps.
 Require Export QuantumLib.Matrix.
 Require Import Group.
-From mathcomp Require Import ssrfun fingroup.
+From mathcomp Require Import ssrfun fingroup eqtype fintype.
 
 Module Pauli.
 
@@ -1003,5 +1003,19 @@ Proof.
   destruct x.
   destruct s, p; easy.
 Qed.
+
+From HB Require Import structures.
+
+
+(*
+HB: isMulGroup.Build requires its subject to be already equipped with:
+	- choice.hasChoice
+    - choice.Choice_isCountable
+    - hasDecEq
+    - isFinit
+*)
+Fail HB.instance Definition _ := 
+isMulBaseGroup.Build PauliTerm pmul e pinv pmul_assoc pmul_left_id pmul_left_inverse
+.
 
 End Pauli.
