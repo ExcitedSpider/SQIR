@@ -1,5 +1,7 @@
 Require Export SQIR.UnitaryOps.
 Require Export QuantumLib.Matrix.
+Require Import Group.
+From mathcomp Require Import ssrfun fingroup.
 
 Module Pauli.
 
@@ -224,13 +226,13 @@ Qed.
 
 (* The operation on the PauliTerm group *)
 (* Define the operation as relation makes it so hard *)
-Inductive pmult: PauliTerm -> PauliTerm -> PauliTerm -> Prop := 
+Inductive pmultrel: PauliTerm -> PauliTerm -> PauliTerm -> Prop := 
 | PauliMultRel: forall (a b c: PauliTerm),
   (pauli_to_matrix a) × (pauli_to_matrix b) = pauli_to_matrix c ->
-  pmult a b c.
+  pmultrel a b c.
 
 Example fact_square_x: 
-pmult (One · X)  (One · X) (One · I).
+pmultrel (One · X)  (One · X) (One · I).
 Proof.
 apply PauliMultRel.
 simpl.
@@ -250,7 +252,7 @@ auto with wf_db.
 Qed.
 
 Lemma pauli_identity_correct_left:
-forall (a: PauliTerm), pmult ID a a.
+forall (a: PauliTerm), pmultrel ID a a.
 Proof.
 intros.
 apply PauliMultRel.
@@ -266,7 +268,7 @@ apply mat_equiv_eq.
 Qed.
 
 Lemma pauli_identity_correct:
-forall (a: PauliTerm), pmult a ID a.
+forall (a: PauliTerm), pmultrel a ID a.
 Proof.
 intros.
 apply PauliMultRel; simpl.
@@ -295,17 +297,17 @@ match op with
 | NegIphase => Iphase 
 end.
 
-Definition pauli_inverse (p : PauliTerm) : PauliTerm :=
+Definition pinv (p : PauliTerm) : PauliTerm :=
 match p with
 | ScaledOp s op => ScaledOp (inverse_scala s) (inverse_op op)
 end.
 
-Lemma pauli_inverse_correct:
+Lemma pinv_correct:
 forall (a: PauliTerm), exists (a': PauliTerm),
-pmult a a' ID.
+pmultrel a a' ID.
 Proof.
 intros.
-exists (pauli_inverse a). 
+exists (pinv a). 
 apply PauliMultRel. 
 destruct a.
 destruct s, p;
@@ -315,7 +317,7 @@ Qed.
 
 Lemma pauli_closure:
 forall a b,
-exists (c: PauliTerm), pmult a b c.
+exists (c: PauliTerm), pmultrel a b c.
 Proof.
 intros a b.
 destruct a as [sa pa], b as [sb pb].
@@ -374,7 +376,7 @@ Qed.
 (* This one succeed by using two lemmas *)
 Lemma pauli_closure':
 forall a b,
-exists (c: PauliTerm), pmult a b c.
+exists (c: PauliTerm), pmultrel a b c.
 Proof.
 intros a b.
 destruct a as [sa pa], b as [sb pb].
@@ -398,10 +400,10 @@ rewrite Mscale_assoc.
 reflexivity.
 Qed.
 
-Lemma pmult_assoc : forall a b ab c abc : PauliTerm,
-pmult a b ab ->
-pmult ab c abc ->
-exists bc, pmult b c bc /\ pmult a bc abc.
+Lemma pmultrel_assoc : forall a b ab c abc : PauliTerm,
+pmultrel a b ab ->
+pmultrel ab c abc ->
+exists bc, pmultrel b c bc /\ pmultrel a bc abc.
 Proof.
 intros a b ab c abc HL HR.
 specialize (pauli_closure' b c) as Hbc.
@@ -422,19 +424,19 @@ Qed.
 
 (* The PauliTerm operator forms a group *)
 Theorem PauliGroupProperties:
-(forall a, pmult ID a a) /\
-(forall a, exists a', pmult a a' ID) /\
-(forall a b, exists c, pmult a b c) /\ 
+(forall a, pmultrel ID a a) /\
+(forall a, exists a', pmultrel a a' ID) /\
+(forall a b, exists c, pmultrel a b c) /\ 
 (forall a b ab c abc,
-  pmult a b ab ->
-  pmult ab c abc ->
-  exists bc, pmult b c bc /\ pmult a bc abc
+  pmultrel a b ab ->
+  pmultrel ab c abc ->
+  exists bc, pmultrel b c bc /\ pmultrel a bc abc
 ).
 Proof.
 split. apply pauli_identity_correct_left.
-split. apply pauli_inverse_correct.
+split. apply pinv_correct.
 split. apply pauli_closure'.
-apply pmult_assoc.
+apply pmultrel_assoc.
 Qed.
 
 (* Definition inverse_scala (op: Scalar): Scalar := 
@@ -445,18 +447,18 @@ match op with
 | NegIphase => Iphase 
 end.
 
-Definition pauli_inverse (p : PauliTerm) : PauliTerm :=
+Definition pinv (p : PauliTerm) : PauliTerm :=
 match p with
 | ScaledOp s op => ScaledOp (inverse_scala s) (inverse_op op)
 end. *)
 
 (* 
 =======================================================
-Define pmult as a function
+Define pmultrel as a function
 
-We found reasoing pmult as a relation is tiresome.
+We found reasoing pmultrel as a relation is tiresome.
 So it is better that we define it as a function.
-Fortunately, as we have proved many facts about pmult,
+Fortunately, as we have proved many facts about pmultrel,
 it will be much easier now.
 =======================================================
 *)
@@ -522,7 +524,7 @@ Proof.
   apply s_prod_total.
 Qed.
 
-Definition pmult_prod (a b: PauliTerm): PauliTerm := 
+Definition pmul (a b: PauliTerm): PauliTerm := 
 match a, b with
 | ScaledOp sa pa, ScaledOp sb pb => 
     let (sab, pab) := (op_prod pa pb) in
@@ -592,14 +594,14 @@ Qed.
 
 
 
-Lemma pmult_prod_is_Mmult:
-forall a b, pauli_to_matrix (pmult_prod a b) = 
+Lemma pmul_is_Mmult:
+forall a b, pauli_to_matrix (pmul a b) = 
   (pauli_to_matrix a) × (pauli_to_matrix b).
 Proof.
   intros.
   destruct a, b.
   specialize (op_prod_correct p p0) as [s_prod [op_prod [Heq H]]].
-  unfold pmult_prod.
+  unfold pmul.
   rewrite Heq.
   unfold pauli_to_matrix .
   distribute_scale.
@@ -617,7 +619,7 @@ match p with
   | ScaledOp s0 op => ScaledOp (s_prod s s0) op
 end.
 
-Definition pmult_prod_alt (a b: PauliTerm): PauliTerm := 
+Definition pmul_alt (a b: PauliTerm): PauliTerm := 
 match a, b with
 | ScaledOp sa pa, ScaledOp sb pb => 
     let (sab, pab) := (op_prod pa pb) in
@@ -625,9 +627,9 @@ match a, b with
     apply_s sab (ScaledOp (s_prod sa sb) pab)
 end.
 
-Lemma pmult_prod_alt_correct:
+Lemma pmul_alt_correct:
 forall a b,
-pmult_prod_alt a b = pmult_prod a b.
+pmul_alt a b = pmul a b.
 Proof.
 intros.
 destruct a, b.
@@ -639,9 +641,9 @@ all: simpl.
 all: reflexivity.
 Qed. 
 
-(* verify our function version of pmult is correct *)
-Lemma pmult_prod_correct_r: forall (a b c: PauliTerm),
-(pmult_prod a b) = c -> pmult a b c. 
+(* verify our function version of pmultrel is correct *)
+Lemma pmul_correct_r: forall (a b c: PauliTerm),
+(pmul a b) = c -> pmultrel a b c. 
 Proof.
 intros.
 subst.
@@ -656,22 +658,22 @@ all: try(rewrite Mmult_1_l).
 all: try(solve_matrix).
 Qed.
 
-Lemma pmult_prod_correct_l: forall (a b c: PauliTerm),
-pmult a b c -> (pmult_prod a b) = c. 
+Lemma pmul_correct_l: forall (a b c: PauliTerm),
+pmultrel a b c -> (pmul a b) = c. 
 Proof.
 intros.
 inversion H; subst.
-rewrite <- pmult_prod_is_Mmult in H0.
+rewrite <- pmul_is_Mmult in H0.
 rewrite pauli_to_matrix_injective in H0.
 assumption.
 Qed.
 
 Theorem pmul_prod_eq: forall (a b c: PauliTerm),
-pmult a b c <-> (pmult_prod a b) = c. 
+pmultrel a b c <-> (pmul a b) = c. 
 Proof.
 split.
-apply pmult_prod_correct_l.
-apply pmult_prod_correct_r.
+apply pmul_correct_l.
+apply pmul_correct_r.
 Qed.
 
 (* 
@@ -681,7 +683,7 @@ We also hope to inspect how our new defined prod function can simplify the proof
 
 Inductive commute: PauliTerm -> PauliTerm -> Prop :=
 | CommuteRel: forall (pa pb: PauliTerm),
-  (pmult_prod pa pb) = (pmult_prod pb pa) -> commute pa pb.
+  (pmul pa pb) = (pmul pb pa) -> commute pa pb.
 
 Lemma commute_self:
 forall (p: PauliTerm), commute p p.
@@ -727,7 +729,7 @@ the definition has a slight issue: it depends on how `apply_s` is defiend. Altho
 *)
 Inductive anticommute: PauliTerm -> PauliTerm -> Prop :=
 | AnticommuteRel: forall (pa pb: PauliTerm),
-  (pmult_prod pa pb) = apply_s (NegOne) (pmult_prod pb pa) -> anticommute pa pb.
+  (pmul pa pb) = apply_s (NegOne) (pmul pb pa) -> anticommute pa pb.
 
 Example anticommute_exp0:
 anticommute (One · X) (One · Y).
@@ -871,6 +873,36 @@ Proof.
   congruence.
 Qed.
 
+Lemma s_prod_assoc:
+  associative s_prod.
+Proof.
+  unfold associative.
+  intros.
+  destruct x, y, z; reflexivity.
+Qed.
+
+Search "commutative".
+
+Lemma s_prod_comm:
+  commutative s_prod.
+Admitted.
+
+Lemma s_prod_left_id: left_id One s_prod.
+Proof.
+  unfold left_id.
+  intros.
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma s_prod_right_id: right_id One s_prod.
+Proof.
+  unfold right_id.
+  intros.
+  simpl.
+  destruct x; easy.
+Qed.
+
 (* A More Usable Variant *)
 Lemma op_prod_correct_eq_var:
   forall oa ob s op,
@@ -881,5 +913,95 @@ Proof.
   remember (s · op) as p.
   apply (op_prod_correct_eq _ _ _ _ p); assumption.
 Qed.  
+
+Lemma op_prod_snd_assoc:
+  forall a b c, 
+  (op_prod a (op_prod b c).2).2 = (op_prod (op_prod a b).2 c).2.
+Proof.
+  intros.
+  simpl.
+  destruct a, b, c.
+  all: simpl; reflexivity.
+Qed.
+
+Lemma op_prod_snd_helper:
+  forall a b s p,
+  (s, p) = op_prod a b ->
+  p =  (op_prod a b).2.
+Proof.
+  intros.
+  inversion H.
+  simpl.
+  reflexivity.
+Qed.
+
+
+Lemma pmul_assoc: associative pmul.
+Proof.
+  unfold associative; intros.
+  destruct x, y, z.
+  simpl.
+  unfold combined_scalars.
+  remember (op_prod p p0) as p00.
+  destruct p00.
+  remember (op_prod p0 p1) as p01.
+  destruct p01.
+  remember (op_prod p p3) as p03.
+  destruct p03; simpl.
+  remember (op_prod p2 p1) as p21.
+  destruct p21.
+  assert (p4 = p5).
+  {
+    apply op_prod_snd_helper in Heqp21.
+    apply op_prod_snd_helper in Heqp03.
+    apply op_prod_snd_helper in Heqp01.
+    apply op_prod_snd_helper in Heqp00.
+    subst.
+    apply op_prod_snd_assoc.
+  }
+  subst.
+  unfold combined_scalars.
+  repeat rewrite s_prod_assoc.
+  assert (
+    s_prod (s_prod (s_prod (s_prod s4 s) s3) s0) s1 =
+    s_prod (s_prod (s_prod (s_prod s5 s2) s) s0) s1
+  ).
+  {
+    destruct p, p0, p1;
+    inversion Heqp00; subst;
+    inversion Heqp01; subst;
+    inversion Heqp03; subst;
+    inversion Heqp21; subst.
+    all: simpl.
+    all: try (apply s_prod_left_id).
+    all: try (
+      rewrite s_prod_right_id; 
+      rewrite <- s_prod_assoc;
+      reflexivity
+    ).
+   all:  try(destruct s, s0, s1; easy).
+  }
+  rewrite H.
+  reflexivity.
+Qed.
+
+Definition e: PauliTerm :=  ScaledOp One I.
+
+Lemma pmul_left_id: left_id e pmul.
+Proof.
+  unfold left_id.
+  intros.
+  simpl.
+  destruct x.
+  reflexivity.
+Qed.
+
+Lemma pmul_left_inverse: left_inverse e pinv pmul.
+Proof.
+  unfold left_inverse.
+  intros.
+  destruct x.
+  destruct s, p; easy.
+Qed.
 
 End Pauli.
