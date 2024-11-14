@@ -9,20 +9,20 @@ Module PauliString.
 
 Definition PauliVector n := Vector.t PauliOp n.
 
-Fixpoint pvec_prod {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
+Fixpoint pvmul {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
   (* Looks like dark magic *)
   match a in Vector.t _ n return Vector.t _ n -> Scalar * PauliVector n  with 
   | ha :: ta => fun b => 
     let hb := Vector.hd b in
     let tb := Vector.tl b in 
-    let (stl, ptl) := pvec_prod ta tb in
+    let (stl, ptl) := pvmul ta tb in
     let (sh, ph) := op_prod ha hb in
     (s_prod stl sh, ph::ptl)
   | [] => fun _ => (One, [])
   end b.
 
 Example pstring_prod_exp: 
-  pvec_prod (Z::X::X::I::[]) (X::X::Y::Y::[]) = (NegOne, (Y::I::Z::Y::[])).
+  pvmul (Z::X::X::I::[]) (X::X::Y::Y::[]) = (NegOne, (Y::I::Z::Y::[])).
 Proof.
   simpl.
   reflexivity.
@@ -31,15 +31,15 @@ Qed.
 (* The Pauli String *)
 Definition PString (n : nat) : Set := Scalar * PauliVector n.
 
-Definition p_prod {n: nat} (a b: PString n) : PString n :=
+Definition psmul {n: nat} (a b: PString n) : PString n :=
   let (sa, va) := a in
   let (sb, vb) := b in
-  let (sab, vab) := pvec_prod va vb in 
+  let (sab, vab) := pvmul va vb in 
   ((combined_scalars sab sa sb), vab).
 
 (* Good !*)
 Example pauli_calc0:
-  p_prod (One, (X::X::Y::Y::[])) (One, (Z::X::X::I::[]))
+  psmul (One, (X::X::Y::Y::[])) (One, (Z::X::X::I::[]))
   = (NegOne, (Y::I::Z::Y::[])).
 Proof.
   simpl.
@@ -154,7 +154,7 @@ Qed.
 
 Lemma pvec_head:
   forall (n: nat) (va vb: PauliVector (S n)) s v hab sab,
-  (s, v) = pvec_prod va vb ->
+  (s, v) = pvmul va vb ->
   (sab, hab) = op_prod (Vector.hd va) (Vector.hd vb) ->
   Vector.hd v = hab.
 Proof.
@@ -165,7 +165,7 @@ Proof.
   rewrite H2 in H.
   simpl in H.
   rewrite <- H0 in H.
-  remember (pvec_prod (tl va) (tl vb)) as vrest.
+  remember (pvmul (tl va) (tl vb)) as vrest.
   destruct vrest.
   inversion H; subst.
   easy.
@@ -174,8 +174,8 @@ Qed.
 
 Lemma pvec_tail:
   forall (n: nat) (va vb: PauliVector (S n)) s v vtl stl,
-  (s, v) = pvec_prod va vb ->
-  (stl, vtl) = pvec_prod (Vector.tl va) (Vector.tl vb) ->
+  (s, v) = pvmul va vb ->
+  (stl, vtl) = pvmul (Vector.tl va) (Vector.tl vb) ->
   Vector.tl v = vtl.
 Proof.
   intros.
@@ -208,11 +208,11 @@ Qed.
 
 Lemma pvec_prod_scalar_comb:
   forall (n:nat) (va vb: PauliVector (S n)) sab vab ha hb sh hab stl tlab,
-  (sab, vab) = pvec_prod va vb ->
+  (sab, vab) = pvmul va vb ->
   Vector.hd va = ha ->
   Vector.hd vb = hb ->
   (sh, hab) = op_prod ha hb ->
-  (stl, tlab) = pvec_prod (Vector.tl va) (Vector.tl vb) ->
+  (stl, tlab) = pvmul (Vector.tl va) (Vector.tl vb) ->
   sab = s_prod sh stl.
 Proof.
   intros.
@@ -267,14 +267,14 @@ Lemma pvec_prod_correct_ind_correct:
   tl1 h1 tl2 h2 sprod vprod stl vtl,
   (h1::tl1) = ls1 ->
   (h2::tl2) = ls2 ->
-  (sprod, vprod) = pvec_prod ls1 ls2 ->
-  (stl, vtl) = pvec_prod tl1 tl2 ->
+  (sprod, vprod) = pvmul ls1 ls2 ->
+  (stl, vtl) = pvmul tl1 tl2 ->
   pvec_to_matrix tl1 × pvec_to_matrix tl2 =
      scalar_to_complex stl .* pvec_to_matrix vtl ->
   pvec_to_matrix ls1 × pvec_to_matrix ls2 = scalar_to_complex sprod .* pvec_to_matrix vprod.
 Proof.
   intros.
-  remember (pvec_prod tl1 tl2) as ptl.
+  remember (pvmul tl1 tl2) as ptl.
   destruct ptl.
   remember (op_prod h1 h2) as phd.
   destruct phd as [shd ohd].
@@ -331,7 +331,7 @@ Qed.
 
 Lemma pvec_prod_correct:
   forall (n: nat) (p1 p2: PauliVector n) sc vecc, 
-  (sc, vecc) = pvec_prod p1 p2 ->
+  (sc, vecc) = pvmul p1 p2 ->
   (pvec_to_matrix p1) × (pvec_to_matrix p2) = (scalar_to_complex sc) .* (pvec_to_matrix vecc).
 Proof.
   intros n p1.
@@ -346,7 +346,7 @@ Proof.
   - intros. 
     assert (H0: p2 = Vector.hd p2 :: Vector.tl p2) by apply eta.
     rewrite H0.
-    remember (pvec_prod p1 (Vector.tl p2)) as rest.
+    remember (pvmul p1 (Vector.tl p2)) as rest.
     destruct rest as [stl vectl].
     specialize (IHp1 (Vector.tl p2) stl vectl Heqrest) as H1. 
     clear IHp1.
@@ -363,7 +363,7 @@ Qed.
 (* multiplication on PauliTerm string respects with matrix multiplication *)
 Theorem p_prod_correct:
   forall (n: nat) (p1 p2: PString n), 
-  (pstr_to_matrix p1) × (pstr_to_matrix p2) = pstr_to_matrix (p_prod p1 p2).
+  (pstr_to_matrix p1) × (pstr_to_matrix p2) = pstr_to_matrix (psmul p1 p2).
 Proof.
   intros.
   destruct p1 as [sp1 ls1].
@@ -372,10 +372,10 @@ Proof.
   rewrite Mscale_mult_dist_l.
   rewrite Mscale_mult_dist_r.
   rewrite Mscale_assoc.
-  remember (p_prod (sp1, ls1) (sp2, ls2)) as ps.
+  remember (psmul (sp1, ls1) (sp2, ls2)) as ps.
   destruct ps.
-  unfold p_prod in Heqps.
-  remember (pvec_prod ls1 ls2) as pv.
+  unfold psmul in Heqps.
+  remember (pvmul ls1 ls2) as pv.
   destruct pv as (sp, vp). 
   inversion Heqps; subst.
   (* !Important *)
