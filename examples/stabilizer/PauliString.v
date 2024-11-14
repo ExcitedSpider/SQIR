@@ -3,6 +3,7 @@ Require Import Pauli.
 Import Pauli.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
+From mathcomp Require Import ssrfun fingroup eqtype fintype.
 
 Module PauliString.
 
@@ -329,7 +330,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma pvec_prod_correct:
+Lemma pvmul_correct:
   forall (n: nat) (p1 p2: PauliVector n) sc vecc, 
   (sc, vecc) = pvmul p1 p2 ->
   (pvec_to_matrix p1) × (pvec_to_matrix p2) = (scalar_to_complex sc) .* (pvec_to_matrix vecc).
@@ -361,7 +362,7 @@ Proof.
 Qed.  
 
 (* multiplication on PauliTerm string respects with matrix multiplication *)
-Theorem p_prod_correct:
+Theorem psmul_correct:
   forall (n: nat) (p1 p2: PString n), 
   (pstr_to_matrix p1) × (pstr_to_matrix p2) = pstr_to_matrix (psmul p1 p2).
 Proof.
@@ -379,7 +380,7 @@ Proof.
   destruct pv as (sp, vp). 
   inversion Heqps; subst.
   (* !Important *)
-  apply pvec_prod_correct in Heqpv.
+  apply pvmul_correct in Heqpv.
   rewrite Heqpv.
   rewrite Mscale_assoc.
   rewrite combinded_scalars_correct.
@@ -387,5 +388,106 @@ Proof.
   rewrite Cmult_assoc.
   reflexivity.
 Qed.
+
+Lemma psmul_implies_Mmult:
+  forall (n:nat) (a b c: PString n),
+  psmul a b = c -> 
+  (pstr_to_matrix a) × (pstr_to_matrix b) = pstr_to_matrix c.
+Proof.
+  intros.
+  rewrite <- H. 
+  rewrite psmul_correct. 
+  reflexivity.
+Qed.
+
+Lemma pstr_to_matrix_unique_one_step:
+forall n sa ha sb hb (pa pb: PauliVector n) , 
+  pstr_to_matrix (sa, ha :: pa) = pstr_to_matrix (sb, hb :: pb) ->
+  pstr_to_matrix (sa, pa) = pstr_to_matrix (sb, pb) /\ ha = hb.
+Admitted.
+
+Example painful_unequal:
+(Matrix.I 1) 0%nat 0%nat <> (Ci .* Matrix.I 1) 0%nat 0%nat.
+Proof.
+  unfold Matrix.I.
+  unfold scale. 
+  simpl.
+  unfold not.
+  intros.
+  inversion H.
+  contradict H2.
+  lra.
+Qed.
+
+Lemma pstr_to_matrix_empty:
+forall sa sb,
+  pstr_to_matrix (sa, []) = pstr_to_matrix (sb, []) ->
+  sa = sb.
+Proof.
+  intros.
+  simpl in H.
+  destruct sa, sb; simpl in H.
+  all: try reflexivity.
+  all: try (contradict H; Qsimpl).
+  Admitted. (* Too painful to handle contractions in SQIR *)
+
+Lemma pstr_to_matrix_unique:
+  forall (n: nat) (a b: PString n),
+  pstr_to_matrix a = pstr_to_matrix b ->
+  a = b.
+Proof.
+  intros n a.
+  destruct a. 
+  induction p; intros.
+  { 
+    destruct b.
+    assert (p = []) by apply length_0_pvector; subst.
+    apply injective_projections.
+    2: simpl; reflexivity.
+    simpl.
+    now apply pstr_to_matrix_empty.
+  }
+  {
+    destruct b. 
+    dependent destruction p0.
+    apply pstr_to_matrix_unique_one_step in H.
+    destruct H.
+    assert ((s, p) = (s0, p0)). {
+      apply IHp.
+      assumption.
+    }
+    inversion H1; subst.
+    reflexivity.
+  }
+Qed.
+
+
+Lemma Mmult_implies_psmul:
+  forall (n:nat) (a b c: PString n),
+  (pstr_to_matrix a) × (pstr_to_matrix b) = pstr_to_matrix c ->
+  psmul a b = c.
+Proof.
+  intros.
+  rewrite psmul_correct in H.
+  apply pstr_to_matrix_unique in H.
+  assumption.
+Qed.
+
+
+Lemma psmul_assoc:
+  forall (n: nat), associative (@psmul n).
+Proof.
+  intros.
+  unfold associative.
+  intros.
+  apply Mmult_implies_psmul.
+  repeat rewrite <- psmul_correct.
+  remember (pstr_to_matrix x) as m1.
+  remember (pstr_to_matrix y) as m2.
+  remember (pstr_to_matrix z) as m3.
+  rewrite Mmult_assoc.
+  easy.
+Qed.
+
 
 End PauliString.
