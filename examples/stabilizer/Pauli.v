@@ -885,7 +885,11 @@ Search "commutative".
 
 Lemma s_prod_comm:
   commutative s_prod.
-Admitted.
+Proof.
+  unfold commutative.
+  intros.
+  now destruct x, y; simpl.
+Qed.
 
 Lemma s_prod_left_id: left_id One s_prod.
 Proof.
@@ -1014,8 +1018,14 @@ HB: isMulGroup.Build requires its subject to be already equipped with:
     - hasDecEq
     - isFinit
 *)
+HB.about isMulGroup.
+HB.about isFinite.
+HB.about hasDecEq.
+HB.about hasDecEq.Build.
+HB.about isFinite.Build.
+
 Fail HB.instance Definition _ := 
-isMulBaseGroup.Build PauliTerm pmul e pinv pmul_assoc pmul_left_id pmul_left_inverse
+isMulGroup.Build PauliTerm pmul e pinv pmul_assoc pmul_left_id pmul_left_inverse
 .
 
 End Pauli.
