@@ -398,25 +398,101 @@ Proof.
   rewrite <- H. 
   rewrite psmul_correct. 
   reflexivity.
+Qed. 
+
+(* two known math facts and it should be provided in quantumlib? *)
+Fact kron_inj:
+  forall (n m:nat) (ha hb: Square n) (ta tb: Square m),
+  (ha ⊗ ta = hb ⊗ tb) -> (ta = tb) /\ (ha = hb).
+Admitted.
+
+Fact scalar_ineq:
+  forall (n: nat) sa sb (m: Square n),
+  sa <> sb ->
+  sa .* m <> sb .* m.
+Admitted.
+
+(* Involve unequality of matrices. too painful *)
+Lemma pstr_comb_inj:
+forall n (sa sb: Scalar) (pa pb: PauliVector n),
+  scalar_to_complex sa .* pvec_to_matrix pa =
+  scalar_to_complex sb .* pvec_to_matrix pb ->
+  sa = sb /\ pa = pb.
+Proof.
+  intros n sa sb pa.
+  induction pa; intros.
+  {
+    assert (pb = []) by apply length_0_vector.
+    subst.
+    simpl in H.
+    destruct sa, sb.
+    all: try easy.
+    all: contradict H; simpl.
+    all: try (
+      apply scalar_ineq;
+      unfold not;
+      intros;
+      inversion H;
+      try (contradict H1; lra);
+      try (contradict H2; lra)
+      ).
+  }
+  {
+    dependent destruction pb.
+    simpl in H.
+    repeat rewrite Mscale_1_l in H.
+    assert (sa = sb /\ pa = pb).
+    {
+      apply IHpa.
+     
+      (* Mscale_kron_dist_l
+      : forall (m n o p : nat) (x : C) (A : Matrix m n) (B : Matrix o p),
+          x .* A ⊗ B = x .* (A ⊗ B *)
+      (* Don't understand why it is inapplicable *)
+      (* Make an assertion next to it *)
+      Fail rewrite <- Mscale_kron_dist_l in H.
+      assert ( 
+        (scalar_to_complex sa .* op_to_matrix h) ⊗ pvec_to_matrix pa =
+        (scalar_to_complex sb .* op_to_matrix h0) ⊗ pvec_to_matrix pb ) by admit.
+      apply kron_inj in H0.
+      destruct H0.
+      rewrite H0.
+      apply pauli_orthogonal in H1.
+      destruct H1.
+      subst.
+      easy.
+    }
+    destruct H0.
+    subst.
+    split; try easy.
+    assert (h = h0) by admit.
+    subst.
+    reflexivity.
+Admitted.
+
+Lemma pstr_to_matrix_inj:
+  forall n (sa sb: Scalar) (pa pb: PauliVector n),
+  pstr_to_matrix (sa, pa) = pstr_to_matrix (sb, pb) ->
+  sa = sb /\ pa = pb.
+Proof.
+  intros.
+  simpl in H.
+  apply pstr_comb_inj in H.
+  easy.
 Qed.
 
 Lemma pstr_to_matrix_unique_one_step:
 forall n sa ha sb hb (pa pb: PauliVector n) , 
   pstr_to_matrix (sa, ha :: pa) = pstr_to_matrix (sb, hb :: pb) ->
   pstr_to_matrix (sa, pa) = pstr_to_matrix (sb, pb) /\ ha = hb.
-Admitted.
-
-Example painful_unequal:
-(Matrix.I 1) 0%nat 0%nat <> (Ci .* Matrix.I 1) 0%nat 0%nat.
 Proof.
-  unfold Matrix.I.
-  unfold scale. 
-  simpl.
-  unfold not.
   intros.
-  inversion H.
-  contradict H2.
-  lra.
+  apply pstr_to_matrix_inj in H.
+  destruct H.
+  apply cons_inj in H0.
+  destruct H0.
+  subst.
+  easy.
 Qed.
 
 Lemma pstr_to_matrix_empty:
@@ -425,11 +501,9 @@ forall sa sb,
   sa = sb.
 Proof.
   intros.
-  simpl in H.
-  destruct sa, sb; simpl in H.
-  all: try reflexivity.
-  all: try (contradict H; Qsimpl).
-  Admitted. (* Too painful to handle contractions in SQIR *)
+  apply pstr_to_matrix_inj in H.
+  easy.
+Qed.
 
 Lemma pstr_to_matrix_unique:
   forall (n: nat) (a b: PString n),
@@ -451,6 +525,7 @@ Proof.
     destruct b. 
     dependent destruction p0.
     apply pstr_to_matrix_unique_one_step in H.
+    
     destruct H.
     assert ((s, p) = (s0, p0)). {
       apply IHp.
