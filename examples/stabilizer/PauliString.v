@@ -389,6 +389,9 @@ Proof.
   reflexivity.
 Qed.
 
+
+(* Additional Group Theory Stuff *)
+
 Lemma psmul_implies_Mmult:
   forall (n:nat) (a b c: PString n),
   psmul a b = c -> 
@@ -412,7 +415,6 @@ Fact scalar_ineq:
   sa .* m <> sb .* m.
 Admitted.
 
-(* Involve unequality of matrices. too painful *)
 Lemma pstr_comb_inj:
 forall n (sa sb: Scalar) (pa pb: PauliVector n),
   scalar_to_complex sa .* pvec_to_matrix pa =
