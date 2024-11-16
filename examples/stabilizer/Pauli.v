@@ -463,11 +463,59 @@ it will be much easier now.
 =======================================================
 *)
 
-Definition op_prod(a b: PauliOp): (Scalar * PauliOp) := 
+Definition op_prod_op(a b: PauliOp): PauliOp :=
   match a, b with
+  | I, p => p
+  | p, I => p  
+  
+  | X, X => I
+  | Y, Y => I 
+  | Z, Z => I
+
+  | X, Y => Z
+  | Y, X => Z
+
+  | Y, Z => X
+  | Z, Y => X
+
+  | Z, X => Y
+  | X, Z => Y 
+end.
+
+Lemma op_prod_op_assoc: 
+  associative op_prod_op.
+Proof.
+  unfold associative.
+  intros.
+  destruct x, y, z.
+  all: easy.
+Qed.
+
+
+Definition op_prod_s(a b: PauliOp): Scalar :=
+  match a, b with
+  | I, p => One
+  | p, I => One
+  
+  | X, X => One
+  | Y, Y => One
+  | Z, Z => One
+
+  | X, Y => Iphase
+  | Y, X => NegIphase
+
+  | Y, Z => Iphase
+  | Z, Y => NegIphase
+
+  | Z, X => Iphase
+  | X, Z => NegIphase 
+end.
+
+Definition op_prod(a b: PauliOp): (Scalar * PauliOp) :=
+  match a, b with  
   | I, p => (One, p)
   | p, I => (One, p)  
-  
+
   | X, X => (One, I)
   | Y, Y => (One, I) 
   | Z, Z => (One, I)
@@ -480,7 +528,20 @@ Definition op_prod(a b: PauliOp): (Scalar * PauliOp) :=
 
   | Z, X => (Iphase, Y)
   | X, Z => (NegIphase, Y) 
-end.
+  end.
+
+(* Easier to use in verificaition *)
+Definition op_prod_alt(a b: PauliOp): (Scalar * PauliOp) := 
+  ( op_prod_s a b, op_prod_op a b).
+
+Lemma op_prod_alt_correct: 
+forall a b,
+op_prod_alt a b = op_prod a b.
+Proof.
+  intros.
+  destruct a, b; easy.
+Qed.
+
 
 Definition s_prod(a b: Scalar): Scalar := 
 match a, b with
@@ -965,7 +1026,6 @@ Proof.
   }
   subst.
   unfold combined_scalars.
-  repeat rewrite s_prod_assoc.
   assert (
     s_prod (s_prod (s_prod (s_prod s4 s) s3) s0) s1 =
     s_prod (s_prod (s_prod (s_prod s5 s2) s) s0) s1
@@ -985,8 +1045,18 @@ Proof.
     ).
    all:  try(destruct s, s0, s1; easy).
   }
-  rewrite H.
-  reflexivity.
+  Fail now rewrite H. Abort.
+
+
+Lemma pmul_assoc: associative pmul.
+Proof.
+  unfold associative.
+  intros.
+  destruct x, y, z.
+  simpl.
+  unfold combined_scalars.
+  destruct p, p0, p1; simpl.
+  all: destruct s, s0, s1; easy.
 Qed.
 
 Definition e: PauliTerm :=  ScaledOp One I.
@@ -1008,7 +1078,7 @@ Proof.
   destruct s, p; easy.
 Qed.
 
-From HB Require Import structures.
+(* From HB Require Import structures.
 
 
 (*
@@ -1026,6 +1096,6 @@ HB.about isFinite.Build.
 
 Fail HB.instance Definition _ := 
 isMulGroup.Build PauliTerm pmul e pinv pmul_assoc pmul_left_id pmul_left_inverse
-.
+. *)
 
 End Pauli.

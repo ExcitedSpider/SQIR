@@ -22,6 +22,54 @@ Fixpoint pvmul {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
   | [] => fun _ => (One, [])
   end b.
 
+Fixpoint pvmul_v {n: nat} (a b : PauliVector n) : PauliVector n :=
+  match a in Vector.t _ n return Vector.t _ n -> PauliVector n  with 
+  | ha :: ta => fun b => 
+    let hb := Vector.hd b in
+    let tb := Vector.tl b in 
+    let ptl := pvmul_v ta tb in
+    let ph := op_prod_op ha hb in
+    ph::ptl
+  | [] => fun _ => []
+  end b.
+
+Fixpoint pvmul_s {n: nat} (a b : PauliVector n) : Scalar  :=
+    (* Looks like dark magic *)
+    match a in Vector.t _ n return Vector.t _ n -> Scalar with 
+    | ha :: ta => fun b => 
+      let hb := Vector.hd b in
+      let tb := Vector.tl b in 
+      let stl := pvmul_s ta tb in
+      let sh := op_prod_s ha hb in
+      s_prod stl sh
+    | [] => fun _ => One
+    end b.
+
+(* Easier to use in verification *)
+Definition pvmul_alt  {n: nat} (a b : PauliVector n) : Scalar * PauliVector n 
+  := (pvmul_s a b, pvmul_v a b).
+
+Lemma pvmul_alt_correct: 
+  forall n (pa pb: PauliVector n),
+  pvmul_alt pa pb = pvmul pa pb.
+Proof.
+  intros.
+  induction n.
+  - dependent destruction pa.
+    dependent destruction pb.
+    unfold pvmul_alt.
+    simpl.
+    reflexivity.
+  - dependent destruction pa.
+    dependent destruction pb.
+    specialize (IHn pa pb).
+    unfold pvmul_alt.
+    simpl.
+    unfold pvmul_alt in IHn.
+    rewrite <- IHn.
+    f_equal.
+Qed.
+
 Example pstring_prod_exp: 
   pvmul (Z::X::X::I::[]) (X::X::Y::Y::[]) = (NegOne, (Y::I::Z::Y::[])).
 Proof.
@@ -45,6 +93,36 @@ Example pauli_calc0:
 Proof.
   simpl.
   reflexivity.
+Qed.
+
+(* Simpler definition *)
+Definition psmul_alt {n: nat} (a b: PString n) : PString n :=
+  let (sa, va) := a in
+  let (sb, vb) := b in
+  ((combined_scalars (pvmul_s va vb)  sa sb), pvmul_v va vb).
+
+Lemma psmul_alt_correct: 
+  forall n (pa pb: PString n),
+  psmul_alt pa pb = psmul pa pb.
+Proof.
+  intros.
+  induction n.
+  - destruct pa, pb.
+    dependent destruction p.
+    dependent destruction p0.
+    unfold psmul_alt.
+    simpl.
+    reflexivity.
+  - destruct pa, pb.
+    unfold psmul_alt.
+    dependent destruction p.
+    dependent destruction p0.
+    specialize (IHn (s, p) (s0, p0)).
+    simpl.
+    specialize (pvmul_alt_correct _ p p0) as Hpvmul.
+    unfold pvmul_alt in Hpvmul.
+    rewrite <- Hpvmul.
+    f_equal.
 Qed.
 
 (* Translate a PauliTerm vector into a matrix *)
@@ -564,7 +642,79 @@ Proof.
   remember (pstr_to_matrix z) as m3.
   rewrite Mmult_assoc.
   easy.
+Abort.
+
+Lemma pvmul_v_assoc:
+  forall (n: nat), associative (@pvmul_v n).
+Proof.
+  unfold associative.
+  intros.
+  induction n.
+  - dependent destruction x.
+    dependent destruction y.
+    dependent destruction z.
+    reflexivity.
+  - dependent destruction x.
+    dependent destruction y.
+    dependent destruction z.
+    simpl.
+    rewrite IHn.
+    f_equal.
+    apply op_prod_op_assoc.
 Qed.
 
+(* psmul (s0, h0 :: p0) (s1, h1 :: p1) = 
+( (op_prod_op h0 h1) :: psmul (s0, p0) (s1, p1)) *)
+
+
+Lemma pvmul_s_assoc:
+  forall (n: nat) (x y z: PauliVector n),
+  pvmul_s x (pvmul_v y z) = pvmul_s (pvmul_v x y) z.
+Proof.
+  intros.
+  induction n.
+  - dependent destruction x.
+    dependent destruction y.
+    dependent destruction z.
+    simpl.
+    easy.
+  - dependent destruction x.
+    dependent destruction y.
+    dependent destruction z.
+    simpl.
+    f_equal.
+    apply IHn.
+    apply pvmul_v_assoc.
+
+
+Lemma psmul_assoc:
+  forall (n: nat), associative (@psmul n).
+Proof.
+  intros.
+  unfold associative.
+  intros.
+  induction n.
+  - destruct x, y, z.
+    dependent destruction p.
+    dependent destruction p0.
+    dependent destruction p1.
+    simpl.
+    f_equal.
+    apply s_prod_assoc.
+  - repeat rewrite <- psmul_alt_correct.
+    destruct x, y, z.
+    dependent destruction p.
+    dependent destruction p0.
+    dependent destruction p1.
+    simpl.
+    unfold combined_scalars.
+    f_equal.
+    Focus 2.
+    f_equal.
+    apply op_prod_op_assoc.
+    apply pvmul_v_assoc.
+    f_equal.
+    f_equal.
+    apply pvmul_v_assoc.
 
 End PauliString.
