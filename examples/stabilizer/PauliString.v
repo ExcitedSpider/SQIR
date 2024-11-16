@@ -481,8 +481,50 @@ Proof.
   reflexivity.
 Qed. 
 
-(* two known math facts and it should be provided in quantumlib? *)
-Fact kron_inj:
+
+End PauliString.
+
+Export PauliString.
+
+Section PnZ4Group.
+
+(* The global phase factors (scalars) usually aren’t very important for practical applications. *)
+(* And scalars make verificaiton process much complicated *)
+(* So we choose to formalize the P_n / Z_4 group instead. *)
+(*  the quotient group P_n / Z_4 is exactly the 
+n-qubit Pauli group but with the phases ignored. *)
+
+(* So we use @pvmul_v to define the P_n / Z_4 group*)
+
+Variable (n:nat).
+
+Lemma pvmul_v_assoc:
+  associative (@pvmul_v n).
+Proof.
+  unfold associative.
+  intros.
+  induction n.
+  - dependent destruction x.
+    dependent destruction y.
+    dependent destruction z.
+    reflexivity.
+  - dependent destruction x.
+    dependent destruction y.
+    dependent destruction z.
+    simpl.
+    rewrite IHn0.
+    f_equal.
+    apply op_prod_op_assoc.
+Qed.
+  
+End PnZ4Group.
+
+
+
+
+(* These are not able to prove
+and might have some mathmatical problems *)
+(* Fact kron_inj:
   forall (n m:nat) (ha hb: Square n) (ta tb: Square m),
   (ha ⊗ ta = hb ⊗ tb) -> (ta = tb) /\ (ha = hb).
 Admitted.
@@ -491,9 +533,9 @@ Fact scalar_ineq:
   forall (n: nat) sa sb (m: Square n),
   sa <> sb ->
   sa .* m <> sb .* m.
-Admitted.
+Admitted. *)
 
-Lemma pstr_comb_inj:
+(* Lemma pstr_comb_inj:
 forall n (sa sb: Scalar) (pa pb: PauliVector n),
   scalar_to_complex sa .* pvec_to_matrix pa =
   scalar_to_complex sb .* pvec_to_matrix pb ->
@@ -548,9 +590,9 @@ Proof.
     assert (h = h0) by admit.
     subst.
     reflexivity.
-Admitted.
+Admitted. *)
 
-Lemma pstr_to_matrix_inj:
+(* Lemma pstr_to_matrix_inj:
   forall n (sa sb: Scalar) (pa pb: PauliVector n),
   pstr_to_matrix (sa, pa) = pstr_to_matrix (sb, pb) ->
   sa = sb /\ pa = pb.
@@ -559,9 +601,9 @@ Proof.
   simpl in H.
   apply pstr_comb_inj in H.
   easy.
-Qed.
+Qed. *)
 
-Lemma pstr_to_matrix_unique_one_step:
+(* Lemma pstr_to_matrix_unique_one_step:
 forall n sa ha sb hb (pa pb: PauliVector n) , 
   pstr_to_matrix (sa, ha :: pa) = pstr_to_matrix (sb, hb :: pb) ->
   pstr_to_matrix (sa, pa) = pstr_to_matrix (sb, pb) /\ ha = hb.
@@ -573,9 +615,9 @@ Proof.
   destruct H0.
   subst.
   easy.
-Qed.
+Qed. *)
 
-Lemma pstr_to_matrix_empty:
+(* Lemma pstr_to_matrix_empty:
 forall sa sb,
   pstr_to_matrix (sa, []) = pstr_to_matrix (sb, []) ->
   sa = sb.
@@ -626,95 +668,6 @@ Proof.
   rewrite psmul_correct in H.
   apply pstr_to_matrix_unique in H.
   assumption.
-Qed.
+Qed. *)
 
 
-Lemma psmul_assoc:
-  forall (n: nat), associative (@psmul n).
-Proof.
-  intros.
-  unfold associative.
-  intros.
-  apply Mmult_implies_psmul.
-  repeat rewrite <- psmul_correct.
-  remember (pstr_to_matrix x) as m1.
-  remember (pstr_to_matrix y) as m2.
-  remember (pstr_to_matrix z) as m3.
-  rewrite Mmult_assoc.
-  easy.
-Abort.
-
-Lemma pvmul_v_assoc:
-  forall (n: nat), associative (@pvmul_v n).
-Proof.
-  unfold associative.
-  intros.
-  induction n.
-  - dependent destruction x.
-    dependent destruction y.
-    dependent destruction z.
-    reflexivity.
-  - dependent destruction x.
-    dependent destruction y.
-    dependent destruction z.
-    simpl.
-    rewrite IHn.
-    f_equal.
-    apply op_prod_op_assoc.
-Qed.
-
-(* psmul (s0, h0 :: p0) (s1, h1 :: p1) = 
-( (op_prod_op h0 h1) :: psmul (s0, p0) (s1, p1)) *)
-
-
-Lemma pvmul_s_assoc:
-  forall (n: nat) (x y z: PauliVector n),
-  pvmul_s x (pvmul_v y z) = pvmul_s (pvmul_v x y) z.
-Proof.
-  intros.
-  induction n.
-  - dependent destruction x.
-    dependent destruction y.
-    dependent destruction z.
-    simpl.
-    easy.
-  - dependent destruction x.
-    dependent destruction y.
-    dependent destruction z.
-    simpl.
-    f_equal.
-    apply IHn.
-    apply pvmul_v_assoc.
-
-
-Lemma psmul_assoc:
-  forall (n: nat), associative (@psmul n).
-Proof.
-  intros.
-  unfold associative.
-  intros.
-  induction n.
-  - destruct x, y, z.
-    dependent destruction p.
-    dependent destruction p0.
-    dependent destruction p1.
-    simpl.
-    f_equal.
-    apply s_prod_assoc.
-  - repeat rewrite <- psmul_alt_correct.
-    destruct x, y, z.
-    dependent destruction p.
-    dependent destruction p0.
-    dependent destruction p1.
-    simpl.
-    unfold combined_scalars.
-    f_equal.
-    Focus 2.
-    f_equal.
-    apply op_prod_op_assoc.
-    apply pvmul_v_assoc.
-    f_equal.
-    f_equal.
-    apply pvmul_v_assoc.
-
-End PauliString.
