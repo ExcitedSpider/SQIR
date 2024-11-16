@@ -561,14 +561,19 @@ From HB Require Import structures.
 Fail HB.instance Definition _ := 
 isMulGroup.Build (PauliVector n) pvmul_v e pninv pvmul_v_assoc pmul_v_left_id pninv_correct.
 
-  
 End PnZ4Group.
 
 
 
 
-(* These are not able to prove
-and might have some mathmatical problems *)
+(* These are some failed attempt to work on 
+formalizing P_n group, which take scalars (global phase)
+into consideration.
+The scalars cause so much complexity.
+and it requires many lemmas that quantumlib 
+does not have right now.
+Work on this if you have more time
+*)
 (* Fact kron_inj:
   forall (n m:nat) (ha hb: Square n) (ta tb: Square m),
   (ha ⊗ ta = hb ⊗ tb) -> (ta = tb) /\ (ha = hb).
