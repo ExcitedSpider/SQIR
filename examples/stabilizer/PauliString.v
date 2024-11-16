@@ -516,6 +516,51 @@ Proof.
     f_equal.
     apply op_prod_op_assoc.
 Qed.
+
+(* the unit element *)
+Definition e: PauliVector n :=
+  Vector.const I n.
+
+Lemma pmul_v_left_id:
+left_id e (@pvmul_v n).
+Proof.
+  unfold left_id.
+  intros.
+  unfold e.
+  induction n.
+  - dependent destruction x.
+    reflexivity.
+  - simpl.
+    unfold PauliVector in x.
+    rewrite IHn0.
+    apply caseS with (v := x).
+    intros.
+    reflexivity.
+Qed.
+
+Definition pninv (p: PauliVector n): PauliVector n :=
+  map inverse_op p.
+
+Lemma pninv_correct:
+  left_inverse e pninv pvmul_v.
+Proof.
+  unfold left_inverse.
+  intros.
+  unfold e, pninv.
+  induction n.
+  - dependent destruction x.
+    easy.
+  - dependent destruction x.
+    simpl.
+    f_equal.
+    apply inverse_op_correct.
+    apply IHn0.
+Qed.
+
+From HB Require Import structures.
+Fail HB.instance Definition _ := 
+isMulGroup.Build (PauliVector n) pvmul_v e pninv pvmul_v_assoc pmul_v_left_id pninv_correct.
+
   
 End PnZ4Group.
 

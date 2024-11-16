@@ -289,6 +289,8 @@ match op with
 | Z => Z
 end.
 
+
+
 Definition inverse_scala (op: Scalar): Scalar := 
 match op with
 | One => One
@@ -878,6 +880,14 @@ Qed.
 
 
 (* Additonal Lemmas *)
+
+Lemma inverse_op_correct:
+  left_inverse I inverse_op op_prod_op.
+Proof.
+  unfold left_inverse.
+  intros.
+  destruct x; reflexivity.
+Qed.
 
 (* Have some troubles proving function inequalities*)
 (* But this is a known simple fact in math that all PauliTerm operators are orthogonal*)
