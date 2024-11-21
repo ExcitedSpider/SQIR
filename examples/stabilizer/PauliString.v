@@ -63,10 +63,12 @@ Proof.
   - dependent destruction pa.
     dependent destruction pb.
     specialize (IHn pa pb).
-    unfold pvmul_alt.
     simpl.
     unfold pvmul_alt in IHn.
     rewrite <- IHn.
+    unfold pvmul_alt; simpl.
+    rewrite <- op_prod_alt_correct.
+    simpl.
     f_equal.
 Qed.
 
@@ -122,6 +124,8 @@ Proof.
     specialize (pvmul_alt_correct _ p p0) as Hpvmul.
     unfold pvmul_alt in Hpvmul.
     rewrite <- Hpvmul.
+    rewrite <- op_prod_alt_correct.
+    simpl.
     f_equal.
 Qed.
 
