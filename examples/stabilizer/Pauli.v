@@ -291,8 +291,8 @@ end.
 
 
 
-Definition inverse_scala (op: Scalar): Scalar := 
-match op with
+Definition inverse_scalar (sc: Scalar): Scalar := 
+match sc with
 | One => One
 | Iphase => NegIphase
 | NegOne => NegOne
@@ -301,7 +301,7 @@ end.
 
 Definition pinv (p : PauliTerm) : PauliTerm :=
 match p with
-| ScaledOp s op => ScaledOp (inverse_scala s) (inverse_op op)
+| ScaledOp s op => ScaledOp (inverse_scalar s) (inverse_op op)
 end.
 
 Lemma pinv_correct:
@@ -441,7 +441,7 @@ split. apply pauli_closure'.
 apply pmultrel_assoc.
 Qed.
 
-(* Definition inverse_scala (op: Scalar): Scalar := 
+(* Definition inverse_scalar (op: Scalar): Scalar := 
 match op with
 | One => One
 | Iphase => NegIphase
@@ -451,7 +451,7 @@ end.
 
 Definition pinv (p : PauliTerm) : PauliTerm :=
 match p with
-| ScaledOp s op => ScaledOp (inverse_scala s) (inverse_op op)
+| ScaledOp s op => ScaledOp (inverse_scalar s) (inverse_op op)
 end. *)
 
 (* 
@@ -559,6 +559,13 @@ match a, b with
   | Iphase, Iphase => NegOne
   | NegIphase, NegIphase => NegOne
 end.
+
+Lemma inverse_scalar_correct:
+  forall sc, s_prod sc (inverse_scalar sc) = One
+. 
+intros.
+destruct sc; easy.
+Qed.
 
 Lemma s_prod_total:
   forall s1 s2,

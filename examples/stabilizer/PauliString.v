@@ -472,7 +472,7 @@ Proof.
 Qed.
 
 
-(* Additional Group Theory Stuff *)
+
 
 Lemma psmul_implies_Mmult:
   forall (n:nat) (a b c: PString n),
@@ -489,6 +489,8 @@ Qed.
 End PauliString.
 
 Export PauliString.
+
+(* Additional Group Theory Stuff *)
 
 Section PnZ4Group.
 
@@ -522,21 +524,23 @@ Proof.
 Qed.
 
 (* the unit element *)
-Definition e: PauliVector n :=
+Definition pmul_id (n:nat): PauliVector n :=
   Vector.const I n.
 
+Definition e := pmul_id n.
+
 Lemma pmul_v_left_id:
-left_id e (@pvmul_v n).
+forall n', left_id (pmul_id n') (@pvmul_v n').
 Proof.
   unfold left_id.
   intros.
   unfold e.
-  induction n.
+  induction n'.
   - dependent destruction x.
     reflexivity.
   - simpl.
     unfold PauliVector in x.
-    rewrite IHn0.
+    rewrite IHn'.
     apply caseS with (v := x).
     intros.
     reflexivity.
@@ -545,7 +549,7 @@ Qed.
 Definition pninv (p: PauliVector n): PauliVector n :=
   map inverse_op p.
 
-Lemma pninv_correct:
+Lemma pvmul_v_id_correct:
   left_inverse e pninv pvmul_v.
 Proof.
   unfold left_inverse.
@@ -561,14 +565,128 @@ Proof.
     apply IHn0.
 Qed.
 
+Lemma pvmul_s_id_correct:
+  left_inverse One pninv pvmul_s.
+Proof.
+  unfold left_inverse.
+  intros.
+  unfold pninv.
+  induction n.
+  - dependent destruction x.
+    easy.
+  - dependent destruction x.
+    simpl.
+    rewrite IHn0.
+    destruct h; simpl; reflexivity.
+Qed.
+
 From HB Require Import structures.
 Fail HB.instance Definition _ := 
-isMulGroup.Build (PauliVector n) pvmul_v e pninv pvmul_v_assoc pmul_v_left_id pninv_correct.
+isMulGroup.Build (PauliVector n) pvmul_v e pninv pvmul_v_assoc pmul_v_left_id pvmul_v_id_correct.
 
 End PnZ4Group.
 
 
+(* Very loose definition of pauli string group *)
+(* Refine later *)
+Section PStrGroup.
 
+(* Print psmul. *)
+
+Definition pstr_identity (n: nat) := (One, Vector.const I n).
+
+Lemma pvmul_id_correct:
+forall n (pvec: PauliVector  n), pvmul (pmul_id n) pvec = (One, pvec)
+.
+Proof.
+  intros.
+  rewrite <- pvmul_alt_correct.
+  unfold pvmul_alt.
+  f_equal.
+  {
+    induction n.
+    + reflexivity.
+    + simpl. rewrite IHn. reflexivity.
+  }
+  {
+    apply pmul_v_left_id.
+  }
+Qed.
+
+(* replace (pvec_to_matrix (const I n)) with (Matrix.I n). *)
+
+Example pstr_id_to_matrix_exp: 
+  pstr_to_matrix (pstr_identity 3) = Matrix.I (2 ^ 3).
+Proof.
+  simpl.
+  Qsimpl.
+  repeat rewrite id_kron.
+  reflexivity.
+Qed.
+
+Lemma pstr_id_to_matrix:
+  forall n, pstr_to_matrix (pstr_identity n) = Matrix.I (2^n).
+Proof.
+  intros.
+  induction n.
+  { simpl. Qsimpl. solve_matrix. }
+  {
+    simpl; Qsimpl.
+    simpl in IHn.
+    rewrite Mscale_1_l in IHn.
+    rewrite IHn.
+    rewrite id_kron.
+    reflexivity.
+  }
+Qed.
+
+Lemma pvec_id_to_matrix:
+  forall n, Matrix.I (2 ^ n) = pvec_to_matrix (pmul_id n).
+Proof.
+  intros.
+  specialize (pstr_id_to_matrix n) as H.
+  simpl in H.
+  rewrite <- H.
+  Qsimpl.
+  reflexivity.
+Qed.
+
+Lemma psmul_id_left:
+  forall n, left_id (pstr_identity n) (@psmul n).
+Proof.
+  unfold left_id, pstr_identity; intros n [sx vx].
+  simpl.
+  replace (const I n) with (pmul_id n) by reflexivity.
+  assert (Hid: forall n (pvec: PauliVector  n), pvmul (pmul_id n) pvec = (One, pvec)) by apply pvmul_id_correct.
+  rewrite Hid.
+  simpl.
+  reflexivity.
+Qed.
+
+Locate pstr.
+
+Definition pstr_inv {n: nat} (pstr: PString n)
+: (PString n) :=
+  let (sp, vp) := pstr in
+  ((inverse_scalar sp), (pninv n vp)).
+
+Lemma pstr_inv_correct:
+  forall n (pstr: PString n),
+  psmul (pstr_inv pstr) pstr = (pstr_identity n)
+.
+  intros n [sp vp].
+  simpl.
+  rewrite <- pvmul_alt_correct; unfold pvmul_alt.
+  rewrite pvmul_v_id_correct.
+  unfold pstr_identity; f_equal.
+  rewrite pvmul_s_id_correct.
+  simpl.
+  rewrite s_prod_comm.
+  rewrite inverse_scalar_correct.
+  easy.
+Qed.
+
+End PStrGroup.
 
 (* These are some failed attempt to work on 
 formalizing P_n group, which take scalars (global phase)
