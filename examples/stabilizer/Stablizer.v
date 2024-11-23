@@ -32,4 +32,22 @@ Proof.
   solve_matrix.
 Qed.
 
+(* X stabilize the bell state *)
+Example stb_xbell:
+  stb (One, X::[]) ( 1/√2 .* (∣0⟩ .+ ∣1⟩)).
+Proof.
+  unfold stb.
+  simpl; Qsimpl.
+  solve_matrix.
+Qed.
+
+(* Y stabilize the |i> state *)
+Example stb_yibell:
+  stb (One, Y::[]) ( 1/√2 .* (∣0⟩ .+ Ci .* ∣1⟩)).
+Proof.
+  unfold stb.
+  simpl; Qsimpl.
+  solve_matrix.
+Qed.
+
   
