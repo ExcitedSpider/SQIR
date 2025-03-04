@@ -16,7 +16,7 @@ Definition stb {n: nat} (pstring: PString n) (ψ: Vector (2^n))
 
 (* Z stabilises ∣0⟩ *)
 Example stb_z0:
-  stb (One, Z::[]) ∣0⟩.
+  stb (One, p[Z]) ∣0⟩.
 Proof.
   unfold stb.
   simpl; Qsimpl.
@@ -62,7 +62,7 @@ Proof.
 Qed.
 
 Example stb_z2bell2:
-  stb (One, Z::Z::[]) ( 1/2 .* (∣0,0⟩ .+ ∣1,1⟩)).
+  stb (One, p[Z, Z]) ( 1/2 .* (∣0,0⟩ .+ ∣1,1⟩)).
 Proof.
   unfold stb.
   simpl; Qsimpl.

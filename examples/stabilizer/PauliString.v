@@ -6,8 +6,6 @@ Import VectorNotations.
 From mathcomp Require Import ssrfun fingroup eqtype fintype.
 
 Module PauliString.
-
-
 Definition PauliVector n := Vector.t PauliOp n.
 
 Fixpoint pvmul {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
@@ -82,6 +80,27 @@ Qed.
 (* The Pauli String *)
 Definition PString (n : nat) : Set := Scalar * PauliVector n.
 
+(* [X;Y;Z] has been occupied by QuantumLib *)
+(* We defined a new annotation here Use a prefix `p` to avoid mess up *)
+(* TODO: Maybe I should use a scope for this *)
+
+Notation "p[ x , y , .. , z ]" := (cons _ x _ (cons _ y _ .. (cons _ z _ (nil _)) ..)) (at level 60).
+
+Notation "p[ x ]" := (x :: []) (at level 60).
+
+Definition pstring_example0 : PString 3 :=
+  (One, p[X, Y, Z]).
+
+(* `::` is interpreted correctly *)
+Definition pstring_example1 : PString 3 :=
+  (One, X::Y::Z::[]).
+
+Definition pstring_example2 : PString 0 :=
+  (One, []).
+
+Definition pstring_example3 : PString 1 :=
+  (One, p[X]).
+
 Definition psmul {n: nat} (a b: PString n) : PString n :=
   let (sa, va) := a in
   let (sb, vb) := b in
@@ -90,8 +109,8 @@ Definition psmul {n: nat} (a b: PString n) : PString n :=
 
 (* Good !*)
 Example pauli_calc0:
-  psmul (One, (X::X::Y::Y::[])) (One, (Z::X::X::I::[]))
-  = (NegOne, (Y::I::Z::Y::[])).
+  psmul (One, (p[X,X,Y,Y])) (One, (p[Z,X,X,I]))
+  = (NegOne, (p[Y,I,Z,Y])).
 Proof.
   simpl.
   reflexivity.
@@ -137,7 +156,7 @@ match p with
 end.
 
 Example pvec_interpret:
-pvec_to_matrix (X::X::Y::Y::[]) = σx ⊗ σx ⊗ σy ⊗ σy.
+pvec_to_matrix (p[X,X,Y,Y]) = σx ⊗ σx ⊗ σy ⊗ σy.
 Proof. 
   simpl.
   Qsimpl.
