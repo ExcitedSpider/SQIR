@@ -107,3 +107,13 @@ Proof.
   unfold pstr_identity.
   apply one_stb_everything; easy.
 Qed.
+
+Print Vector.
+
+(* 
+If we take the tensor product of a two states, with stabiliser groups A and B (respectively), then the resulting tensor product state has stabiliser group given by the cartesian product A × B. 
+*)
+Lemma stb_compose:
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ1 ψ2:  Vector (2^n)),
+  let cpstring := compose_pstring pstr1 pstr2 in
+  stb cpstring (ψ1 ⊗ ψ2).

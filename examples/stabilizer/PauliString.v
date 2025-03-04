@@ -705,6 +705,26 @@ Lemma pstr_inv_correct:
   easy.
 Qed.
 
+(* Definition of how to compose two PStrings *)
+
+Definition extract_scalar {n: nat} (ps : PString n) : Scalar :=
+  fst ps.
+
+Definition s_prod_of_pstrings {n: nat} {m: nat} (ps1: PString n) (ps2: PString m) : Scalar :=
+  let s1 := extract_scalar ps1 in
+  let s2 := extract_scalar ps2 in
+  s_prod s1 s2.
+
+(* Example *)
+Check s_prod_of_pstrings (One, p[X, Z]) (Iphase, p[Y, X]) = Iphase.
+
+Definition compose_pstring {n m: nat} (ps1 : PString n) (ps2 : PString m) : PString (n + m) :=
+  let s := s_prod_of_pstrings ps1 ps2 in
+  let v := (snd ps1) ++ (snd ps2) in
+  (s, v).
+
+Check compose_pstring (One, p[X, Z]) (Iphase, p[Y, X]) = (Iphase, p[ X, Z, Y, X]).
+
 End PStrGroup.
 
 (* These are some failed attempt to work on 
