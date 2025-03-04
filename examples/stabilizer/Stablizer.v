@@ -14,9 +14,12 @@ if S∣ψ⟩ = ∣ψ⟩
 Definition stb {n: nat} (pstring: PString n) (ψ: Vector (2^n))
   : Prop := (pstr_to_matrix pstring) × ψ = ψ.
 
+(* A fancy symbol for "stabilize" *)
+Notation "pstring ⊩ ψ" := (stb pstring ψ) (at level 50).
+
 (* Z stabilises ∣0⟩ *)
 Example stb_z0:
-  stb (One, p[Z]) ∣0⟩.
+  (One, p[Z]) ⊩ ∣0⟩.
 Proof.
   unfold stb.
   simpl; Qsimpl.
@@ -25,7 +28,7 @@ Qed.
 
 (* -Z stabilises ∣1⟩ *)
 Example stb_nz0:
-  stb (NegOne, Z::[]) ∣1⟩.
+  (NegOne, Z::[]) ⊩ ∣1⟩.
 Proof.
   unfold stb.
   simpl; Qsimpl.
@@ -110,20 +113,15 @@ Qed.
 
 Print Vector.
 
-Lemma trivial_stb_zero:
-  forall (pstr: PString 0) (ψ: Vector 0),
-  stb pstr ψ.
-Admitted.
-
 (* 
 If we take the tensor product of a two states, with stabiliser groups A and B (respectively), then the resulting tensor product state has stabiliser group given by the cartesian product A × B. 
 *)
 Theorem stb_compose:
   forall {n: nat} (pstr1 pstr2: PString n) (ψ1 ψ2:  Vector (2^n)),
   let cpstring := compose_pstring pstr1 pstr2 in
-  stb pstr1 ψ1 ->
-  stb pstr2 ψ2 ->
-  stb cpstring (ψ1 ⊗ ψ2).
+  pstr1 ⊩ ψ1 ->
+  pstr2 ⊩ ψ2 ->
+  cpstring ⊩ (ψ1 ⊗ ψ2).
 Proof.
   intros.
   assert (Hcomp: pstr_to_matrix (compose_pstring pstr1 pstr2) = pstr_to_matrix pstr1 ⊗ pstr_to_matrix pstr2) by apply compose_pstring_correct.
@@ -137,3 +135,27 @@ Proof.
   reflexivity.
 Qed.
   
+(* The vector space of EPR Pair can be defined by generator <XX, ZZ> *)
+Fact bell_stabilizer: 
+  (One, p[X,X]) ⊩ ∣Φ+⟩ /\ (One, p[Z,Z]) ⊩ ∣Φ+⟩.
+Proof.
+  split.
+  - unfold stb.
+    lma'.
+    simpl;Qsimpl.
+    auto with wf_db. 
+  - unfold stb.
+    lma'.
+    simpl;Qsimpl.
+    auto with wf_db.
+Qed. 
+
+Fact three_qubit_state_stabilizer:
+  (One, p[Z, Z, I]) ⊩ ∣000⟩ /\ (One, p[Z, Z, I]) ⊩ ∣000⟩.
+Proof.
+  split.
+  - unfold stb.
+    solve_matrix.
+  - unfold stb.
+    solve_matrix.
+Qed.
