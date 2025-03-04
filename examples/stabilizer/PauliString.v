@@ -725,6 +725,45 @@ Definition compose_pstring {n m: nat} (ps1 : PString n) (ps2 : PString m) : PStr
 
 Check compose_pstring (One, p[X, Z]) (Iphase, p[Y, X]) = (Iphase, p[ X, Z, Y, X]).
 
+Lemma pvec_concat_correct:
+  forall {n m: nat}  (pv1: PauliVector  n) (pv2: PauliVector  m),
+  pvec_to_matrix (pv1 ++ pv2) = pvec_to_matrix pv1 ⊗ pvec_to_matrix pv2.
+Admitted.
+
+
+Theorem compose_pstring_correct: 
+  forall {n m: nat}  (ps1: PString n) (ps2: PString m),
+  pstr_to_matrix (compose_pstring ps1 ps2) =
+  pstr_to_matrix ps1 ⊗ pstr_to_matrix ps2.
+Proof.
+  intros.
+  unfold compose_pstring.
+  induction ps1.
+  induction ps2.
+  simpl.
+  (* Search (_ ⊗ (_ .* _)). *)
+  rewrite Mscale_kron_dist_r.
+  (* Search (_ .* (_ .* _)). *)
+  Fail rewrite Mscale_assoc.
+  (* Search (_ .* _  ⊗ _). *)
+  rewrite Mscale_kron_dist_l.
+  rewrite Mscale_assoc.
+  assert (
+    Hscale: scalar_to_complex (s_prod_of_pstrings (a, b) (a0, b0)) = 
+    scalar_to_complex a0 * scalar_to_complex a
+  ).
+    {
+      unfold  s_prod_of_pstrings .
+      simpl.
+      rewrite s_prod_correct.
+      rewrite Cmult_comm.
+      reflexivity.
+    }
+  rewrite Hscale.
+  rewrite pvec_concat_correct.
+  reflexivity.
+Qed.
+
 End PStrGroup.
 
 (* These are some failed attempt to work on 

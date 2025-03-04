@@ -110,10 +110,30 @@ Qed.
 
 Print Vector.
 
+Lemma trivial_stb_zero:
+  forall (pstr: PString 0) (ψ: Vector 0),
+  stb pstr ψ.
+Admitted.
+
 (* 
 If we take the tensor product of a two states, with stabiliser groups A and B (respectively), then the resulting tensor product state has stabiliser group given by the cartesian product A × B. 
 *)
-Lemma stb_compose:
+Theorem stb_compose:
   forall {n: nat} (pstr1 pstr2: PString n) (ψ1 ψ2:  Vector (2^n)),
   let cpstring := compose_pstring pstr1 pstr2 in
+  stb pstr1 ψ1 ->
+  stb pstr2 ψ2 ->
   stb cpstring (ψ1 ⊗ ψ2).
+Proof.
+  intros.
+  assert (Hcomp: pstr_to_matrix (compose_pstring pstr1 pstr2) = pstr_to_matrix pstr1 ⊗ pstr_to_matrix pstr2) by apply compose_pstring_correct.
+  unfold stb in *.
+  unfold cpstring.
+  rewrite Hcomp.
+  restore_dims.
+  rewrite kron_mixed_product.
+  rewrite H.
+  rewrite H0.
+  reflexivity.
+Qed.
+  
