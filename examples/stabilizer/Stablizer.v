@@ -159,3 +159,37 @@ Proof.
   - unfold stb.
     solve_matrix.
 Qed.
+
+Theorem stb_group_closure: 
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  pstr1 ⊩ ψ ->
+  pstr2 ⊩ ψ ->
+  psmul pstr1 pstr2 ⊩ ψ
+.
+Proof.
+  intros.
+  unfold stb in *.
+  Search psmul.
+  remember (psmul pstr1 pstr2) as pstr_prod.
+  assert (pstr_to_matrix pstr_prod = pstr_to_matrix pstr1 × pstr_to_matrix pstr2).
+  {
+    symmetry.
+    apply psmul_implies_Mmult.
+    easy.
+  }
+  rewrite H1. 
+  rewrite Mmult_assoc.
+  rewrite H0.
+  rewrite H.
+  easy.
+Qed.
+
+
+(* TODO: Encode the idea of stabilizer generator *)
+(* TODO: Encode the idea of generators must commute each other *)
+(* 
+How to encode the idea of stabilizer group?
+There're two options
+1. Specify a state and defines a group that contains all stabilizers
+2.   
+*)
