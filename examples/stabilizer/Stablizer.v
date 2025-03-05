@@ -160,7 +160,7 @@ Proof.
     solve_matrix.
 Qed.
 
-Theorem stb_group_closure: 
+Theorem stb_closed: 
   forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
   pstr1 ⊩ ψ ->
   pstr2 ⊩ ψ ->
@@ -169,7 +169,7 @@ Theorem stb_group_closure:
 Proof.
   intros.
   unfold stb in *.
-  Search psmul.
+  (* Search psmul. *)
   remember (psmul pstr1 pstr2) as pstr_prod.
   assert (pstr_to_matrix pstr_prod = pstr_to_matrix pstr1 × pstr_to_matrix pstr2).
   {
@@ -183,6 +183,46 @@ Proof.
   rewrite H.
   easy.
 Qed.
+
+(* This is harder than expected *)
+Lemma pvec_id_interpret:
+  forall {n},
+  pvec_to_matrix (const I n) = Matrix.I (2^n).
+Proof.
+  intros.
+  induction n.
+  {
+    easy. 
+  }
+  {
+    simpl; Qsimpl. 
+    assert (Matrix.I (2 ^ n + (2 ^ n + 0)) = Matrix.I 2 ⊗ Matrix.I (2 ^ n)).
+    {
+      symmetry.
+      apply id_kron.
+    }
+    rewrite H.
+    rewrite IHn.
+    reflexivity.
+  }
+Qed.
+
+Theorem stb_by_id: 
+  forall {n: nat} (ψ:  Vector (2^n)), 
+  WF_Matrix ψ ->
+  (One, Vector.const I n) ⊩ ψ.
+Proof.
+  intros.
+  unfold stb.
+  simpl.
+  Qsimpl.
+  (* Search Matrix.I. *)
+  assert (pvec_to_matrix (const I n) = Matrix.I (2^n)) by apply pvec_id_interpret.
+  rewrite H0.
+  apply Mmult_1_l.
+  easy.
+Qed.
+
 
 
 (* TODO: Encode the idea of stabilizer generator *)
