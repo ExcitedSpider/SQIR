@@ -11,6 +11,7 @@ The stabilize relation is defined as:
 An operator S (pauli string) stabilizes a (non-zero) ψ ∣ψ⟩ 
 if S∣ψ⟩ = ∣ψ⟩ 
 *)
+(* TODO: update this to make it only works on well formed vector *)
 Definition stb {n: nat} (pstring: PString n) (ψ: Vector (2^n))
   : Prop := (pstr_to_matrix pstring) × ψ = ψ.
 
@@ -223,6 +224,32 @@ Proof.
   easy.
 Qed.
 
+(* TODO: This is apparent but actually hard to prove *)
+Lemma negate_change_state n:
+  forall (ψ:  Vector n),
+  -1 .* ψ <> ψ.
+Admitted. 
+
+(* there is no -1 in any stabilizer group *)
+Theorem stb_group_no_m1: 
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  pstr1 ⊩ ψ ->
+  pstr2 ⊩ ψ ->
+  WF_Matrix ψ ->
+  psmul pstr1 pstr2 <> (~𝟙 n).
+Proof.
+  unfold not.
+  intros.
+  assert ((~𝟙) n ⊩ ψ).
+  {
+    rewrite <- H2.
+    apply stb_closed; easy.
+  }
+  contradict H3.
+  unfold stb.
+  rewrite pstr_negate_states; try easy.
+  apply negate_change_state.
+Qed.
 
 
 (* TODO: Encode the idea of stabilizer generator *)

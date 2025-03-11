@@ -661,18 +661,81 @@ isMulBaseGroup.Build
 (* Definition sort := PauliVector n. *)
 
 
-
-
 End PnZ4Group.
 
+Definition pstr_identity (n: nat) := (One, Vector.const I n).
+Notation "𝟙" := pstr_identity (at level 40).
+
+Definition pstr_negate_phase (n: nat) := (NegOne, Vector.const I n).
+Notation "~𝟙" := pstr_negate_phase (at level 40).
+
+Lemma pstr_id_interprete n:
+  pstr_to_matrix (𝟙 n) = Matrix.I (2^n).
+Proof.
+  induction n.
+  - simpl. Qsimpl. reflexivity.  
+  - assert (pstr_to_matrix (𝟙 (S n)) = Matrix.I 2 ⊗ pstr_to_matrix (𝟙 n)).
+    {
+      simpl.
+      Qsimpl.
+      reflexivity. 
+    }
+    rewrite H.
+    rewrite IHn.
+    rewrite id_kron. (* TODO: check how robert proves this *)
+    restore_dims.
+    reflexivity.
+Qed.
+
+(* id is the eigenvector of all states *)
+Theorem pstr_identity_eigenvector n: 
+  forall (ψ: Vector (2^n)),
+  WF_Matrix ψ -> pstr_to_matrix (𝟙 n) × ψ = ψ.
+Proof.
+  intros.
+  rewrite pstr_id_interprete.
+  (* Search (Matrix.I _ × _). *)
+  apply Mmult_1_l.
+  easy.
+Qed.
+
+(* similar to pstr_id_interprete but idk how to simplify it  *)
+Lemma pstr_negate_interprete n:
+  pstr_to_matrix (~𝟙 n) = -1 .* Matrix.I (2^n).
+Proof.
+induction n.
+- simpl. Qsimpl. reflexivity.  
+- assert (pstr_to_matrix (~𝟙 (S n)) = Matrix.I 2 ⊗ pstr_to_matrix (~𝟙 n)).
+  {
+    simpl.
+    Qsimpl.
+    (* Search (_ ⊗ (_ .* _)). *)
+    rewrite Mscale_kron_dist_r.
+    reflexivity. 
+  }
+  rewrite H.
+  rewrite IHn.
+  rewrite Mscale_kron_dist_r.
+  rewrite id_kron.
+  restore_dims.
+  reflexivity.
+Qed.
+
+Search Vector WF_Matrix.
+
+Theorem pstr_negate_states n:
+  forall (ψ: Vector (2^n)),
+  WF_Matrix ψ -> pstr_to_matrix (~𝟙 n) × ψ = -1 .* ψ.
+Proof.
+  intros.
+  rewrite pstr_negate_interprete.
+  rewrite Mscale_mult_dist_l.
+  rewrite Mmult_1_l; easy.
+Qed.
 
 (* Very loose definition of pauli string group *)
 (* Refine later *)
 Section PStrGroup.
-
-(* Print psmul. *)
-
-Definition pstr_identity (n: nat) := (One, Vector.const I n).
 
 Lemma pvmul_id_correct:
 forall n (pvec: PauliVector  n), pvmul (pmul_id n) pvec = (One, pvec)
