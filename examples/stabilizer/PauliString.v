@@ -5,6 +5,8 @@ Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 From mathcomp Require Import ssrfun fingroup eqtype fintype.
 
+Locate PauliOp.
+
 Module PauliString.
 Definition PauliVector n := Vector.t PauliOp n.
 
@@ -521,6 +523,8 @@ n-qubit Pauli group but with the phases ignored. *)
 
 (* So we use @pvmul_v to define the P_n / Z_4 group*)
 
+Print pvmul_v.
+
 Variable (n:nat).
 
 Lemma pvmul_v_assoc:
@@ -600,8 +604,64 @@ Proof.
 Qed.
 
 From HB Require Import structures.
-Fail HB.instance Definition _ := 
-isMulGroup.Build (PauliVector n) pvmul_v e pninv pvmul_v_assoc pmul_v_left_id pvmul_v_id_correct.
+
+(* 
+HB: FinGroup is a factory for the following mixins:
+	- isMulBaseGroup
+  - choice.hasChoice
+  - choice.Choice_isCountable
+  - hasDecEq
+  - isFinite
+  - BaseFinGroup_isGroup
+*)
+HB.about FinGroup.
+(*
+HB: isMulBaseGroup operations and axioms are:
+	- mulg_subdef
+  - oneg_subdef
+  - invg_subdef
+  - mulgA_subproof
+  - mul1g_subproof
+  - invgK_subproof
+  - invMg_subproof
+*)
+HB.about isMulBaseGroup.
+Print mulg_subdef.
+Locate mulg_subdef.
+Locate isMulBaseGroup.
+Locate "isMulBaseGroup".
+(* 
+Check PauliVector. *)
+
+(* Fail HB.instance Definition _ := Finite.on (PauliVector n). *)
+
+
+Check pvmul_v.
+
+Check pmul_v_left_id.
+
+Check left_id. 
+
+Lemma pvmul_left_id:
+  left_id e pvmul_v.
+Admitted.
+
+(* Do not use isMulBaseGroup. this is provided by isMulGroup *)
+(* Fail HB.instance Definition isMulBaseGroup.Type _ := 
+isMulBaseGroup.Build 
+  (PauliVector n)
+  pvmul_v_assoc
+  pvmul_left_id
+  pninv_involutive
+  pvmul_v 
+  e 
+  pvmul_v_assoc 
+  pvmul_v_id_correct. *)
+
+(* Definition sort := PauliVector n. *)
+
+
+
 
 End PnZ4Group.
 
