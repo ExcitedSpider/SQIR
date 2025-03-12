@@ -285,11 +285,8 @@ Proof.
   contradiction Hcontra.
 Qed.
 
-(* TODO: Encode the idea of stabilizer generator *)
-(* TODO: Encode the idea of generators must commute each other *)
 (* 
 How to encode the idea of stabilizer group?
-There're two options
-1. Specify a state and defines a group that contains all stabilizers
-2.   
+1. use math comp. too hard to learn and what's the benefit?
+2. use custome define group in Group.v
 *)
