@@ -113,9 +113,8 @@ Definition apply_s {n: nat} (s: Scalar) (pstr: PString n): PString n :=
   let (s', pv) := pstr in
   (s_prod s s', pv).
 
-(* negation by .*-1 *)
-Definition psneg {n: nat}(pstr: PString n): PString n :=
-  apply_s NegOne pstr.
+
+
 
 (* Good !*)
 Example pauli_calc0:
@@ -177,6 +176,31 @@ Qed.
 Definition pstr_to_matrix {n: nat} (pstr: PString n): Square (2^n) :=
 let (s, pvec) := pstr in
 (scalar_to_complex s) .* (pvec_to_matrix pvec).
+
+Lemma pstr_to_matrix_WF n: 
+  forall (pstr: PString n),
+  WF_Matrix (pstr_to_matrix pstr).
+Proof.
+  intros.
+  destruct pstr.
+  simpl.
+  apply WF_scale.
+  dependent induction p.
+  {
+    simpl.
+    auto with wf_db. 
+  }
+  {
+    simpl.
+    (* Search (_ .* _ ⊗ _).  *)
+    rewrite Mscale_kron_dist_l.
+    apply WF_scale.
+    (* Search (WF_Matrix (_ ⊗ _)). *)
+    apply WF_kron; try easy.
+    destruct h; simpl; auto with wf_db. 
+  }
+Qed.
+
 
 Example pstr_interpret:
 pstr_to_matrix (NegOne, (X::X::Y::Y::[])) = -1 .* σx ⊗ σx ⊗ σy ⊗ σy.
@@ -514,7 +538,17 @@ Proof.
   reflexivity.
 Qed. 
 
+Lemma Mmult_implies_psmul:
+  forall (n:nat) (a b c: PString n),
+  (pstr_to_matrix a) × (pstr_to_matrix b) = pstr_to_matrix c ->
+  psmul a b = c.
+Proof.
+  intros.
+  (* How to do it? *)
+Admitted.
 
+
+  
 End PauliString.
 
 Export PauliString.
@@ -679,6 +713,10 @@ Notation "𝟙" := pstr_identity (at level 40).
 Definition pstr_negate_phase (n: nat) := (NegOne, Vector.const I n).
 Notation "~𝟙" := pstr_negate_phase (at level 40).
 
+(* negation by .*-1 *)
+Definition psneg {n: nat}(pstr: PString n): PString n :=
+  psmul (~𝟙 n) pstr.
+
 Lemma pstr_id_interprete n:
   pstr_to_matrix (𝟙 n) = Matrix.I (2^n).
 Proof.
@@ -731,7 +769,18 @@ induction n.
   reflexivity.
 Qed.
 
-(* Search Vector WF_Matrix. *)
+Lemma psneg_correct :
+forall {n: nat} (pstr: PString n),
+  pstr_to_matrix (psneg pstr) = -1 .* pstr_to_matrix pstr.
+Proof.
+  intros.
+  unfold psneg.
+  rewrite <- psmul_correct.
+  rewrite pstr_negate_interprete.
+  rewrite Mscale_mult_dist_l.
+  rewrite Mmult_1_l. easy.
+  apply pstr_to_matrix_WF.
+Qed.
 
 Theorem pstr_negate_states n:
   forall (ψ: Vector (2^n)),
@@ -858,6 +907,7 @@ Definition compose_pstring {n m: nat} (ps1 : PString n) (ps2 : PString m) : PStr
 
 Check compose_pstring (One, p[X, Z]) (Iphase, p[Y, X]) = (Iphase, p[ X, Z, Y, X]).
 
+(* Hard to prove due to dependent type *)
 Lemma pvec_concat_correct:
   forall {n m: nat}  (pv1: PauliVector  n) (pv2: PauliVector  m),
   pvec_to_matrix (pv1 ++ pv2) = pvec_to_matrix pv1 ⊗ pvec_to_matrix pv2.
@@ -898,6 +948,33 @@ Proof.
 Qed.
 
 End PStrGroup.
+
+Section PStringProperties.
+
+Require Import Properties.
+
+Print PString.
+
+(* Hard to make type correct due to dependent type *)
+Fail Lemma pstring_tail n: 
+  forall (pstr: PString (n + 1)),
+  exists (ptail: PString n) (ph: PauliOp),
+    let (s, pv) := ptail in
+    pstr = (s, shiftin ph pv).
+
+
+
+(* Hard to prove since the lemma pstring_tail cannot define *)
+Lemma psmul_bicommute n: 
+  bicommute (@psmul n) (@psneg n).
+Proof.
+  unfold bicommute; intros.
+  dependent induction n.
+Admitted.
+
+
+End PStringProperties.
+
 
 (* These are some failed attempt to work on 
 formalizing P_n group, which take scalars (global phase)

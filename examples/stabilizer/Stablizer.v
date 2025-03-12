@@ -253,18 +253,6 @@ Qed.
 
 Require Import Properties.
 
-(* Move to PauliString.v and prove it *)
-Lemma psneg_correct :
-  forall {n: nat} (pstr: PString n),
-  pstr_to_matrix (psneg pstr) = -1 .* pstr_to_matrix pstr.
-Admitted.
-
-(* Move to PauliString.v and prove it *)
-Lemma psmul_bicommute n: 
-  bicommute (@psmul n) (@psneg n).
-Admitted.
-
-
 Theorem stabilizer_must_commute: 
   forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
   pstr1 ⊩ ψ ->
