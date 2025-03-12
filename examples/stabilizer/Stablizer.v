@@ -224,11 +224,14 @@ Proof.
   easy.
 Qed.
 
-(* TODO: This is apparent but actually hard to prove *)
+(* 
+  TODO: This is apparent but actually hard to prove
+  As QuantumLib does not provide usable lemmas about ineq
+  *)
 Lemma negate_change_state n:
   forall (ψ:  Vector n),
   -1 .* ψ <> ψ.
-Admitted. 
+Admitted.
 
 (* there is no -1 in any stabilizer group *)
 Theorem stb_group_no_m1: 
