@@ -633,7 +633,9 @@ Locate "isMulBaseGroup".
 (* 
 Check PauliVector. *)
 
-(* Fail HB.instance Definition _ := Finite.on (PauliVector n). *)
+(* Coq cannot figure out dependent types  *)
+(* I'm going to use Mathcomp tuples *)
+Fail HB.instance Definition _ := Finite.on (PauliVector n).
 
 
 Check pvmul_v.
