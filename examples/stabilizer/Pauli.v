@@ -689,6 +689,8 @@ match p with
   | ScaledOp s0 op => ScaledOp (s_prod s s0) op
 end.
 
+Definition pneg (p: PauliTerm): PauliTerm := apply_s (NegOne) p.
+
 Definition pmul_alt (a b: PauliTerm): PauliTerm := 
 match a, b with
 | ScaledOp sa pa, ScaledOp sb pb => 
@@ -1095,24 +1097,33 @@ Proof.
   destruct s, p; easy.
 Qed.
 
-(* From HB Require Import structures.
+Section PauliProperties.
 
+From mathcomp Require Import ssrfun.
+Require Import Properties.
 
-(*
-HB: isMulGroup.Build requires its subject to be already equipped with:
-	- choice.hasChoice
-    - choice.Choice_isCountable
-    - hasDecEq
-    - isFinit
-*)
-HB.about isMulGroup.
-HB.about isFinite.
-HB.about hasDecEq.
-HB.about hasDecEq.Build.
-HB.about isFinite.Build.
+Theorem pmul_bicommute:
+  bicommute pmul pneg.
+Proof.
+  intros.
+  unfold bicommute.
+  intros a b.
+  destruct a as [sa pa];
+  destruct b as [sb pb];
+  destruct sa, sb, pa, pb;
+  simpl.
+  all: try (left; easy).
+  all: try (right; easy). 
+Qed.
 
-Fail HB.instance Definition _ := 
-isMulGroup.Build PauliTerm pmul e pinv pmul_assoc pmul_left_id pmul_left_inverse
-. *)
+Lemma op_prod_self_inverse: 
+  self_inverse I op_prod_op.
+Proof. 
+  unfold self_inverse.
+  intros.
+  destruct x; easy.
+Qed.
+  
+End PauliProperties.
 
 End Pauli.

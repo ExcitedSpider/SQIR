@@ -251,6 +251,51 @@ Proof.
   apply negate_change_state.
 Qed.
 
+Require Import Properties.
+
+(* Move to PauliString.v and prove it *)
+Lemma psneg_correct :
+  forall {n: nat} (pstr: PString n),
+  pstr_to_matrix (psneg pstr) = -1 .* pstr_to_matrix pstr.
+Admitted.
+
+(* Move to PauliString.v and prove it *)
+Lemma psmul_bicommute n: 
+  bicommute (@psmul n) (@psneg n).
+Admitted.
+
+
+Theorem stabilizer_must_commute: 
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  pstr1 ⊩ ψ ->
+  pstr2 ⊩ ψ ->
+  commute_at psmul pstr1 pstr2.
+Proof.
+  intros.
+  assert (Hbicom: bicommute (@psmul n) (@psneg n)) by apply psmul_bicommute.
+  remember (Hbicom pstr1 pstr2) as HChoice.
+  destruct HChoice as [| Hanti].
+  easy.
+  clear  HeqHChoice.
+  remember (stb_closed pstr1 pstr2 ψ H H0) as HCompose.
+  (* now let's make a contradict using HCompose  *)
+  assert (Hcontra: ψ = -1 .* ψ). {
+    unfold stb in HCompose.
+    rewrite <- HCompose at 1.
+    unfold anticommute_at in Hanti.
+    clear HeqHCompose.
+    rewrite Hanti.
+    rewrite psneg_correct.
+    rewrite Mscale_mult_dist_l.
+    replace (pstr_to_matrix (psmul pstr2 pstr1) × ψ) with ψ.
+    easy.
+    symmetry.
+    apply stb_closed; easy.
+  }
+  symmetry in Hcontra.
+  apply negate_change_state in Hcontra.
+  contradiction Hcontra.
+Qed.
 
 (* TODO: Encode the idea of stabilizer generator *)
 (* TODO: Encode the idea of generators must commute each other *)

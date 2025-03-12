@@ -109,6 +109,14 @@ Definition psmul {n: nat} (a b: PString n) : PString n :=
   let (sab, vab) := pvmul va vb in 
   ((combined_scalars sab sa sb), vab).
 
+Definition apply_s {n: nat} (s: Scalar) (pstr: PString n): PString n :=
+  let (s', pv) := pstr in
+  (s_prod s s', pv).
+
+(* negation by .*-1 *)
+Definition psneg {n: nat}(pstr: PString n): PString n :=
+  apply_s NegOne pstr.
+
 (* Good !*)
 Example pauli_calc0:
   psmul (One, (p[X,X,Y,Y])) (One, (p[Z,X,X,I]))
@@ -723,7 +731,7 @@ induction n.
   reflexivity.
 Qed.
 
-Search Vector WF_Matrix.
+(* Search Vector WF_Matrix. *)
 
 Theorem pstr_negate_states n:
   forall (ψ: Vector (2^n)),
