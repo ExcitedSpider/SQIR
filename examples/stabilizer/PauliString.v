@@ -538,15 +538,6 @@ Proof.
   reflexivity.
 Qed. 
 
-Lemma Mmult_implies_psmul:
-  forall (n:nat) (a b c: PString n),
-  (pstr_to_matrix a) × (pstr_to_matrix b) = pstr_to_matrix c ->
-  psmul a b = c.
-Proof.
-  intros.
-  (* How to do it? *)
-Admitted.
-
 
   
 End PauliString.
@@ -677,7 +668,7 @@ Check PauliVector. *)
 
 (* Coq cannot figure out dependent types  *)
 (* I'm going to use Mathcomp tuples *)
-Fail HB.instance Definition _ := Finite.on (PauliVector n).
+(* Fail HB.instance Definition _ := Finite.on (PauliVector n).
 
 
 Check pvmul_v.
@@ -688,7 +679,7 @@ Check left_id.
 
 Lemma pvmul_left_id:
   left_id e pvmul_v.
-Admitted.
+Admitted. *)
 
 (* Do not use isMulBaseGroup. this is provided by isMulGroup *)
 (* Fail HB.instance Definition isMulBaseGroup.Type _ := 
