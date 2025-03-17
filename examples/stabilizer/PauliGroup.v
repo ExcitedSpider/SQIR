@@ -92,7 +92,7 @@ Definition PauliTuple n := {tuple n of PauliOp}.
 
 (* Multiolication on Pauli Group with fixed length n *)
 Definition mult_pn {n: nat} (a b: PauliTuple n): PauliTuple n := 
-  (map (fun x => (mult_p1 x.1 x.2))) (zip a b).
+  (map_tuple (fun x => (mult_p1 x.1 x.2))) (zip_tuple a b).
 
 Definition pn_id n := [tuple of nseq n I].
 
@@ -115,7 +115,46 @@ Proof. by apply/eqP. Qed.
   forall xh xt yh yt,
   (@mult_pn n) [tuple of xh::xt] [tuple of yh::yt].  *)
 
-Lemma mult_pn_assoc n: associative (@mult_pn n). Admitted.
+Lemma trivial_tuples (p q: PauliTuple 0) : p = q.
+Proof. by rewrite (tuple0 p) (tuple0 q). Qed.
+
+(* 
+Shout out to
+https://github.com/coq-community/bits/blob/f0b274803dc93c5799bd26473c2bcea5b43139ea/src/ssrextra/tuple.v
+Thanks for their beutiful proofs for these two lemmas
+zipCons and mapCons
+*)
+Lemma zipCons {n A B} a (aa: n.-tuple A) b (bb: n.-tuple B) :
+  zip_tuple [tuple of a::aa] [tuple of b::bb] = [tuple of (a,b) :: zip_tuple aa bb].
+Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (a,b)). Qed.
+
+Lemma mapCons {n A B} (f: A -> B) b (p: n.-tuple A) :
+  map_tuple f [tuple of b :: p] = [tuple of f b :: map_tuple f p].
+Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (f b)). Qed.
+
+Lemma mult_pn_assoc n: associative (@mult_pn n). 
+Proof.
+  unfold associative.
+  induction n.
+  {
+    intros.
+    apply trivial_tuples.
+  }
+  {
+    intros.
+    (* applies view of tupleP *)
+    (* Change t: tuple n+1 to t: h::tx *)
+    case : x / tupleP => hx tx.
+    case : y / tupleP => hy ty.
+    case : z / tupleP => hz tz.
+    unfold mult_pn.
+    repeat rewrite zipCons mapCons zipCons mapCons.
+    remember (IHn tx ty tz) as IHxyz;
+      unfold mult_pn in IHxyz; rewrite IHxyz; clear HeqIHxyz IHxyz.
+    rewrite mult_p1_assoc /=.
+    reflexivity.
+  }
+Qed.
 
 Lemma mult_pn_cmpn {n: nat}:
   forall (x y: PauliTuple n.+1),
