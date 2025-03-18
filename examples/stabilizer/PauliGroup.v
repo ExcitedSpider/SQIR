@@ -60,7 +60,7 @@ Lemma mult_p1_assoc: associative mult_p1.
 Proof. 
   rewrite /associative.
   move => x y z.
-  by case: x; case: y; case: z.
+  case: x; case: y; case: z; by [].
 Qed. 
 
 
@@ -70,6 +70,8 @@ Proof.
   move => x.
   by case: x.
 Qed. 
+
+Print left_inverse.
 
 Lemma mult_p1_left_inv: left_inverse p1_id inv_p1 mult_p1.
 Proof.
@@ -95,6 +97,7 @@ Definition mult_pn {n: nat} (a b: PauliTuple n): PauliTuple n :=
   (map_tuple (fun x => (mult_p1 x.1 x.2))) (zip_tuple a b).
 
 Definition pn_id n := [tuple of nseq n I].
+(* Definition pn_id n := nseq_tuple n I. *)
 
 Definition inv_pn {n: nat} (pt: PauliTuple n): PauliTuple n := map_tuple inv_p1 pt.
 
@@ -156,43 +159,52 @@ Proof.
   }
 Qed.
 
-Lemma mult_pn_cmpn {n: nat}:
-  forall (x y: PauliTuple n.+1),
-  mult_pn x y = [tuple of (mult_p1 (thead x) (thead y)) :: (mult_pn (behead x) (behead y))].
+
+Check tupleP.
+Print tuple1_spec.
+
+Lemma pn_idP {n: nat}: 
+  pn_id n.+1 = [tuple of p1_id :: (pn_id n)].
+Proof.
+  rewrite /pn_id /p1_id /=.
+  (* 
+    both side seems the same
+    but unable to unity
+    the goal is literally
+    *)
+  Fail by []. 
 Admitted.
 
 Lemma mult_pn_id n: left_id (@pn_id n) (@mult_pn n).
 Proof. 
   unfold left_id.
   induction n.
-  - intros. 
-    rewrite tuple0. 
-    symmetry.
-    apply tuple0.
-  - simpl. 
-    intros x'.
-    rewrite mult_pn_cmpn.
-    replace (mult_p1 (thead (pn_id n.+1)) (thead x')) with (thead x'). (* A1 *)
-    replace (behead_tuple (pn_id n.+1)) with ((pn_id n)). (* A2 *)
-    rewrite IHn.
-    simpl.
-    symmetry.
-    apply tuple_eta.
-    (* A2 *)
-    { admit. (* don't know how to prove it, need to learn ssreflect*) }
-    (* A1 *)
-    { by []. }
-Admitted.
+  1: by intros; apply trivial_tuples. 
+  intros.
+  case : x / tupleP => hx tx.
+  rewrite pn_idP.
+  move: IHn.
+  rewrite /mult_pn /pn_id zipCons mapCons=> IHx.
+  have IHtx := (IHx tx).
+  by rewrite IHtx.
+Qed.
+
+
 
 Lemma mult_pn_left_inv n: left_inverse (@pn_id n) (@inv_pn n) (@mult_pn n).
 Proof.
   unfold left_inverse.
   induction n.
-  - intros x.
-    rewrite tuple0.
-    symmetry. 
-    apply tuple0.
-  - Admitted.
+  1: by intros; apply trivial_tuples.
+  move => x.
+  case : x / tupleP => hx tx.
+  rewrite /inv_pn mapCons.
+  have IHtx := (IHn tx).
+  move: IHtx.
+  rewrite /mult_pn zipCons mapCons => H.
+  by rewrite H /= mult_p1_left_inv pn_idP.
+Qed.
+
 
 Variable n:nat.
 
@@ -204,3 +216,8 @@ HB.instance Definition _ := isMulGroup.Build
 Check (@PauliTuple n): finGroupType.
 
 End PauliNGroup.
+
+Section Interpretation.
+
+End Interpretation.
+
