@@ -218,6 +218,25 @@ Check (@PauliTuple n): finGroupType.
 End PauliNGroup.
 
 Section Interpretation.
+Check foldr.
+
+Variable reducer: PauliOp -> nat -> nat. 
+
+(* it works, tuple is an instance of seq *)
+Check foldr reducer 0 [tuple].
+
+Definition index_reducer (op: PauliOp) (acc: nat): nat := 
+  acc + match op with
+  | I => 1
+  | X => 2
+  | Y => 3
+  | Z => 4
+  end.
+
+Compute foldr index_reducer 0 [::I;X;Y;Z]. (* =10) *)
+
+(* Now use foldr to build a function that
+   maps tuples to QuantumLib Matrix *)
 
 End Interpretation.
 
