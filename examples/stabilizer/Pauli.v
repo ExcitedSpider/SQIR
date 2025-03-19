@@ -1,7 +1,9 @@
 Require Export SQIR.UnitaryOps.
 Require Export QuantumLib.Matrix.
-Require Import Group.
 From mathcomp Require Import ssrfun fingroup eqtype fintype.
+
+Require Import PauliGroup.
+Import PauliGroup.PauliOneGroup.
 
 Module Pauli.
 
@@ -14,12 +16,8 @@ Module Pauli.
   But it's still valueable to have this complete formalism
 *)
 
-(* The PauliOperator *)
-Inductive PauliOp : Type :=
-| I : PauliOp
-| X : PauliOp
-| Y : PauliOp
-| Z : PauliOp.
+(* PauliOperator directly from group definition *)
+Print PauliOp.
 
 Inductive Scalar : Type :=
 | One : Scalar      (* 1 *)
@@ -54,13 +52,8 @@ match s with
 | NegIphase => - Ci 
 end.
 
-Definition op_to_matrix (p : PauliOp) : Square 2 :=
-match p with
-| I => QuantumLib.Matrix.I 2 
-| X => σx
-| Y => σy
-| Z => σz
-end.
+(* use the interpretation function in group definition *)
+Definition op_to_matrix (p : PauliOp) : Square 2 := PauliGroup.p1_int p.
 
 Definition pauli_to_matrix (p: PauliTerm): Square 2 := 
   match p with

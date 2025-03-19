@@ -2,7 +2,7 @@ From mathcomp Require Import all_ssreflect fingroup.
 From HB Require Import structures.
 Set Bullet Behavior "Strict Subproofs".
 
-Section PauliOneGroup.
+Module PauliOneGroup.
 
 Inductive PauliOp : Type :=
 | I : PauliOp
@@ -87,7 +87,8 @@ Check PauliOp: finGroupType.
 
 End PauliOneGroup.
 
-Section PauliNGroup.
+Module PauliNGroup.
+Import PauliOneGroup.
 
 (* Pauli Group with fixed length n *)
 Definition PauliTuple n := {tuple n of PauliOp}.
@@ -217,26 +218,58 @@ Check (@PauliTuple n): finGroupType.
 
 End PauliNGroup.
 
+(* 
+Interprete Pauli Groups (1-qubit and n-qubit) by Robert's QuantumLib
+*)
 Section Interpretation.
-Check foldr.
 
-Variable reducer: PauliOp -> nat -> nat. 
+Require Import QuantumLib.Quantum.
+Import PauliOneGroup.
 
-(* it works, tuple is an instance of seq *)
-Check foldr reducer 0 [tuple].
+(* 
+==========================
+interpretation of group p1 
+==========================
+*)
+Definition p1_int (p : PauliOp) : Square 2 :=
+match p with
+| I => Matrix.I 2 
+| X => Quantum.σx
+| Y => Quantum.σy
+| Z => Quantum.σz
+end.
 
-Definition index_reducer (op: PauliOp) (acc: nat): nat := 
-  acc + match op with
-  | I => 1
-  | X => 2
-  | Y => 3
-  | Z => 4
-  end.
 
-Compute foldr index_reducer 0 [::I;X;Y;Z]. (* =10) *)
+(* 
+==========================
+interpretation of group pn 
+==========================
+*)
 
-(* Now use foldr to build a function that
-   maps tuples to QuantumLib Matrix *)
+Import PauliNGroup.
+
+Check Matrix.I 1.
+
+Definition pn_reducer {m n: nat} (acc: Matrix m n) (op: PauliOp)  :=
+  acc ⊗ (p1_int op).
+
+(* Cannot Infer m and n *) 
+Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
+  (foldl pn_reducer (Matrix.I 1) p).
+
+(* It actually does not matter if the dimension is correct... *)
+Definition pn_int_alt {n:nat} (p: PauliTuple n): Square (2^n) := 
+  (foldl (@pn_reducer 2 2) (Matrix.I 1) p).
+
+Check kron_assoc.
+
+Example pn_interpret:
+pn_int_alt [X;Z;Y;I] = σx ⊗ σz ⊗ σy ⊗ Matrix.I 2.
+Proof.
+  rewrite /pn_int_alt /pn_reducer /=.
+  by Qsimpl.
+Qed.
+
 
 End Interpretation.
 

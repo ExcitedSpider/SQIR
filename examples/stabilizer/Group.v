@@ -1,6 +1,7 @@
 (*
-The group interfaces and lemmas. 
-Replace with MathComp Fingroup later
+Deprecated. 
+We now use mathcomp group.
+Do not use. 
 *)
 
 Module Group.

@@ -23,5 +23,5 @@ make stabilizer # compile this project
 ## Status
 
 - Done: The single-qubit Pauli group.
-- WIP: The n-qubit Pauli group
+- Done: The n-qubit Pauli group
 - WIP: Theorems of stabilizer theories. e.g. commute/anti-commute relations.
