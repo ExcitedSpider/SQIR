@@ -35,7 +35,7 @@ Definition inv_p1 (op: PauliOp): PauliOp := op.
 
 
 (* ID of Pauli_1 group *)
-Definition p1_id := I.
+Definition id_p1 := I.
 
 (* Already Proved Properties *)
 
@@ -64,7 +64,7 @@ Proof.
 Qed. 
 
 
-Lemma mult_p1_id: left_id p1_id mult_p1.
+Lemma mult_p1_id: left_id id_p1 mult_p1.
 Proof. 
   rewrite /left_id.
   move => x.
@@ -73,7 +73,7 @@ Qed.
 
 Print left_inverse.
 
-Lemma mult_p1_left_inv: left_inverse p1_id inv_p1 mult_p1.
+Lemma mult_p1_left_inv: left_inverse id_p1 inv_p1 mult_p1.
 Proof.
   rewrite /left_inverse.
   move => x.
@@ -165,9 +165,9 @@ Check tupleP.
 Print tuple1_spec.
 
 Lemma pn_idP {n: nat}: 
-  pn_id n.+1 = [tuple of p1_id :: (pn_id n)].
+  pn_id n.+1 = [tuple of id_p1 :: (pn_id n)].
 Proof.
-  rewrite /pn_id /p1_id /=.
+  rewrite /pn_id /id_p1 /=.
   (* 
     both side seems the same
     but unable to unity
@@ -218,6 +218,166 @@ Check (@PauliTuple n): finGroupType.
 
 End PauliNGroup.
 
+(* P1 Group with phase  *)
+Module P1ScaleGroup.
+
+Import PauliOneGroup.
+
+Inductive scalar : Type :=
+| One : scalar   (* 1 *)
+| Img : scalar   (* i *)
+| NOne : scalar  (* -1 *)
+| NImg : scalar. (* -i *)
+
+(* for "Generalized Pauli Operator" *)
+(* Definition GenPauliOp := (Scalar, PauliOp). *)
+
+Definition decode_scalar (n: 'I_4) : scalar := nth One [:: One;Img;NOne;NImg] (nat_of_ord n).
+Definition encode_scalar (e: scalar) : 'I_4 :=
+  match e with
+  | One => Ordinal (n:=4) (m:=0) is_true_true
+  | Img => Ordinal (n:=4) (m:=1) is_true_true
+  | NOne => Ordinal (n:=4) (m:=2) is_true_true
+  | NImg => Ordinal (n:=4) (m:=3) is_true_true
+  end.
+
+Lemma code_decode_scalar : cancel encode_scalar decode_scalar.
+Proof.
+  by case.
+Qed.
+
+HB.instance Definition _ := 
+  Equality.copy scalar (can_type code_decode_scalar).
+HB.instance Definition _ := Finite.copy scalar (can_type code_decode_scalar).
+
+
+Definition mult_scalar (a b : scalar) : scalar :=
+  match a, b with
+  | One, x => x
+  | x, One => x
+  | Img, Img => NOne
+  | Img, NOne => NImg
+  | Img, NImg => One
+  | NOne, Img => NImg
+  | NOne, NOne => One
+  | NOne, NImg => Img
+  | NImg, Img => One
+  | NImg, NOne => Img
+  | NImg, NImg => NOne
+  end.
+
+(* - prove scalars form a group *)
+
+
+Definition inv_scalar (sc: scalar): scalar := 
+match sc with
+| One => One
+| Img => NImg
+| NOne => NOne
+| NImg => Img 
+end.
+
+Definition id_scalar := One.
+
+Lemma mult_scalar_assoc: associative mult_scalar.
+Proof.
+  rewrite /associative => x y z.
+  by case x; case y; case z.
+Qed.
+  
+Lemma mult_scalar_id: left_id id_scalar mult_scalar.
+Proof.
+  rewrite /left_id => x.
+  by case x.
+Qed.
+
+Lemma mult_scalar_left_inv: left_inverse id_scalar inv_scalar mult_scalar.
+Proof.
+  rewrite /left_inverse => x.
+  by case x.
+Qed.
+
+HB.instance Definition _ := isMulGroup.Build scalar
+  mult_scalar_assoc mult_scalar_id mult_scalar_left_inv.
+
+(* Define Generalized Pauli Operator as *)
+(* Cartisian Product of scalar and PauliOp *)
+Check scalar: finType.
+Check PauliOp: finType.
+Definition scalarSet := [set: scalar].
+
+Goal One \in scalarSet.
+by rewrite in_set. Qed.
+
+Check prod.
+Locate prod.
+
+(* for "Generalized Pauli Operator" *)
+Definition GenPauliOp := prod scalar PauliOp.
+
+(* Mathcomp has provided finType structure for prod *)
+(* which you can find by *) 
+Search "fin" "prod".
+Check Datatypes_prod__canonical__fintype_Finite.
+
+Check GenPauliOp: finType.
+
+(* We can also define product set *) 
+Definition GenPauliOpSet := setX [set: scalar] [set: PauliOp].
+
+Lemma setx_correct: forall (gop: GenPauliOp),
+  gop \in GenPauliOpSet.
+Proof.
+  move => gop.
+  case gop => *.
+  by apply /setXP.
+Qed.
+
+Definition mult_p1g (a b: GenPauliOp): GenPauliOp := 
+  match (a, b) with
+  | (pair sa pa, pair sb pb) => (mult_scalar sa sb, mult_p1 pa pb) 
+  end. 
+
+Definition inv_p1g (a: GenPauliOp): GenPauliOp := 
+  match a with
+  | pair s p => (inv_scalar s, inv_p1 p)
+  end.
+
+Definition id_p1g := (id_scalar, id_p1).
+
+Lemma mult_p1g_assoc:
+  associative mult_p1g.
+Proof.
+  rewrite /associative => x y z.
+  case x => sx px.
+  case y => sy py.
+  case z => sz pz.
+  rewrite /mult_p1g /=.
+  by rewrite mult_scalar_assoc mult_p1_assoc.
+Qed.
+
+Lemma mult_p1g_id:
+  left_id id_p1g mult_p1g.
+Proof.
+  rewrite /left_id => x.
+  case x => s p.
+  by rewrite /mult_p1g /=.
+Qed.
+
+Lemma mult_p1g_left_inv:
+  left_inverse id_p1g inv_p1g mult_p1g.
+Proof.
+  rewrite /left_inverse /id_p1g /inv_p1g /mult_p1g => x.
+  case x => s p.
+  by rewrite mult_scalar_left_inv mult_p1_left_inv.
+Qed.
+
+HB.instance Definition _ := Finite.on GenPauliOp.
+HB.instance Definition _ := isMulGroup.Build GenPauliOp
+  mult_p1g_assoc mult_p1g_id mult_p1g_left_inv.
+
+End P1ScaleGroup.
+
 (* 
 Interprete Pauli Groups (1-qubit and n-qubit) by Robert's QuantumLib
 *)
@@ -238,6 +398,28 @@ match p with
 | Y => Quantum.σy
 | Z => Quantum.σz
 end.
+
+
+(* 
+==========================
+interpretation of group p1g 
+==========================
+*)
+
+Import P1ScaleGroup.
+
+Definition scalar_int (s: scalar): C := 
+  match s with
+  | One => C1
+  | NOne => -C1
+  | Img => Ci
+  | NImg => - Ci
+  end.
+
+Definition p1g_int(p: GenPauliOp): Square 2 :=
+  match p with
+  | pair s p => (scalar_int s) .* (p1_int p)
+  end.
 
 
 (* 
