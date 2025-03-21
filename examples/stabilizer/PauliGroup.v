@@ -97,8 +97,8 @@ Definition PauliTuple n := {tuple n of PauliOp}.
 Definition mult_pn {n: nat} (a b: PauliTuple n): PauliTuple n := 
   (map_tuple (fun x => (mult_p1 x.1 x.2))) (zip_tuple a b).
 
-Definition pn_id n := [tuple of nseq n I].
-(* Definition pn_id n := nseq_tuple n I. *)
+Definition id_pn n := [tuple of nseq n I].
+(* Definition id_pn n := nseq_tuple n I. *)
 
 Definition inv_pn {n: nat} (pt: PauliTuple n): PauliTuple n := map_tuple inv_p1 pt.
 
@@ -165,9 +165,9 @@ Check tupleP.
 Print tuple1_spec.
 
 Lemma pn_idP {n: nat}: 
-  pn_id n.+1 = [tuple of id_p1 :: (pn_id n)].
+  id_pn n.+1 = [tuple of id_p1 :: (id_pn n)].
 Proof.
-  rewrite /pn_id /id_p1 /=.
+  rewrite /id_pn /id_p1 /=.
   (* 
     both side seems the same
     but unable to unity
@@ -176,7 +176,7 @@ Proof.
   Fail by []. 
 Admitted.
 
-Lemma mult_pn_id n: left_id (@pn_id n) (@mult_pn n).
+Lemma mult_pn_id n: left_id (@id_pn n) (@mult_pn n).
 Proof. 
   unfold left_id.
   induction n.
@@ -185,14 +185,14 @@ Proof.
   case : x / tupleP => hx tx.
   rewrite pn_idP.
   move: IHn.
-  rewrite /mult_pn /pn_id zipCons mapCons=> IHx.
+  rewrite /mult_pn /id_pn zipCons mapCons=> IHx.
   have IHtx := (IHx tx).
   by rewrite IHtx.
 Qed.
 
 
 
-Lemma mult_pn_left_inv n: left_inverse (@pn_id n) (@inv_pn n) (@mult_pn n).
+Lemma mult_pn_left_inv n: left_inverse (@id_pn n) (@inv_pn n) (@mult_pn n).
 Proof.
   unfold left_inverse.
   induction n.
@@ -219,7 +219,7 @@ Check (@PauliTuple n): finGroupType.
 End PauliNGroup.
 
 (* P1 Group with phase  *)
-Module P1ScaleGroup.
+Module P1PhaseGroup.
 
 Import PauliOneGroup.
 
@@ -407,7 +407,153 @@ HB.instance Definition _ := Finite.on GenPauliOp.
 HB.instance Definition _ := isMulGroup.Build GenPauliOp
   mult_p1g_assoc mult_p1g_id mult_p1g_left_inv.
 
-End P1ScaleGroup.
+End P1PhaseGroup.
+
+Module PnPhaseGroup.
+
+Import P1PhaseGroup.
+Import PauliNGroup.
+Import PauliOneGroup.
+
+Definition get_phase_pn {n: nat} (a b: PauliTuple n): phase := 
+  foldl mult_phase One (
+    map (fun item => get_phase item.1 item.2)  (zip_tuple a b)
+  ).  
+
+(* -1 *)
+Compute get_phase_pn [tuple X;X;Y;Y] [tuple I;I;X;X].
+
+Definition GenPauliTuple (n: nat) := prod phase (PauliTuple n).
+
+Definition mult_png {n: nat} (a b: GenPauliTuple n): GenPauliTuple n :=
+  match (a, b) with
+  | (pair sa pa, pair sb pb) => (
+      mult_phase (get_phase_pn pa pb) (mult_phase sa sb), 
+      mult_pn pa pb
+    ) 
+  end.
+
+Definition inv_png {n}( a: GenPauliTuple n): GenPauliTuple n := 
+  match a with
+  | pair s p => (inv_phase s, inv_pn p)
+  end.
+
+Definition id_p1g := (id_phase, id_pn).
+
+Lemma mult_phase_inj: 
+  forall a b x y,
+  a = x ->
+  b = y ->
+  mult_phase a b = mult_phase x y.
+Proof.
+  move => *.
+  by subst.
+Qed.
+
+(* Questionable? *)
+(* Lemma mult_phase_pn_assoc n: *)
+(*   forall (x y z: PauliTuple n), *)
+(*   get_phase_pn x (mult_pn y z) = *) 
+(*   get_phase_pn (mult_pn x y) z. *)
+(* Admitted. *)
+
+(* mult_phase (mult_phase ip sx) (get_phase_pn py pz) = *)
+(* mult_phase (mult_phase ip (get_phase_pn px py)) sx *)
+
+Lemma mult_phase_comm:
+  commutative mult_phase.
+Proof.
+  rewrite /commutative => x y.
+  by case x, y.
+Qed.
+
+
+(* foldl mult_phase (get_phase hx hy) *)
+(*   [seq get_phase item.1 item.2 | item <- zip tx ty] = *)
+(* foldl mult_phase (get_phase hy hx) *)
+(*   [seq get_phase item.1 item.2 | item <- zip ty tx] *)
+
+
+Lemma get_phase_pn_1 {n}:
+  forall (x y: PauliTuple n) (hx hy: PauliOp),
+  get_phase_pn [tuple of hx::x] [tuple of hy::y] = 
+  mult_phase (get_phase hx hy) (get_phase_pn x y).
+Admitted.
+
+
+
+(* Lemma get_phase_comm: *)
+(*   commutative get_phase. *)
+(* Proof. *)
+(*   rewrite /commutative. *)
+(*   move => x y. *)
+(*   case x; case y. *)
+(*   all: rewrite /=. *)
+
+
+(* Lemma get_phase_pn_comm {n}: *)
+(*   commutative (@get_phase_pn n). *)
+(* Proof. *)
+(*   rewrite /commutative  => x y. *)
+(*   induction n. *)
+(*   by rewrite (tuple0 x) (tuple0 y) /=. *)
+(*   case : x / tupleP => hx tx. *)
+(*   case : y / tupleP => hy ty. *) 
+(*   rewrite ?get_phase_pn_1 /=. *)
+(*   rewrite get_phase_comm IHn. *)
+(*   (1* non-trivial to prove *1) *)  
+(*   (1* attempt this later *1) *)
+(* Admitted. *)
+
+Check zipCons.
+Print mult_pn.
+
+Lemma mult_pn_cons n:
+  forall (tx ty: PauliTuple n) (hx hy: PauliOp),
+  mult_pn [tuple of hx::tx] [tuple of hy::ty] = 
+  [tuple of mult_p1 hx hy :: mult_pn tx ty].
+Admitted.
+
+
+Lemma mult_png_phase_assoc n:
+  forall (x y z: PauliTuple n),
+  mult_phase (get_phase_pn x (mult_pn y z)) (get_phase_pn y z) =
+  mult_phase (get_phase_pn (mult_pn x y) z) (get_phase_pn x y).
+Proof.
+  move => x y z.
+  induction n.
+  by rewrite (tuple0 x) (tuple0 y) (tuple0 z).
+  case : x / tupleP => hx tx.
+  case : y / tupleP => hy ty. 
+  case : z / tupleP => hz tz. 
+  rewrite ?mult_pn_cons.
+  (* Get a similar lemma like `get_phase_pn_cons` *)
+Admitted. 
+
+Lemma mult_png_assoc n: 
+  associative (@mult_png n).
+Proof.
+  rewrite /associative /mult_png => x y z.
+  case x => sx px.
+  case y => sy py.
+  case z => sz pz.
+  f_equal.
+  2: by rewrite mult_pn_assoc.
+  rewrite ?mult_phase_assoc ?mult_pn_assoc.
+  rewrite /=.
+  apply mult_phase_inj. 2: by [].
+  apply mult_phase_inj. 2: by [].
+  (* Here we do very controlled rewrite *)
+  rewrite (mult_phase_comm  (get_phase_pn px (mult_pn py pz)) sx).
+  (* rewrite (get_phase_pn_comm (mult_pn px py) pz). *)
+  rewrite -mult_phase_assoc.
+  rewrite mult_phase_comm.
+  apply mult_phase_inj. 2: by [].
+  by rewrite mult_png_phase_assoc.
+Qed.
+
+
+End PnPhaseGroup.
 
 (* 
 Interprete Pauli Groups (1-qubit and n-qubit) by Robert's QuantumLib
@@ -437,7 +583,7 @@ interpretation of group p1g
 ==========================
 *)
 
-Import P1ScaleGroup.
+Import P1PhaseGroup.
 
 Definition phase_int (s: phase): C := 
   match s with
