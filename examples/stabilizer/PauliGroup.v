@@ -223,17 +223,14 @@ Module P1ScaleGroup.
 
 Import PauliOneGroup.
 
-Inductive scalar : Type :=
-| One : scalar   (* 1 *)
-| Img : scalar   (* i *)
-| NOne : scalar  (* -1 *)
-| NImg : scalar. (* -i *)
+Inductive phase : Type :=
+| One : phase   (* 1 *)
+| Img : phase   (* i *)
+| NOne : phase  (* -1 *)
+| NImg : phase. (* -i *)
 
-(* for "Generalized Pauli Operator" *)
-(* Definition GenPauliOp := (Scalar, PauliOp). *)
-
-Definition decode_scalar (n: 'I_4) : scalar := nth One [:: One;Img;NOne;NImg] (nat_of_ord n).
-Definition encode_scalar (e: scalar) : 'I_4 :=
+Definition decode_phase (n: 'I_4) : phase := nth One [:: One;Img;NOne;NImg] (nat_of_ord n).
+Definition encode_phase (e: phase) : 'I_4 :=
   match e with
   | One => Ordinal (n:=4) (m:=0) is_true_true
   | Img => Ordinal (n:=4) (m:=1) is_true_true
@@ -241,17 +238,17 @@ Definition encode_scalar (e: scalar) : 'I_4 :=
   | NImg => Ordinal (n:=4) (m:=3) is_true_true
   end.
 
-Lemma code_decode_scalar : cancel encode_scalar decode_scalar.
+Lemma code_decode_phase : cancel encode_phase decode_phase.
 Proof.
   by case.
 Qed.
 
 HB.instance Definition _ := 
-  Equality.copy scalar (can_type code_decode_scalar).
-HB.instance Definition _ := Finite.copy scalar (can_type code_decode_scalar).
+  Equality.copy phase (can_type code_decode_phase).
+HB.instance Definition _ := Finite.copy phase (can_type code_decode_phase).
 
 
-Definition mult_scalar (a b : scalar) : scalar :=
+Definition mult_phase (a b : phase) : phase :=
   match a, b with
   | One, x => x
   | x, One => x
@@ -266,10 +263,10 @@ Definition mult_scalar (a b : scalar) : scalar :=
   | NImg, NImg => NOne
   end.
 
-(* - prove scalars form a group *)
+(* - prove phases form a group *)
 
 
-Definition inv_scalar (sc: scalar): scalar := 
+Definition inv_phase (sc: phase): phase := 
 match sc with
 | One => One
 | Img => NImg
@@ -277,43 +274,43 @@ match sc with
 | NImg => Img 
 end.
 
-Definition id_scalar := One.
+Definition id_phase := One.
 
-Lemma mult_scalar_assoc: associative mult_scalar.
+Lemma mult_phase_assoc: associative mult_phase.
 Proof.
   rewrite /associative => x y z.
   by case x; case y; case z.
 Qed.
   
-Lemma mult_scalar_id: left_id id_scalar mult_scalar.
+Lemma mult_phase_id: left_id id_phase mult_phase.
 Proof.
   rewrite /left_id => x.
   by case x.
 Qed.
 
-Lemma mult_scalar_left_inv: left_inverse id_scalar inv_scalar mult_scalar.
+Lemma mult_phase_left_inv: left_inverse id_phase inv_phase mult_phase.
 Proof.
   rewrite /left_inverse => x.
   by case x.
 Qed.
 
-HB.instance Definition _ := isMulGroup.Build scalar
-  mult_scalar_assoc mult_scalar_id mult_scalar_left_inv.
+HB.instance Definition _ := isMulGroup.Build phase
+  mult_phase_assoc mult_phase_id mult_phase_left_inv.
 
 (* Define Generalized Pauli Operator as *)
-(* Cartisian Product of scalar and PauliOp *)
-Check scalar: finType.
+(* Cartisian Product of phase and PauliOp *)
+Check phase: finType.
 Check PauliOp: finType.
-Definition scalarSet := [set: scalar].
+Definition phaseSet := [set: phase].
 
-Goal One \in scalarSet.
+Goal One \in phaseSet.
 by rewrite in_set. Qed.
 
 Check prod.
 Locate prod.
 
 (* for "Generalized Pauli Operator" *)
-Definition GenPauliOp := prod scalar PauliOp.
+Definition GenPauliOp := prod phase PauliOp.
 
 (* Mathcomp has provided finType structure for prod *)
 (* which you can find by *) 
@@ -323,7 +320,7 @@ Check Datatypes_prod__canonical__fintype_Finite.
 Check GenPauliOp: finType.
 
 (* We can also define product set *) 
-Definition GenPauliOpSet := setX [set: scalar] [set: PauliOp].
+Definition GenPauliOpSet := setX [set: phase] [set: PauliOp].
 
 Lemma setx_correct: forall (gop: GenPauliOp),
   gop \in GenPauliOpSet.
@@ -333,17 +330,43 @@ Proof.
   by apply /setXP.
 Qed.
 
+Definition get_phase(a b: PauliOp): phase :=
+  match a, b with  
+  | I, p => One
+  | p, I => One
+  | X, X => One
+  | Y, Y => One 
+  | Z, Z => One
+
+  | X, Y => Img
+  | Z, X => Img
+  | Y, Z => Img
+
+  | Z, Y => NImg
+  | Y, X => NImg
+  | X, Z => NImg
+  end.
+
 Definition mult_p1g (a b: GenPauliOp): GenPauliOp := 
   match (a, b) with
-  | (pair sa pa, pair sb pb) => (mult_scalar sa sb, mult_p1 pa pb) 
+  | (pair sa pa, pair sb pb) => (
+      mult_phase (get_phase pa pb) (mult_phase sa sb), 
+      mult_p1 pa pb
+    ) 
   end. 
 
 Definition inv_p1g (a: GenPauliOp): GenPauliOp := 
   match a with
-  | pair s p => (inv_scalar s, inv_p1 p)
+  | pair s p => (inv_phase s, inv_p1 p)
   end.
 
-Definition id_p1g := (id_scalar, id_p1).
+Definition id_p1g := (id_phase, id_p1).
+
+(* Lemma mult_p1_phase_assoc: *) 
+(*   associative mult_p1_phase. *)
+
+(* get_phase px (mult_p1 py pz) = *)
+(* get_phase (mult_p1 px py) pz *)
 
 Lemma mult_p1g_assoc:
   associative mult_p1g.
@@ -353,7 +376,13 @@ Proof.
   case y => sy py.
   case z => sz pz.
   rewrite /mult_p1g /=.
-  by rewrite mult_scalar_assoc mult_p1_assoc.
+  repeat rewrite mult_phase_assoc mult_p1_assoc.
+  apply injective_projections; rewrite /=.
+  2: by []. 
+  (* we first handle a few cases that can be solved without fully unfold *)
+  case px, py, pz; try by rewrite /= mult_phase_assoc. 
+  (* Then we do brute-force *)
+  all: try by case sx, sy, sz.
 Qed.
 
 Lemma mult_p1g_id:
@@ -369,7 +398,9 @@ Lemma mult_p1g_left_inv:
 Proof.
   rewrite /left_inverse /id_p1g /inv_p1g /mult_p1g => x.
   case x => s p.
-  by rewrite mult_scalar_left_inv mult_p1_left_inv.
+  rewrite mult_phase_left_inv mult_p1_left_inv.
+  case p;
+  by rewrite /=.
 Qed.
 
 HB.instance Definition _ := Finite.on GenPauliOp.
@@ -408,7 +439,7 @@ interpretation of group p1g
 
 Import P1ScaleGroup.
 
-Definition scalar_int (s: scalar): C := 
+Definition phase_int (s: phase): C := 
   match s with
   | One => C1
   | NOne => -C1
@@ -418,7 +449,7 @@ Definition scalar_int (s: scalar): C :=
 
 Definition p1g_int(p: GenPauliOp): Square 2 :=
   match p with
-  | pair s p => (scalar_int s) .* (p1_int p)
+  | pair s p => (phase_int s) .* (p1_int p)
   end.
 
 
