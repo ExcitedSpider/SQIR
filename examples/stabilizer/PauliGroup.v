@@ -130,7 +130,12 @@ zipCons and mapCons
 *)
 Lemma zipCons {n A B} a (aa: n.-tuple A) b (bb: n.-tuple B) :
   zip_tuple [tuple of a::aa] [tuple of b::bb] = [tuple of (a,b) :: zip_tuple aa bb].
-Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (a,b)). Qed.
+(* Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (a,b)). Qed. *)
+Proof.
+    apply: eq_from_tnth => i.
+    rewrite (tnth_nth (a, b)) /=.
+    by rewrite (tnth_nth (a, b)) /=.
+Qed.
 
 Lemma mapCons {n A B} (f: A -> B) b (p: n.-tuple A) :
   map_tuple f [tuple of b :: p] = [tuple of f b :: map_tuple f p].
@@ -425,13 +430,20 @@ Compute get_phase_pn [tuple X;X;Y;Y] [tuple I;I;X;X].
 
 Definition GenPauliTuple (n: nat) := prod phase (PauliTuple n).
 
+Definition get_phase_png {n: nat} (a b: GenPauliTuple n): phase :=
+  match (a, b) with
+  | (pair sa pa, pair sb pb) => (
+      mult_phase (get_phase_pn pa pb) (mult_phase sa sb)
+    )
+  end.
+
 Definition mult_png {n: nat} (a b: GenPauliTuple n): GenPauliTuple n :=
   match (a, b) with
   | (pair sa pa, pair sb pb) => (
-      mult_phase (get_phase_pn pa pb) (mult_phase sa sb), 
+      get_phase_png a b,
       mult_pn pa pb
     ) 
-  end.
+end.
 
 Definition inv_png {n}( a: GenPauliTuple n): GenPauliTuple n := 
   match a with
@@ -450,85 +462,83 @@ Proof.
   by subst.
 Qed.
 
-(* Questionable? *)
-(* Lemma mult_phase_pn_assoc n: *)
-(*   forall (x y z: PauliTuple n), *)
-(*   get_phase_pn x (mult_pn y z) = *) 
-(*   get_phase_pn (mult_pn x y) z. *)
-(* Admitted. *)
-
-(* mult_phase (mult_phase ip sx) (get_phase_pn py pz) = *)
-(* mult_phase (mult_phase ip (get_phase_pn px py)) sx *)
-
-Lemma mult_phase_comm:
-  commutative mult_phase.
-Proof.
-  rewrite /commutative => x y.
-  by case x, y.
-Qed.
-
-
-(* foldl mult_phase (get_phase hx hy) *)
-(*   [seq get_phase item.1 item.2 | item <- zip tx ty] = *)
-(* foldl mult_phase (get_phase hy hx) *)
-(*   [seq get_phase item.1 item.2 | item <- zip ty tx] *)
-
-
-Lemma get_phase_pn_1 {n}:
-  forall (x y: PauliTuple n) (hx hy: PauliOp),
-  get_phase_pn [tuple of hx::x] [tuple of hy::y] = 
-  mult_phase (get_phase hx hy) (get_phase_pn x y).
-Admitted.
-
-
-
-(* Lemma get_phase_comm: *)
-(*   commutative get_phase. *)
-(* Proof. *)
-(*   rewrite /commutative. *)
-(*   move => x y. *)
-(*   case x; case y. *)
-(*   all: rewrite /=. *)
-
-
-(* Lemma get_phase_pn_comm {n}: *)
-(*   commutative (@get_phase_pn n). *)
-(* Proof. *)
-(*   rewrite /commutative  => x y. *)
-(*   induction n. *)
-(*   by rewrite (tuple0 x) (tuple0 y) /=. *)
-(*   case : x / tupleP => hx tx. *)
-(*   case : y / tupleP => hy ty. *) 
-(*   rewrite ?get_phase_pn_1 /=. *)
-(*   rewrite get_phase_comm IHn. *)
-(*   (1* non-trivial to prove *1) *)  
-(*   (1* attempt this later *1) *)
-(* Admitted. *)
-
-Check zipCons.
 Print mult_pn.
 
 Lemma mult_pn_cons n:
-  forall (tx ty: PauliTuple n) (hx hy: PauliOp),
-  mult_pn [tuple of hx::tx] [tuple of hy::ty] = 
-  [tuple of mult_p1 hx hy :: mult_pn tx ty].
+  forall (hx hy: PauliOp) (tx ty: PauliTuple n),
+    mult_pn [tuple of hx :: tx] [tuple of hy :: ty] = 
+    [tuple of mult_p1 hx hy :: mult_pn tx ty]
+    .
+Admitted.
+
+Lemma mult_phase_comm:
+  commutative mult_phase.
+Admitted.
+
+(* Print get_phase_png. *)
+(* get_phase_pn [tuple of mult_p1 hx hy :: mult_pn tx ty] [tuple of hz :: tz] *)
+Lemma get_phase_pn_cons n:
+  forall (hx hy: PauliOp) (tx ty: PauliTuple n),
+  get_phase_pn [tuple of hx :: tx] [tuple of hy :: ty] = 
+  mult_phase (get_phase hx hy) (get_phase_pn tx ty).
+Proof.
+  intros.
+  rewrite /get_phase_pn  /=.
+  Search foldl.
+  Search foldr.
+  rewrite eq_from_tnth.
+
+  rewrite zipCons /=.
+  Search foldl .
+
+
+
+
+Lemma get_phase_png_assoc n:
+  forall (a b c: GenPauliTuple n),
+  get_phase_png (get_phase_png a b, mult_pn a.2 b.2) c = 
+  get_phase_png a (get_phase_png b c, mult_pn b.2 c.2)
+  .
+Proof.
+  induction n.
+  - move => [sx px] [sy py] [sz pz].
+    rewrite (tuple0 px) (tuple0 py) (tuple0 pz) /=.
+    rewrite /get_phase_png /=.
+    by rewrite mult_phase_assoc.
+  - move => [sx px] [sy py] [sz pz] /=.
+    case : px / tupleP => hx tx.
+    case : py / tupleP => hy ty.
+    case : pz / tupleP => hz tz.
+    move:  (IHn (sx, tx) (sy, ty) (sz, tz)) => IHn0.
+    clear IHn.
+    rewrite ?mult_pn_cons /get_phase_png ?get_phase_pn_cons.
+    rewrite /get_phase_png /= in IHn0.
+    (* case hx, hy, hz. *) 
+    (* all: try by rewrite IHn0. *)
+    rewrite -?mult_phase_assoc.  
+    remember 
+      (get_phase_pn (mult_pn tx ty) tz) as pt.
+    rewrite (mult_phase_comm  pt).
+    rewrite mult_phase_assoc.
+    rewrite mult_phase_assoc.
+    remember 
+      ((mult_phase (get_phase (mult_p1 hx hy) hz) (get_phase hx hy))) as const.
+    rewrite -mult_phase_assoc.
+    rewrite (mult_phase_comm _ pt).
+    have: (
+    (mult_phase pt
+     (mult_phase (get_phase_pn tx ty) (mult_phase sx (mult_phase sy sz))))
+    = 
+    (mult_phase pt
+     (mult_phase (mult_phase (get_phase_pn tx ty) (mult_phase sx sy)) sz)
+    )).
+    by rewrite ?mult_phase_assoc.
+    move => H0.
+    rewrite H0 IHn0.
+(* Too Tedious to continue *)
 Admitted.
 
 
-Lemma mult_png_phase_assoc n:
-  forall (x y z: PauliTuple n),
-  mult_phase (get_phase_pn x (mult_pn y z)) (get_phase_pn y z) =
-  mult_phase (get_phase_pn (mult_pn x y) z) (get_phase_pn x y).
-Proof.
-  move => x y z.
-  induction n.
-  by rewrite (tuple0 x) (tuple0 y) (tuple0 z).
-  case : x / tupleP => hx tx.
-  case : y / tupleP => hy ty. 
-  case : z / tupleP => hz tz. 
-  rewrite ?mult_pn_cons.
-  (* Get a similar lemma like `get_phase_pn_cons` *)
-Admitted. 
 
 Lemma mult_png_assoc n: 
   associative (@mult_png n).
@@ -539,19 +549,8 @@ Proof.
   case z => sz pz.
   f_equal.
   2: by rewrite mult_pn_assoc.
-  rewrite ?mult_phase_assoc ?mult_pn_assoc.
-  rewrite /=.
-  apply mult_phase_inj. 2: by [].
-  apply mult_phase_inj. 2: by [].
-  (* Here we do very controlled rewrite *)
-  rewrite (mult_phase_comm  (get_phase_pn px (mult_pn py pz)) sx).
-  (* rewrite (get_phase_pn_comm (mult_pn px py) pz). *)
-  rewrite -mult_phase_assoc.
-  rewrite mult_phase_comm.
-  apply mult_phase_inj. 2: by [].
-  by rewrite mult_png_phase_assoc.
+  by rewrite ?get_phase_png_assoc.
 Qed.
-
 
 End PnPhaseGroup.
 
