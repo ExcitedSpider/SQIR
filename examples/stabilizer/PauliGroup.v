@@ -469,14 +469,18 @@ Lemma mult_pn_cons n:
     mult_pn [tuple of hx :: tx] [tuple of hy :: ty] = 
     [tuple of mult_p1 hx hy :: mult_pn tx ty]
     .
-Admitted.
+Proof.
+  rewrite /mult_pn => hx hy tx ty.
+  by rewrite zipCons mapCons.
+Qed.
 
 Lemma mult_phase_comm:
   commutative mult_phase.
-Admitted.
+Proof.
+  rewrite /commutative => x y.
+  by case x, y.
+Qed.
 
-(* Print get_phase_png. *)
-(* get_phase_pn [tuple of mult_p1 hx hy :: mult_pn tx ty] [tuple of hz :: tz] *)
 Lemma get_phase_pn_cons n:
   forall (hx hy: PauliOp) (tx ty: PauliTuple n),
   get_phase_pn [tuple of hx :: tx] [tuple of hy :: ty] = 
@@ -484,13 +488,15 @@ Lemma get_phase_pn_cons n:
 Proof.
   intros.
   rewrite /get_phase_pn  /=.
+  rewrite mult_phase_comm.
   Search foldl.
-  Search foldr.
-  rewrite eq_from_tnth.
-
-  rewrite zipCons /=.
-  Search foldl .
-
+  rewrite -foldl_rcons /=.
+  symmetry.
+  rewrite (foldl_foldr mult_phase_assoc mult_phase_comm).
+  rewrite foldr_rcons mult_phase_comm.
+  rewrite mult_phase_id.
+  by rewrite (foldl_foldr mult_phase_assoc mult_phase_comm).
+Qed.  
 
 
 
@@ -536,8 +542,8 @@ Proof.
     move => H0.
     rewrite H0 IHn0.
 (* Too Tedious to continue *)
+(* Need to construct some autowrite mechanism *) 
 Admitted.
-
 
 
 Lemma mult_png_assoc n: 
@@ -550,6 +556,33 @@ Proof.
   f_equal.
   2: by rewrite mult_pn_assoc.
   by rewrite ?get_phase_png_assoc.
+Qed.
+
+Lemma get_phase_pn_id n:
+  forall v,
+  get_phase_pn (id_pn n) v = One.
+Proof.
+  move => v.
+  induction n.
+  by rewrite tuple0 (tuple0 v).
+  case : v / tupleP => hv tv.
+  rewrite pn_idP /get_phase_pn /=.
+  rewrite /id_pn /get_phase_pn in IHn.
+  by rewrite IHn.
+Qed.
+
+Definition id_png (n:nat) := 
+  (One, id_pn n).
+
+Lemma mult_png_id n:
+  left_id (id_png n) (@mult_png n).
+Proof.
+  rewrite  /mult_png /left_id /= => x.
+  case x => s v.
+  rewrite mult_pn_id /id_png /get_phase_png.
+  rewrite mult_phase_id .
+  f_equal.
+  by rewrite get_phase_pn_id.
 Qed.
 
 End PnPhaseGroup.
