@@ -1,3 +1,11 @@
+(*
+TODO: use PauliGroup.v to refactor PauliString
+- imports PauliTuple
+- Choose from
+  + make a convert function for PauliTuple <-> PauliString ?
+  + completly wipe out Coq.Vector stuff
+  *)
+
 Require Import Pauli_legacy.
 (* This line helps to write X instead of Pauli.X *)
 Import Pauli.
