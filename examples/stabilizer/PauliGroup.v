@@ -2,7 +2,7 @@ From mathcomp Require Import all_ssreflect fingroup.
 From HB Require Import structures.
 Set Bullet Behavior "Strict Subproofs".
 
-Module PauliOneGroup.
+Module P1Group.
 
 Inductive PauliOp : Type :=
 | I : PauliOp
@@ -85,10 +85,10 @@ HB.instance Definition _ := isMulGroup.Build PauliOp
 
 Check PauliOp: finGroupType.
 
-End PauliOneGroup.
+End P1Group.
 
-Module PauliNGroup.
-Import PauliOneGroup.
+Module PNGroup.
+Import P1Group.
 
 (* Pauli Group with fixed length n *)
 Definition PauliTuple n := {tuple n of PauliOp}.
@@ -175,9 +175,9 @@ Proof.
   rewrite /id_pn /id_p1 /=.
   (* 
     both side seems the same
-    but unable to unity
-    the goal is literally
-    *)
+    but unable to unity due to dependent type
+    but it's trivial from a human's perspective
+  *)
   Fail by []. 
 Admitted.
 
@@ -211,6 +211,7 @@ Proof.
   by rewrite H /= mult_p1_left_inv pn_idP.
 Qed.
 
+Section Structure.
 
 Variable n:nat.
 
@@ -221,12 +222,14 @@ HB.instance Definition _ := isMulGroup.Build
 
 Check (@PauliTuple n): finGroupType.
 
-End PauliNGroup.
+End Structure.
+
+End PNGroup.
 
 (* P1 Group with phase  *)
-Module P1PhaseGroup.
+Module P1GGroup.
 
-Import PauliOneGroup.
+Import P1Group.
 
 Inductive phase : Type :=
 | One : phase   (* 1 *)
@@ -337,8 +340,8 @@ Qed.
 
 Definition get_phase(a b: PauliOp): phase :=
   match a, b with  
-  | I, p => One
-  | p, I => One
+  | I, _ => One
+  | _, I => One
   | X, X => One
   | Y, Y => One 
   | Z, Z => One
@@ -412,13 +415,13 @@ HB.instance Definition _ := Finite.on GenPauliOp.
 HB.instance Definition _ := isMulGroup.Build GenPauliOp
   mult_p1g_assoc mult_p1g_id mult_p1g_left_inv.
 
-End P1PhaseGroup.
+End P1GGroup.
 
-Module PnPhaseGroup.
+Module PNGGroup.
 
-Import P1PhaseGroup.
-Import PauliNGroup.
-Import PauliOneGroup.
+Import P1GGroup.
+Import PNGroup.
+Import P1Group.
 
 Definition get_phase_pn {n: nat} (a b: PauliTuple n): phase := 
   foldl mult_phase One (
@@ -622,7 +625,7 @@ HB.instance Definition _ := isMulGroup.Build
 
 End Strcture.
 
-End PnPhaseGroup.
+End PNGGroup.
 
 (* 
 Interprete Pauli Groups (1-qubit and n-qubit) by Robert's QuantumLib
@@ -630,7 +633,7 @@ Interprete Pauli Groups (1-qubit and n-qubit) by Robert's QuantumLib
 Section Interpretation.
 
 Require Import QuantumLib.Quantum.
-Import PauliOneGroup.
+Import P1Group.
 
 (* 
 ==========================
@@ -652,7 +655,7 @@ interpretation of group p1g
 ==========================
 *)
 
-Import P1PhaseGroup.
+Import P1GGroup.
 
 Definition phase_int (s: phase): C := 
   match s with
@@ -674,7 +677,7 @@ interpretation of group pn
 ==========================
 *)
 
-Import PauliNGroup.
+Import PNGroup.
 
 Check Matrix.I 1.
 
@@ -704,7 +707,7 @@ interpretation of group png
 ==========================
 *)
 
-Import PnPhaseGroup.
+Import PNGGroup.
 
 Definition png_int {n:nat} (p: GenPauliTuple n): Square (2^n) :=
   match p with
