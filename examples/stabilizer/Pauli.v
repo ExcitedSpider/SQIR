@@ -8,24 +8,13 @@ Import PauliGroup.P1GGroup.
 
 Module Pauli.
 
-(* 
-  Complete GenPauliOp group (operations with scalars) 
-  However, we expect it will not be used in the stabilizer formalism
-  because for stabilizer, scalars are useless. It only acts as unneccesary
-  complexity. 
-
-  But it's still valueable to have this complete formalism
-*)
-
 (* PauliOperator directly from group definition *)
 Check PauliOp.
 
 Check phase.
 
+(* PauliOp with phase *)
 Check GenPauliOp.
-(* A Pauli Term is a scaled Pauli Operator *)
-(* Inductive GenPauliOp : Type :=
-| pair : phase -> PauliOp -> GenPauliOp. *)
 
 Definition p1g_of (s: phase) (op: PauliOp): GenPauliOp:=
   pair s op.
@@ -34,8 +23,8 @@ Definition p1g_of (s: phase) (op: PauliOp): GenPauliOp:=
 Notation "s · p" := (p1g_of s p) 
   (at level 40, left associativity).
 
-Check One · X.
-Check Img · Z.
+Check One · X: GenPauliOp.
+Check Img · Z: GenPauliOp.
 
 Lemma pauli_eq_comp:
 forall sa pa sb pb,
@@ -46,29 +35,15 @@ subst.
 reflexivity.
 Qed.
 
-(* Definition scalar_to_complex (s : phase) : C :=
-match s with
-| One => 1
-| Img => Ci
-| NOne => -1
-| NImg => - Ci 
-end. *)
-
-Definition scalar_to_complex := phase_int.
+Definition scalar_to_complex: phase -> C := phase_int.
 
 (* use the interpretation function in group definition *)
-Definition op_to_matrix := p1_int.
+Definition op_to_matrix: PauliOp -> Square 2 := p1_int.
 
-(* Definition pauli_to_matrix (p: GenPauliOp): Square 2 := 
-  match p with
-    | pair s op => (scalar_to_complex s) .* (op_to_matrix op)
-  end. *)
-
-Definition pauli_to_matrix := p1g_int.
+Definition pauli_to_matrix: GenPauliOp -> Square 2 := p1g_int.
 
 Example negY: pauli_to_matrix (NOne · Y) = -C1 .* σy.
 Proof. reflexivity. Qed.
-
 
 Example negIX: pauli_to_matrix (NImg · X) = -Ci .* σx.
 Proof. reflexivity. Qed.
@@ -82,17 +57,6 @@ intros.
 subst.
 reflexivity.
 Qed.
-
-Lemma pauli_to_matrix_total: forall a,
-exists b, pauli_to_matrix a = b.
-Proof.
-intros.
-destruct a.
-simpl.
-(* exists (scalar_to_complex s .* op_to_matrix p). *)
-(* reflexivity.
-Qed. *)
-Abort.
 
 
 Check Matrix.I 2.
@@ -253,60 +217,10 @@ simpl;
 auto with wf_db.
 Qed.
 
-(* Lemma pauli_identity_correct_left:
-forall (a: GenPauliOp), pmultrel id_p1g a a.
-Proof.
-intros.
-apply PauliMultRel.
-simpl.
-rewrite Mscale_1_l.
-(* Search (Matrix.I _ = _). *)
-apply mat_equiv_eq.
-- apply WF_mult.
-  + auto with wf_db.
-  + apply pauli_op_wf.
-- apply pauli_op_wf.  
-- apply Mmult_1_l_mat_eq.
-Qed. *)
+Definition inverse_op: PauliOp -> PauliOp := inv_p1.
 
-(* Lemma pauli_identity_correct:
-forall (a: GenPauliOp), pmultrel a id_p1g a.
-Proof.
-intros.
-apply PauliMultRel; simpl.
-rewrite Mscale_1_l.
-apply mat_equiv_eq.
-- apply WF_mult.
-  + apply pauli_op_wf.
-  + auto with wf_db. 
-- apply pauli_op_wf.  
-- apply Mmult_1_r_mat_eq.
-Qed. *)
+Definition inverse_scalar: phase -> phase := inv_phase.
 
-(* Definition inverse_op (op: PauliOp): PauliOp := 
-match op with
-| I => I
-| X => X
-| Y => Y
-| Z => Z
-end. *)
-
-Definition inverse_op := inv_p1.
-
-(* Definition inverse_scalar (sc: phase): phase := 
-match sc with
-| One => One
-| Img => NImg
-| NOne => NOne
-| NImg => Img 
-end. *)
-
-Definition inverse_scalar := inv_phase.
-
-(* Definition pinv (p : GenPauliOp) : GenPauliOp :=
-match p with
-| pair s op => pair (inverse_scalar s) (inverse_op op)
-end. *)
 
 Definition pinv := inv_p1g.
 
@@ -321,16 +235,6 @@ destruct a as [s p].
 destruct s, p;
 solve_matrix.
 Qed.
-
-(* 
-Lemma pauli_closure:
-forall a b,
-exists (c: GenPauliOp), pmultrel a b c.
-Proof.
-intros a b.
-destruct a as [sa pa], b as [sb pb].
-destruct sa, pa, sb, pb.
-Abort. 256 cases. not feasible to prove directly *)
 
 Lemma scalar_closure:
 forall a b,
@@ -433,35 +337,6 @@ split.
   reflexivity.
 Qed.
 
-(* The GenPauliOp operator forms a group *)
-(* Theorem PauliGroupProperties:
-(forall a, pmultrel id_p1g a a) /\
-(forall a, exists a', pmultrel a a' id_p1g) /\
-(forall a b, exists c, pmultrel a b c) /\ 
-(forall a b ab c abc,
-  pmultrel a b ab ->
-  pmultrel ab c abc ->
-  exists bc, pmultrel b c bc /\ pmultrel a bc abc
-).
-Proof.
-split. apply pauli_identity_correct_left.
-split. apply pinv_correct.
-split. apply pauli_closure'.
-apply pmultrel_assoc.
-Qed. *)
-
-(* Definition inverse_scalar (op: phase): phase := 
-match op with
-| One => One
-| Img => NImg
-| NOne => NOne
-| NImg => Img 
-end.
-
-Definition pinv (p : GenPauliOp) : GenPauliOp :=
-match p with
-| pair s op => pair (inverse_scalar s) (inverse_op op)
-end. *)
 
 (* 
 =======================================================
@@ -476,74 +351,9 @@ it will be much easier now.
 
 Definition op_prod_op := mult_p1.
 
-(* Definition op_prod_op(a b: PauliOp): PauliOp :=
-  match a, b with
-  | I, p => p
-  | p, I => p  
-  
-  | X, X => I
-  | Y, Y => I 
-  | Z, Z => I
-
-  | X, Y => Z
-  | Y, X => Z
-
-  | Y, Z => X
-  | Z, Y => X
-
-  | Z, X => Y
-  | X, Z => Y 
-end. *)
-
-(* Lemma op_prod_op_assoc: 
-  associative op_prod_op.
-Proof.
-  unfold associative.
-  intros.
-  destruct x, y, z.
-  all: easy.
-Qed. *)
-
-
-(* Definition op_prod_s(a b: PauliOp): phase :=
-  match a, b with
-  | I, p => One
-  | p, I => One
-  
-  | X, X => One
-  | Y, Y => One
-  | Z, Z => One
-
-  | X, Y => Img
-  | Y, X => NImg
-
-  | Y, Z => Img
-  | Z, Y => NImg
-
-  | Z, X => Img
-  | X, Z => NImg 
-end. *)
 
 Definition op_prod_s := get_phase.
 
-(* Definition op_prod(a b: PauliOp): (phase * PauliOp) :=
-  match a, b with  
-  | I, p => (One, p)
-  | p, I => (One, p)  
-
-  | X, X => (One, I)
-  | Y, Y => (One, I) 
-  | Z, Z => (One, I)
-
-  | X, Y => (Img, Z) 
-  | Y, X => (NImg, Z)
-
-  | Y, Z => (Img, X)
-  | Z, Y => (NImg, X)
-
-  | Z, X => (Img, Y)
-  | X, Z => (NImg, Y) 
-  end. *)
 
 Definition op_prod (a b: PauliOp): (phase * PauliOp) := 
   (get_phase a b, mult_p1 a b).
@@ -560,20 +370,6 @@ Proof.
 Qed.
 
 
-(* Definition s_prod(a b: phase): phase := 
-match a, b with
-  | One, s => s
-  | s, One => s
-  | NOne, Img => NImg
-  | Img, NOne => NImg
-  | NOne, NOne => One
-  | NOne, NImg => Img
-  | NImg, NOne => Img
-  | Img, NImg => One
-  | NImg, Img => One
-  | Img, Img => NOne
-  | NImg, NImg => NOne
-end. *)
 
 Definition s_prod := mult_phase.
 
@@ -977,14 +773,6 @@ Proof.
   congruence.
 Qed.
 
-(* Lemma s_prod_assoc:
-  associative s_prod.
-Proof.
-  unfold associative.
-  intros.
-  destruct x, y, z; reflexivity.
-Qed. *)
-
 Search "commutative".
 
 Lemma s_prod_comm:
@@ -1042,84 +830,6 @@ Proof.
   simpl.
   reflexivity.
 Qed.
-
-(* 
-Lemma pmul_assoc: associative pmul.
-Proof.
-  unfold associative; intros.
-  destruct x, y, z.
-  simpl.
-  unfold combined_scalars.
-  remember (op_prod p p0) as p00.
-  destruct p00.
-  remember (op_prod p0 p1) as p01.
-  destruct p01.
-  remember (op_prod p p3) as p03.
-  destruct p03; simpl.
-  remember (op_prod p2 p1) as p21.
-  destruct p21.
-  assert (p4 = p5).
-  {
-    apply op_prod_snd_helper in Heqp21.
-    apply op_prod_snd_helper in Heqp03.
-    apply op_prod_snd_helper in Heqp01.
-    apply op_prod_snd_helper in Heqp00.
-    subst.
-    apply op_prod_snd_assoc.
-  }
-  subst.
-  unfold combined_scalars.
-  assert (
-    s_prod (s_prod (s_prod (s_prod s4 s) s3) s0) s1 =
-    s_prod (s_prod (s_prod (s_prod s5 s2) s) s0) s1
-  ).
-  {
-    destruct p, p0, p1;
-    inversion Heqp00; subst;
-    inversion Heqp01; subst;
-    inversion Heqp03; subst;
-    inversion Heqp21; subst.
-    all: simpl.
-    all: try (apply s_prod_left_id).
-    all: try (
-      rewrite s_prod_right_id; 
-      rewrite <- s_prod_assoc;
-      reflexivity
-    ).
-   all:  try(destruct s, s0, s1; easy).
-  }
-  Fail now rewrite H. Abort.
-
-
-Lemma pmul_assoc: associative pmul.
-Proof.
-  unfold associative.
-  intros.
-  destruct x, y, z.
-  simpl.
-  unfold combined_scalars.
-  destruct p, p0, p1; simpl.
-  all: destruct s, s0, s1; easy.
-Qed. *)
-
-(* Definition e: GenPauliOp :=  pair One I.
-
-Lemma pmul_left_id: left_id e pmul.
-Proof.
-  unfold left_id.
-  intros.
-  simpl.
-  destruct x.
-  reflexivity.
-Qed.
-
-Lemma pmul_left_inverse: left_inverse e pinv pmul.
-Proof.
-  unfold left_inverse.
-  intros.
-  destruct x.
-  destruct s, p; easy.
-Qed. *)
 
 Section PauliProperties.
 
