@@ -585,6 +585,43 @@ Proof.
   by rewrite get_phase_pn_id.
 Qed.
 
+Check inv_png.
+
+Lemma inv_pn_pres_phase n:
+  forall (v: PauliTuple n),
+  get_phase_pn (inv_pn v) v = One.
+Proof.
+  move => v.
+  rewrite /get_phase_pn.
+  induction n.
+    by rewrite (tuple0) /=.
+  case : v / tupleP => hv tv.
+  by case hv; rewrite /= IHn.
+Qed.
+  
+
+Lemma mult_png_left_inv n:
+  left_inverse (id_png n) inv_png mult_png. 
+Proof.
+  rewrite /left_inverse /mult_png /inv_png /id_png => x.
+  case x => p v.
+  rewrite mult_pn_left_inv.
+  f_equal.
+  rewrite /get_phase_png mult_phase_left_inv.
+  rewrite mult_phase_comm mult_phase_id.
+  by rewrite inv_pn_pres_phase.
+Qed.
+
+Section Strcture.
+
+Variable n: nat.
+
+HB.instance Definition _ := Finite.on (@GenPauliTuple n).
+HB.instance Definition _ := isMulGroup.Build
+  (@GenPauliTuple n) (@mult_png_assoc n) (@mult_png_id n) (@mult_png_left_inv n).
+
+End Strcture.
+
 End PnPhaseGroup.
 
 (* 
@@ -648,19 +685,31 @@ Definition pn_reducer {m n: nat} (acc: Matrix m n) (op: PauliOp)  :=
 Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
   (foldl pn_reducer (Matrix.I 1) p).
 
-(* It actually does not matter if the dimension is correct... *)
-Definition pn_int_alt {n:nat} (p: PauliTuple n): Square (2^n) := 
+(* It actually does not matter if the dimension is incorrect... *)
+Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
   (foldl (@pn_reducer 2 2) (Matrix.I 1) p).
 
 Check kron_assoc.
 
 Example pn_interpret:
-pn_int_alt [X;Z;Y;I] = σx ⊗ σz ⊗ σy ⊗ Matrix.I 2.
+pn_int [X;Z;Y;I] = σx ⊗ σz ⊗ σy ⊗ Matrix.I 2.
 Proof.
-  rewrite /pn_int_alt /pn_reducer /=.
+  rewrite /pn_int /pn_reducer /=.
   by Qsimpl.
 Qed.
 
+(* 
+==========================
+interpretation of group png
+==========================
+*)
+
+Import PnPhaseGroup.
+
+Definition png_int {n:nat} (p: GenPauliTuple n): Square (2^n) :=
+  match p with
+  | (phase, tuple) => (phase_int phase) .* (pn_int tuple)
+  end.
 
 End Interpretation.
 
