@@ -1,3 +1,12 @@
+(*
+Group Definition of 
+- P1: 1-qubit Pauli Group without Phase (p1/z4)
+- P1G: 1-qubit Pauli Group
+- Pn: n-qubit Pauli Group wihtout phase (pn/z4)
+- PnG: n-qubit Pauli Group
+
+All formalisms are absed on MathComp
+*)
 From mathcomp Require Import all_ssreflect fingroup.
 From HB Require Import structures.
 Set Bullet Behavior "Strict Subproofs".
