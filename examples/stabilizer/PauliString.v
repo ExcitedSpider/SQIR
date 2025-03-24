@@ -27,6 +27,8 @@ Check tuple_of.
 
 Module PauliString.
 Definition PauliVector n := Vector.t PauliOp n.
+Definition PVector0 := Vector.nil PauliOp.
+Check PVector0.
 
 Fixpoint pvmul {n: nat} (a b : PauliVector n) : phase * PauliVector n :=
   (* Looks like dark magic *)
@@ -744,4 +746,84 @@ Proof.
 Abort.
 
 End PStringProperties.
+
+(* adatpr for GenPauliTuple <-> PauliString *)
+Module Adaptor.
+
+Check PauliTuple. 
+
+From Coq Require Import ssreflect.
+Check List.cons.
+
+Print tuple_of.
+Print behead.
+Print thead.
+
+Check Vector.nil.
+Check Vector.nil PauliOp.
+
+(* Stupid dependent types *)
+(* Fail Fixpoint tuple_to_vector {n:nat} (tuple: n.-tuple PauliOp): PauliVector n := *)
+(*   if n is n'.+1 *) 
+(*   then thead tuple :: (behead_tuple tuple) *)
+(*   else PVector0. *)  
+
+(* This one does work but the type is inconvinient*)
+Definition TtoV {n:nat} (l: PauliTuple n): PauliVector (size l) :=
+  of_list l.
+
+(* I can prove n = (size l) in TtoV *)
+Lemma tuple_size:
+  forall (n:nat) (tuple: PauliTuple n),
+  size tuple = n.
+Proof.
+  by move => *; rewrite size_tuple.
+Qed.
+
+(* How to refine to type to this? *)
+Fail Definition TtoV_r {n:nat} (l: PauliTuple n): PauliVector n :=
+  TtoV l.
+
+(* Fail Definition vector_to_tuple {n:nat} (v: PauliVector n): PauliTuple n := *)
+(*   [tuple of (to_list v)]. *)
+
+(* Fail Definition vector_to_tuple {n:nat} (v: PauliVector n): PauliTuple n := *)
+(*   [tuple fold_right (fun cur acc => List.cons cur acc) v [tuple]]. *)
+
+(* Definition vector_to_tuple_absurd {n:nat} (v: PauliVector n):= *)
+(*   [tuple fold_right (fun cur acc => List.cons cur acc) v [tuple]]. *)
+
+
+Fixpoint VtoT {n : nat} (v : PauliVector n) : PauliTuple n :=
+  match v with
+  | nil => List.nil
+  | cons h _ t => List.cons h (VtoT t)
+  end.
+
+(* Goal size (vector_to_tuple example_v40) = 4%nat. *)
+(* by []. Qed. *)
+
+(* Goal vector_to_tuple example_v40 = example_t40. *) 
+(* Proof. *)
+(*   by []. *)
+(* Qed. *)
+
+
+(* Fixpoint tuple_to_vector_alt {n : nat} *) 
+(*   (l : n.-tuple PauliOp) : t PauliOp n := *)
+(*   if n is S n' *)
+(*   then fun p => *) 
+
+(* Fixpoint tuple_to_vector {n:nat} (l: n.-tuple PauliOp): Vector.t PauliOp n := *)
+(*    if n is S n' *)
+(*    then cons (thead l) _ (tuple_to_vector (behead l)) *)
+(*    else nil PauliOp. *)
+
+(* Theorem adaptor_vt_correct n: *)
+(*   forall (v: PauliVector n) (n': nat) v' , *)
+(*   tuple_to_vector (vector_to_tuple v) = v' -> *)
+(*   n = n' /\ v = v'. *)
+
+End Adaptor.
+
 
