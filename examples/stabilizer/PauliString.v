@@ -800,7 +800,23 @@ Proof.
   }
 Qed.
 
-Definition tupleGToPString {n} (png: GenPauliTuple n): PString n :=
+Print pn_int.
+
+Theorem tupleToVector_correct n:
+  forall tup: PauliTuple n,
+  pn_int tup = pvec_to_matrix (tupleToVector tup).
+Proof.
+  move => tup.
+  induction n.
+    by rewrite (tuple0 tup).
+  case: tup / tupleP => h t.
+  rewrite /= Mscale_1_l theadCons beheadCons.
+  rewrite pn_int_cons.
+  by rewrite IHn.
+Qed.
+
+
+Definition pngToPString {n} (png: GenPauliTuple n): PString n :=
   match png with
   |  (phase, tuple) => (phase, tupleToVector tuple)
   end.
@@ -812,8 +828,8 @@ Definition pstringToTupleG {n} (pstr: PString n): GenPauliTuple n :=
 
 
 Theorem ps_isomorphism n:
-    cancel (@pstringToTupleG n) (@tupleGToPString n) /\
-    cancel (@tupleGToPString n) (@pstringToTupleG n).
+    cancel (@pstringToTupleG n) (@pngToPString n) /\
+    cancel (@pngToPString n) (@pstringToTupleG n).
 Proof.  
   have H0 := vt_isomorphism.
   destruct (H0 n) as [Hvt Htv].
@@ -827,9 +843,17 @@ Proof.
     move => [phase tup] /=.
     f_equal.
     by rewrite Htv.
-
   }
+Qed.
 
+Theorem pngToPstring_correct n:
+  forall tupg: GenPauliTuple n,
+  png_int tupg = pstr_to_matrix (pngToPString tupg).
+Proof.
+  move => tupg.
+  case tupg => pha p.
+  rewrite /png_int /pstr_to_matrix /scalar_to_complex /=.
+  by rewrite tupleToVector_correct.
 Qed.
 
 End Adaptor.

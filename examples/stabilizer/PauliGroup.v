@@ -666,6 +666,14 @@ match p with
 | Z => Quantum.σz
 end.
 
+Lemma p1_int_WF:
+  forall p: PauliOp,
+  WF_Matrix (p1_int p).
+Proof.
+  case;
+  rewrite /=;
+  by auto with wf_db.
+Qed.
 
 (* 
 ==========================
@@ -709,6 +717,29 @@ Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) :=
 (* It actually does not matter if the dimension is incorrect... *)
 Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
   (foldl (@pn_reducer 2 2) (Matrix.I 1) p).
+
+Lemma pn_reducer_1: 
+  forall h: PauliOp,
+  pn_reducer (Matrix.I 1) h = p1_int h.
+Proof.
+  move => h.
+  unfold pn_reducer.
+  rewrite (kron_1_l).
+  by [].
+  by apply p1_int_WF.
+Qed.
+
+Lemma pn_int_cons n:
+  forall (h: PauliOp) (t: PauliTuple n),
+  pn_int [tuple of h :: t] = p1_int h ⊗ pn_int t.
+Proof.
+  move => h t.
+  rewrite /pn_int /=.
+  (* need to dive into notations to see why *)
+  Fail rewrite pn_reducer_1.
+Admitted.
+  
+
 
 Check kron_assoc.
 
