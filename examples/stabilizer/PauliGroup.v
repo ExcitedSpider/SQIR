@@ -11,6 +11,34 @@ From mathcomp Require Import all_ssreflect fingroup.
 From HB Require Import structures.
 Set Bullet Behavior "Strict Subproofs".
 
+
+(* 
+Shout out to
+https://github.com/coq-community/bits
+for their tuple lemmas in this section
+*)
+Section TupleExtras.
+
+Lemma beheadCons {n A} a (aa: n.-tuple A) : behead_tuple [tuple of a::aa] = aa.
+Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth a). Qed.
+
+Lemma theadCons : forall {n A} (a:A) (aa: n.-tuple A), thead [tuple of a::aa] = a.
+Proof. done. Qed.
+
+Lemma zipCons {n A B} a (aa: n.-tuple A) b (bb: n.-tuple B) :
+  zip_tuple [tuple of a::aa] [tuple of b::bb] = [tuple of (a,b) :: zip_tuple aa bb].
+Proof.
+    apply: eq_from_tnth => i.
+    rewrite (tnth_nth (a, b)) /=.
+    by rewrite (tnth_nth (a, b)) /=.
+Qed.
+
+Lemma mapCons {n A B} (f: A -> B) b (p: n.-tuple A) :
+  map_tuple f [tuple of b :: p] = [tuple of f b :: map_tuple f p].
+Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (f b)). Qed.
+
+End TupleExtras. 
+
 Module P1Group.
 
 Inductive PauliOp : Type :=
@@ -130,25 +158,6 @@ Proof. by apply/eqP. Qed.
 
 Lemma trivial_tuples (p q: PauliTuple 0) : p = q.
 Proof. by rewrite (tuple0 p) (tuple0 q). Qed.
-
-(* 
-Shout out to
-https://github.com/coq-community/bits/blob/f0b274803dc93c5799bd26473c2bcea5b43139ea/src/ssrextra/tuple.v
-Thanks for their beutiful proofs for these two lemmas
-zipCons and mapCons
-*)
-Lemma zipCons {n A B} a (aa: n.-tuple A) b (bb: n.-tuple B) :
-  zip_tuple [tuple of a::aa] [tuple of b::bb] = [tuple of (a,b) :: zip_tuple aa bb].
-(* Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (a,b)). Qed. *)
-Proof.
-    apply: eq_from_tnth => i.
-    rewrite (tnth_nth (a, b)) /=.
-    by rewrite (tnth_nth (a, b)) /=.
-Qed.
-
-Lemma mapCons {n A B} (f: A -> B) b (p: n.-tuple A) :
-  map_tuple f [tuple of b :: p] = [tuple of f b :: map_tuple f p].
-Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (f b)). Qed.
 
 Lemma mult_pn_assoc n: associative (@mult_pn n). 
 Proof.

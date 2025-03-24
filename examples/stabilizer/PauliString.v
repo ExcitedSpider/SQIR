@@ -747,32 +747,17 @@ Abort.
 
 End PStringProperties.
 
-(* adatpr for GenPauliTuple <-> PauliString *)
 Module Adaptor.
 
 Check PauliTuple. 
 
 From Coq Require Import ssreflect.
-Check List.cons.
-
-Print tuple_of.
-Print behead.
-Print thead.
-
-Check Vector.nil.
-Check Vector.nil PauliOp.
-
-(* Stupid dependent types *)
-(* Fail Fixpoint tuple_to_vector {n:nat} (tuple: n.-tuple PauliOp): PauliVector n := *)
-(*   if n is n'.+1 *) 
-(*   then thead tuple :: (behead_tuple tuple) *)
-(*   else PVector0. *)  
 
 (* This one does work but the type is inconvinient*)
-Definition TtoV {n:nat} (l: PauliTuple n): PauliVector (size l) :=
+Definition TtoV_l {n:nat} (l: PauliTuple n): PauliVector (size l) :=
   of_list l.
 
-(* I can prove n = (size l) in TtoV *)
+(* I can prove n = (size l) in tupleToVector *)
 Lemma tuple_size:
   forall (n:nat) (tuple: PauliTuple n),
   size tuple = n.
@@ -780,49 +765,72 @@ Proof.
   by move => *; rewrite size_tuple.
 Qed.
 
-(* How to refine to type to this? *)
-Fail Definition TtoV_r {n:nat} (l: PauliTuple n): PauliVector n :=
-  TtoV l.
 
-(* Fail Definition vector_to_tuple {n:nat} (v: PauliVector n): PauliTuple n := *)
-(*   [tuple of (to_list v)]. *)
+Fixpoint tupleToVector {n}: (PauliTuple n) -> PauliVector n :=
+  if n is S n return n.-tuple PauliOp -> PauliVector n 
+  then fun xs => (thead xs)::(tupleToVector (behead_tuple xs))
+  else fun xs => PVector0.
 
-(* Fail Definition vector_to_tuple {n:nat} (v: PauliVector n): PauliTuple n := *)
-(*   [tuple fold_right (fun cur acc => List.cons cur acc) v [tuple]]. *)
-
-(* Definition vector_to_tuple_absurd {n:nat} (v: PauliVector n):= *)
-(*   [tuple fold_right (fun cur acc => List.cons cur acc) v [tuple]]. *)
-
-
-Fixpoint VtoT {n : nat} (v : PauliVector n) : PauliTuple n :=
+Fixpoint vectorToTuple {n} (v : PauliVector n) : PauliTuple n :=
   match v with
   | nil => List.nil
-  | cons h _ t => List.cons h (VtoT t)
+  | cons h _ t => List.cons h (vectorToTuple t)
   end.
 
-(* Goal size (vector_to_tuple example_v40) = 4%nat. *)
-(* by []. Qed. *)
 
-(* Goal vector_to_tuple example_v40 = example_t40. *) 
-(* Proof. *)
-(*   by []. *)
-(* Qed. *)
+Theorem vt_isomorphism n:
+    cancel (@vectorToTuple n) (@tupleToVector n) /\
+    cancel (@tupleToVector n) (@vectorToTuple n).
+Proof.
+  split.
+  {
+    move => v.
+    induction n.
+      by rewrite (length_0_pvector v).
+    rewrite (eta v) /=.
+    rewrite beheadCons theadCons.
+    by rewrite {1}(IHn (VectorDef.tl v)).
+  }
+  {
+    move => t.
+    induction n.
+      by rewrite (tuple0 t).
+    case: t / tupleP => ht tt.
+    by rewrite /= theadCons beheadCons IHn.
+  }
+Qed.
+
+Definition tupleGToPString {n} (png: GenPauliTuple n): PString n :=
+  match png with
+  |  (phase, tuple) => (phase, tupleToVector tuple)
+  end.
+
+Definition pstringToTupleG {n} (pstr: PString n): GenPauliTuple n :=
+  match pstr with 
+  | (phase, vector) => (phase, vectorToTuple vector)
+  end.
 
 
-(* Fixpoint tuple_to_vector_alt {n : nat} *) 
-(*   (l : n.-tuple PauliOp) : t PauliOp n := *)
-(*   if n is S n' *)
-(*   then fun p => *) 
+Theorem ps_isomorphism n:
+    cancel (@pstringToTupleG n) (@tupleGToPString n) /\
+    cancel (@tupleGToPString n) (@pstringToTupleG n).
+Proof.  
+  have H0 := vt_isomorphism.
+  destruct (H0 n) as [Hvt Htv].
+  split. 
+  {
+    move => [phase vec] /=.
+    f_equal.
+    by rewrite Hvt.
+  }
+  {
+    move => [phase tup] /=.
+    f_equal.
+    by rewrite Htv.
 
-(* Fixpoint tuple_to_vector {n:nat} (l: n.-tuple PauliOp): Vector.t PauliOp n := *)
-(*    if n is S n' *)
-(*    then cons (thead l) _ (tuple_to_vector (behead l)) *)
-(*    else nil PauliOp. *)
+  }
 
-(* Theorem adaptor_vt_correct n: *)
-(*   forall (v: PauliVector n) (n': nat) v' , *)
-(*   tuple_to_vector (vector_to_tuple v) = v' -> *)
-(*   n = n' /\ v = v'. *)
+Qed.
 
 End Adaptor.
 
