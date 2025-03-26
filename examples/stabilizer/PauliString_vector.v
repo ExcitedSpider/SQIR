@@ -942,7 +942,7 @@ End PStrGroup.
 
 Section PStringProperties.
 
-Require Import Properties.
+Require Import ExtraSpecs.
 
 Print PString.
 

@@ -1,3 +1,7 @@
+(* TODO:
+   - [] make a similar properties based on PauliGroup.v
+ *)
+
 Require Import PauliString_vector.
 Require Import SQIR.UnitaryOps.
 Require Import Pauli_legacy.
@@ -256,7 +260,7 @@ Proof.
   apply negate_change_state.
 Qed.
 
-Require Import Properties.
+Require Import ExtraSpecs.
 
 Theorem stabilizer_must_commute: 
   forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
@@ -395,6 +399,3 @@ Proof.
     by_identity 3%nat.
   - by_identity 3%nat.
 Qed.
-  
-
-End StbExample.

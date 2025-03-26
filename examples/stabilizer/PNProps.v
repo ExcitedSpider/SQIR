@@ -5,7 +5,7 @@ TODO: use PauliGroup.v to refactor PauliString
 - [ ] completly wipe out Coq.Vector stuff
 *)
 
-Require Import Pauli.
+Require Import P1Props.
 Import Pauli.
 From mathcomp Require Import ssrfun fingroup eqtype tuple seq fintype.
 
@@ -723,7 +723,7 @@ Qed.
 
 Section PStringProperties.
 
-Require Import Properties.
+Require Import ExtraSpecs.
 
 Print PString.
 

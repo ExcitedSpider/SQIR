@@ -834,7 +834,7 @@ Qed.
 Section PauliProperties.
 
 From mathcomp Require Import ssrfun.
-Require Import Properties.
+Require Import ExtraSpecs.
 
 Theorem pmul_bicommute:
   bicommute pmul pneg.
