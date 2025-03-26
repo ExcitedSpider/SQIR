@@ -1,4 +1,4 @@
-Require Import Pauli.
+Require Import Pauli_legacy.
 (* This line helps to write X instead of Pauli.X *)
 Import Pauli.
 

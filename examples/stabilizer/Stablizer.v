@@ -1,10 +1,11 @@
-Require Import PauliString.
+Require Import PauliString_vector.
 Require Import SQIR.UnitaryOps.
-Require Import Pauli.
-Import Pauli.
-Import PauliString.
+Require Import Pauli_legacy.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
+
+Locate PauliString_legacy.PString.
+Import Pauli.
 
 (* 
 The stabilize relation is defined as:
@@ -17,6 +18,7 @@ Definition stb {n: nat} (pstring: PString n) (ψ: Vector (2^n))
 
 (* A fancy symbol for "stabilize" *)
 Notation "pstring ∝1 ψ" := (stb pstring ψ) (at level 50).
+
 
 (* Z stabilises ∣0⟩ *)
 Example stb_z0:
@@ -394,6 +396,5 @@ Proof.
   - by_identity 3%nat.
 Qed.
   
-
 
 End StbExample.

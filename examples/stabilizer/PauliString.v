@@ -1,11 +1,8 @@
 (*
 TODO: use PauliGroup.v to refactor PauliString
-- imports PauliTuple
-- Choose from
-  + make a convert function for PauliTuple <-> PauliString ?
-    try this first.
-  + completly wipe out Coq.Vector stuff
-    try this later.
+- [x] imports PauliTuple
+- [x] make a convert function for PauliTuple <-> PauliString ?
+- [ ] completly wipe out Coq.Vector stuff
 *)
 
 Require Import Pauli.
@@ -240,7 +237,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma length_0_pvector:
+Lemma vector0:
   forall (p: PauliVector 0), p = [].
 Proof. apply length_0_vector. Qed.
 
@@ -503,7 +500,7 @@ Proof.
   intros n p1.
   induction p1.
   - intros.
-    assert (p2 = []) by apply length_0_pvector.
+    assert (p2 = []) by apply vector0.
     subst.
     simpl in H.
     inversion H; subst.
@@ -786,7 +783,7 @@ Proof.
   {
     move => v.
     induction n.
-      by rewrite (length_0_pvector v).
+      by rewrite (vector0 v).
     rewrite (eta v) /=.
     rewrite beheadCons theadCons.
     by rewrite {1}(IHn (VectorDef.tl v)).
@@ -799,8 +796,6 @@ Proof.
     by rewrite /= theadCons beheadCons IHn.
   }
 Qed.
-
-Print pn_int.
 
 Theorem tupleToVector_correct n:
   forall tup: PauliTuple n,
@@ -815,6 +810,11 @@ Proof.
   by rewrite IHn.
 Qed.
 
+Lemma vector_view n:
+  forall (a b: PauliVector n),
+  pvmul_v a b = tupleToVector (mult_pn (vectorToTuple a) (vectorToTuple b)).
+Proof.
+  Admitted.
 
 Definition pngToPString {n} (png: GenPauliTuple n): PString n :=
   match png with
