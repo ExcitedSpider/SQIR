@@ -16,12 +16,19 @@ opam repo add coq-released https://coq.inria.fr/opam/released
 opam update
 opam install coq-quantumlib.1.5.1
 
-make # compile sqir
-make stabilizer # compile this project
+# compile barebone project -- use no libs or frameworks
+cd barebone
+dune build
+
+# compile mathcomp based project
+cd mathcomp
+dune build
 ```
 
 ## Status
 
 - Done: The single-qubit Pauli group.
 - Done: The n-qubit Pauli group
-- WIP: Theorems of stabilizer theories. e.g. commute/anti-commute relations.
+- Done: Theorems of stabilizer theories. e.g. commute/anti-commute relations.
+- WIP: Stabilizer Theories using mathcomp formalism
+- WIP: examples of proving larger QECC programs correct
