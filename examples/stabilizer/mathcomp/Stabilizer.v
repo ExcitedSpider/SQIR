@@ -48,7 +48,10 @@ Import PauliGroup.P1GGroup.
 Import PauliGroup.PNGroup.
 Import PauliGroup.PNGGroup.
 
-Definition stb {n: nat} (op: (PauliTuple n) + (GenPauliTuple n)) (ψ: Vector (2^n)) : Prop := 
+(* What can i gain from doing this? *)
+Definition PauliString (n: nat) := sum (PauliTuple n) (GenPauliTuple n).
+
+Definition stb {n: nat} (op: PauliString n) (ψ: Vector (2^n)) : Prop := 
   match op with
   | inl opn => (pn_int opn)  × ψ = ψ
   | inr opn => (png_int opn)  × ψ = ψ
@@ -115,3 +118,9 @@ Proof.
   rewrite id_pn_int.
   by rewrite Mmult_1_l.
 Qed.
+
+(* It's hard to define this *)
+(* Need a better way to define stabilizers *)
+(* If S∣ψ⟩=∣ψ⟩, then (S^(-1))∣ψ⟩=∣ψ⟩ *)
+
+
