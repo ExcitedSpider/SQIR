@@ -191,13 +191,9 @@ Lemma pn_idP {n: nat}:
   id_pn n.+1 = [tuple of id_p1 :: (id_pn n)].
 Proof.
   rewrite /id_pn /id_p1 /=.
-  (* 
-    both side seems the same
-    but unable to unity due to dependent type
-    but it's trivial from a human's perspective
-  *)
-  Fail by []. 
-Admitted.
+  apply: eq_from_tnth => i;
+  by rewrite !(tnth_nth I).
+Qed.
 
 Lemma mult_pn_id n: left_id (@id_pn n) (@mult_pn n).
 Proof. 
@@ -714,6 +710,7 @@ Definition pn_reducer {m n: nat} (acc: Matrix m n) (op: PauliOp)  :=
 Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
   (foldl pn_reducer (Matrix.I 1) p).
 
+(* foldl makes proof painful *)
 (* It actually does not matter if the dimension is incorrect... *)
 Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
   (foldl (@pn_reducer 2 2) (Matrix.I 1) p).
