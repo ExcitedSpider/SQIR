@@ -706,6 +706,7 @@ Check Matrix.I 1.
 Definition pn_reducer {m n: nat} (acc: Matrix m n) (op: PauliOp)  :=
   acc ⊗ (p1_int op).
 
+
 (* Cannot Infer m and n *) 
 Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
   (foldl pn_reducer (Matrix.I 1) p).
@@ -714,6 +715,18 @@ Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) :=
 (* It actually does not matter if the dimension is incorrect... *)
 Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
   (foldl (@pn_reducer 2 2) (Matrix.I 1) p).
+
+Fixpoint pn_int_fix {n: nat} : (n.-tuple PauliOp) -> Square (2^n) :=
+  if n is n'.+1 return (n.-tuple PauliOp) ->  Square (2^n)
+  then fun xs => (p1_int (thead xs)) ⊗ (pn_int_fix (behead xs))
+  else fun _ => Matrix.I 1.
+
+Goal pn_int_fix [tuple X; Y; Z] = σx ⊗ σy ⊗ σz.
+Proof.
+  rewrite /=.
+  Qsimpl.
+  rewrite kron_assoc; auto with wf_db.
+Qed.
 
 Lemma pn_reducer_1: 
   forall h: PauliOp,
@@ -726,6 +739,8 @@ Proof.
   by apply p1_int_WF.
 Qed.
 
+Locate foldl.
+
 Lemma pn_int_cons n:
   forall (h: PauliOp) (t: PauliTuple n),
   pn_int [tuple of h :: t] = p1_int h ⊗ pn_int t.
@@ -733,17 +748,44 @@ Proof.
   move => h t.
   rewrite /pn_int /=.
   (* need to dive into notations to see why *)
-  Fail rewrite pn_reducer_1.
-Admitted.
+  unfold pn_reducer at 2.
+  remember (p1_int h) as ih.
+  remember (Matrix.I 1) as I1.
+  (* Unset Printing Notations. *)
+  (* Set Printing Implicit. *)
+  remember ((@kron 2 2 2 2 I1 ih)) as Ih.
+  assert (Ih = ih) by admit.
+  rewrite H.
+  subst.
+  clear H.
+  remember (p1_int h) as ih.
+  Check foldl_rcons.
+  assert (foldl (@pn_reducer 2 2) ih t = foldl (@pn_reducer 2 2) (Matrix.I 1) (rcons t h)) by admit. 
+  rewrite H.
+  rewrite foldl_rcons /=.
+  unfold pn_reducer at 1.
+  subst.
+  Abort. 
+  (* The fold-based definition is too hard to work with *)
+
+Theorem pn_int_alt n:
+  forall (p: PauliTuple n),
+  pn_int p = pn_int_fix p.
+Proof.
+  intros p.
+  induction n.
+  - by rewrite tuple0 /pn_int /=.
+  - move: IHn.
+    (* rewrite /pn_int /= => IHn. *)
+    case:  p/tupleP => h t.
+    rewrite pn_int_cons /= => IHn.
+    by rewrite theadCons beheadCons IHn.
+Qed.
+
 
 Locate "*".
 
 Definition id1_pn: PauliTuple 1 := [tuple I].
-
-Goal mulg id1_pn [tuple I] = [tuple I].
-Proof.
-  rewrite /id1_pn /=.
-  Search mulg "=".
 
 Lemma pn_int_Mmult n:
   forall (x y: PauliTuple n),
@@ -753,10 +795,8 @@ Proof.
   intros.
   induction n.
   {
-    rewrite (tuple0 x) (tuple0 y) /=.
-    rewrite /mulg.
-  }
-Admitted.
+    rewrite (tuple0 x) (tuple0 y).
+  Abort.
   
 
 
