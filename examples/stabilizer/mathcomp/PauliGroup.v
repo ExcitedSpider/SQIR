@@ -1,5 +1,5 @@
 (*
-Group Definition of 
+The Group Definition of 
 - P1: 1-qubit Pauli Group without Phase (p1/z4)
 - P1G: 1-qubit Pauli Group
 - Pn: n-qubit Pauli Group wihtout phase (pn/z4)
@@ -735,6 +735,28 @@ Proof.
   (* need to dive into notations to see why *)
   Fail rewrite pn_reducer_1.
 Admitted.
+
+Locate "*".
+
+Definition id1_pn: PauliTuple 1 := [tuple I].
+
+Goal mulg id1_pn [tuple I] = [tuple I].
+Proof.
+  rewrite /id1_pn /=.
+  Search mulg "=".
+
+Lemma pn_int_Mmult n:
+  forall (x y: PauliTuple n),
+  pn_int x × pn_int y = pn_int (mulg x y).
+Proof.
+  Search "mulg" "=".
+  intros.
+  induction n.
+  {
+    rewrite (tuple0 x) (tuple0 y) /=.
+    rewrite /mulg.
+  }
+Admitted.
   
 
 
@@ -759,6 +781,14 @@ Definition png_int {n:nat} (p: GenPauliTuple n): Square (2^n) :=
   match p with
   | (phase, tuple) => (phase_int phase) .* (pn_int tuple)
   end.
+
+Lemma png_int_one n:
+  forall (pt: PauliTuple n),
+  pn_int pt = png_int (One, pt).
+Proof.
+  move => pt.
+  by rewrite /png_int /= Mscale_1_l.
+Qed.
 
 End Interpretation.
 
