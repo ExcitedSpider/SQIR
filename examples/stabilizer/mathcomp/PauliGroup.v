@@ -701,89 +701,90 @@ interpretation of group pn
 
 Import PNGroup.
 
-Check Matrix.I 1.
+(* Check Matrix.I 1. *)
+(* The frist attempt is to use foldl to define interpretation, which makes a lot of problems *)
+(* Definition pn_reducer {m n: nat} (acc: Matrix m n) (op: PauliOp)  := *)
+(*   acc ⊗ (p1_int op). *)
 
-Definition pn_reducer {m n: nat} (acc: Matrix m n) (op: PauliOp)  :=
-  acc ⊗ (p1_int op).
+
+(* (1* Cannot Infer m and n *1) *) 
+(* Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := *) 
+(*   (foldl pn_reducer (Matrix.I 1) p). *)
+
+(* (1* foldl makes proof painful *1) *)
+(* (1* It actually does not matter if the dimension is incorrect... *1) *)
+(* Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := *) 
+(*   (foldl (@pn_reducer 2 2) (Matrix.I 1) p). *)
 
 
-(* Cannot Infer m and n *) 
-Fail Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
-  (foldl pn_reducer (Matrix.I 1) p).
+(* Lemma pn_reducer_1: *) 
+(*   forall h: PauliOp, *)
+(*   pn_reducer (Matrix.I 1) h = p1_int h. *)
+(* Proof. *)
+(*   move => h. *)
+(*   unfold pn_reducer. *)
+(*   rewrite (kron_1_l). *)
+(*   by []. *)
+(*   by apply p1_int_WF. *)
+(* Qed. *)
 
-(* foldl makes proof painful *)
-(* It actually does not matter if the dimension is incorrect... *)
-Definition pn_int {n:nat} (p: PauliTuple n): Square (2^n) := 
-  (foldl (@pn_reducer 2 2) (Matrix.I 1) p).
+(* Locate foldl. *)
 
-Fixpoint pn_int_fix {n: nat} : (n.-tuple PauliOp) -> Square (2^n) :=
+(* Lemma pn_int_cons n: *)
+(*   forall (h: PauliOp) (t: PauliTuple n), *)
+(*   pn_int [tuple of h :: t] = p1_int h ⊗ pn_int t. *)
+(* Proof. *)
+(*   move => h t. *)
+(*   rewrite /pn_int /=. *)
+(*   (1* need to dive into notations to see why *1) *)
+(*   unfold pn_reducer at 2. *)
+(*   remember (p1_int h) as ih. *)
+(*   remember (Matrix.I 1) as I1. *)
+(*   (1* Unset Printing Notations. *1) *)
+(*   (1* Set Printing Implicit. *1) *)
+(*   remember ((@kron 2 2 2 2 I1 ih)) as Ih. *)
+(*   assert (Ih = ih) by admit. *)
+(*   rewrite H. *)
+(*   subst. *)
+(*   clear H. *)
+(*   remember (p1_int h) as ih. *)
+(*   Check foldl_rcons. *)
+(*   assert (foldl (@pn_reducer 2 2) ih t = foldl (@pn_reducer 2 2) (Matrix.I 1) (rcons t h)) by admit. *) 
+(*   rewrite H. *)
+(*   rewrite foldl_rcons /=. *)
+(*   unfold pn_reducer at 1. *)
+(*   subst. *)
+(*   Abort. *) 
+(*   (1* The fold-based definition is too hard to work with *1) *)
+
+(* Theorem pn_int_alt n: *)
+(*   forall (p: PauliTuple n), *)
+(*   pn_int p = pn_int p. *)
+(* Proof. *)
+(*   intros p. *)
+(*   induction n. *)
+(*   - by rewrite tuple0 /pn_int /=. *)
+(*   - move: IHn. *)
+(*     (1* rewrite /pn_int /= => IHn. *1) *)
+(*     case:  p/tupleP => h t. *)
+(*     rewrite pn_int_cons /= => IHn. *)
+(*     by rewrite theadCons beheadCons IHn. *)
+(* Qed. *)
+
+
+(* Locate "*". *)
+
+Fixpoint pn_int {n: nat} : (n.-tuple PauliOp) -> Square (2^n) :=
   if n is n'.+1 return (n.-tuple PauliOp) ->  Square (2^n)
-  then fun xs => (p1_int (thead xs)) ⊗ (pn_int_fix (behead xs))
+  then fun xs => (p1_int (thead xs)) ⊗ (pn_int (behead xs))
   else fun _ => Matrix.I 1.
 
-Goal pn_int_fix [tuple X; Y; Z] = σx ⊗ σy ⊗ σz.
+Goal pn_int [tuple X; Y; Z] = σx ⊗ σy ⊗ σz.
 Proof.
   rewrite /=.
   Qsimpl.
   rewrite kron_assoc; auto with wf_db.
 Qed.
-
-Lemma pn_reducer_1: 
-  forall h: PauliOp,
-  pn_reducer (Matrix.I 1) h = p1_int h.
-Proof.
-  move => h.
-  unfold pn_reducer.
-  rewrite (kron_1_l).
-  by [].
-  by apply p1_int_WF.
-Qed.
-
-Locate foldl.
-
-Lemma pn_int_cons n:
-  forall (h: PauliOp) (t: PauliTuple n),
-  pn_int [tuple of h :: t] = p1_int h ⊗ pn_int t.
-Proof.
-  move => h t.
-  rewrite /pn_int /=.
-  (* need to dive into notations to see why *)
-  unfold pn_reducer at 2.
-  remember (p1_int h) as ih.
-  remember (Matrix.I 1) as I1.
-  (* Unset Printing Notations. *)
-  (* Set Printing Implicit. *)
-  remember ((@kron 2 2 2 2 I1 ih)) as Ih.
-  assert (Ih = ih) by admit.
-  rewrite H.
-  subst.
-  clear H.
-  remember (p1_int h) as ih.
-  Check foldl_rcons.
-  assert (foldl (@pn_reducer 2 2) ih t = foldl (@pn_reducer 2 2) (Matrix.I 1) (rcons t h)) by admit. 
-  rewrite H.
-  rewrite foldl_rcons /=.
-  unfold pn_reducer at 1.
-  subst.
-  Abort. 
-  (* The fold-based definition is too hard to work with *)
-
-Theorem pn_int_alt n:
-  forall (p: PauliTuple n),
-  pn_int p = pn_int_fix p.
-Proof.
-  intros p.
-  induction n.
-  - by rewrite tuple0 /pn_int /=.
-  - move: IHn.
-    (* rewrite /pn_int /= => IHn. *)
-    case:  p/tupleP => h t.
-    rewrite pn_int_cons /= => IHn.
-    by rewrite theadCons beheadCons IHn.
-Qed.
-
-
-Locate "*".
 
 Definition id1_pn: PauliTuple 1 := [tuple I].
 
@@ -802,11 +803,16 @@ Proof.
 
 Check kron_assoc.
 
+Ltac pn_int_simpl :=
+  Qsimpl;
+  repeat rewrite kron_assoc;
+  auto with wf_db.
+
 Example pn_interpret:
 pn_int [X;Z;Y;I] = σx ⊗ σz ⊗ σy ⊗ Matrix.I 2.
 Proof.
-  rewrite /pn_int /pn_reducer /=.
-  by Qsimpl.
+  rewrite /pn_int /=.
+  by pn_int_simpl.
 Qed.
 
 (* 

@@ -1,3 +1,5 @@
+(* TODO: Use mathcomp action to formalize this *)
+
 Require Import PauliGroup.
 Require Import SQIR.UnitaryOps.
 
@@ -164,18 +166,26 @@ Proof.
   by rewrite Mmult_1_l.
 Qed.
 
+(* From mathcomp Require Import fingroup. *)
 
+(* Seems problematic. Do a math proof first *)
 Lemma inv_stb:
   forall {n: nat} (pstr: GenPauliTuple n) (ψ:  Vector (2^n)),
   WF_Matrix ψ -> stb pstr ψ -> stb (inv_png pstr) ψ.
 Proof.
-  move => n [p str] psi.
-  rewrite /stb /png_int /=.
-  have Hstr := (inv_stb_s str psi).
-  move: Hstr.
-  rewrite /stb_s => H  Hwf Hphase.
-  rewrite Mscale_mult_dist_l H.
-  clear H.
-  Search ".*" "×" "=" .
-  rewrite -Hphase.
-  Abort.
+  move => n [p str] psi Hwf.
+  rewrite /stb /= => Hstb.
+  rewrite <- Hstb at 1.
+  rewrite <- Mmult_assoc.
+  rewrite !Mscale_mult_dist_r !Mscale_mult_dist_l.
+  rewrite !Mscale_assoc pn_int_Mmult mulVg.
+  assert ((pn_int (id_pn n) × psi) = psi) by admit.
+  rewrite H.
+  assert (phase_int p * phase_int (inv_phase p) = phase_int (mulg p (inv_phase p))) by admit.
+  rewrite H0 mulgV.
+  by rewrite Mscale_1_l.
+Abort.
+
+
+
+
