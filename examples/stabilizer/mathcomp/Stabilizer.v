@@ -76,7 +76,6 @@ Check [pauli X, Y, Z].
 Ltac simpl_int :=
   try unfold png_int;
   try unfold pn_int;
-  try unfold pn_reducer; 
   simpl; Qsimpl.
 
 Example stb'_bell00:

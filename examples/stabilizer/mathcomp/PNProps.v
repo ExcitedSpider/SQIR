@@ -806,7 +806,6 @@ Proof.
     by rewrite (tuple0 tup).
   case: tup / tupleP => h t.
   rewrite /= Mscale_1_l theadCons beheadCons.
-  rewrite pn_int_cons.
   by rewrite IHn.
 Qed.
 
@@ -871,7 +870,6 @@ Proof.
     simpl.
     auto with wf_db.
   - case: op / tupleP => x t.
-    rewrite pn_int_cons.
     apply WF_kron; try easy.
     by apply p1_int_WF.
 Qed.
@@ -892,9 +890,9 @@ Lemma id_pn_int:
 Proof.
   intros.
   induction n.
-    by rewrite /pn_int tuple0.
-  rewrite pn_idP pn_int_cons.
-  rewrite IHn /=.
+    by rewrite /pn_int.
+  rewrite pn_idP.
+  rewrite /= beheadCons IHn.
   restore_dims.
   rewrite id_kron.
   lma'.

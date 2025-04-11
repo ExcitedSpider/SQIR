@@ -48,6 +48,27 @@ HB.instance Definition _ := isMulGroup.Build g
 
 Goal forall (a b: g),
   mulg a b = mul a b.
-by [].
+by [].Qed.
 
 Check g: finGroupType.
+
+
+Section NactionDef.
+
+From mathcomp Require Import action.
+
+Check is_action.
+Variables (gT : finGroupType) (sT : finType).
+Variables (to : {action gT &-> sT}) (n :  nat).
+
+Definition n_act (t : n.-tuple sT) a := [tuple of map (to^~ a) t].
+Print n_act.
+
+Locate "^~".
+
+Fact n_act_is_action : is_action setT n_act.
+Proof. Admitted.
+
+
+End NactionDef.
+

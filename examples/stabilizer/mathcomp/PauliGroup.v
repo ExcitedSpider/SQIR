@@ -641,12 +641,15 @@ End Strcture.
 
 End PNGGroup.
 
+Require Import QuantumLib.Quantum.
+From mathcomp Require action.
+(* Make sure it is loaded *)
+
 (* 
 Interprete Pauli Groups (1-qubit and n-qubit) by Robert's QuantumLib
 *)
 Section Interpretation.
 
-Require Import QuantumLib.Quantum.
 Import P1Group.
 
 (* 
@@ -670,6 +673,39 @@ Proof.
   rewrite /=;
   by auto with wf_db.
 Qed.
+
+Definition apply_p1 : Vector 2 -> PauliOp -> Vector 2 := 
+  fun psi op => (p1_int op) × psi.
+
+(* Attempt to use mathcomp.fingroup.action to formalize *)
+(* But failed *)
+(* Reason: *)
+(* 1. QuantumLib requires well-form evidence, which cannot be assumed
+   2. mathcomp Stabilizers are defined on finite type, but Matrix are infinite.
+*)
+Fact act_p1_is_action:
+  action.is_action [set: PauliOp] apply_p1.
+Proof.
+  rewrite /action.is_action.
+  split.
+  {
+    (* left_injective *)
+    rewrite /left_injective /= /injective /apply_p1 => x.
+    rewrite /= => A B.
+    eapply Mmult_cancel_l.
+    (* Problem: you need to show A and B is well formed, which is not possible *)
+Abort.
+      
+Fail Canonical act_p1 := action.Action act_p1_is_action.
+
+(* Check action.act act_p1. *)
+
+(* Goal (action.act act_p1 ∣0⟩ X) = ∣1⟩. *)
+(* Proof. *)
+(*   rewrite /= /apply_p1. *)
+(*   by lma'. *)
+(* Qed. *)
+
 
 (* 
 ==========================
