@@ -850,13 +850,15 @@ Qed.
 
 End Interpretation.
 
-From mathcomp Require action.
 
-Section Action.
+Module MathCompAction.
+From mathcomp Require action.
 Import P1Group.
 
 Definition apply_p1 : Vector 2 -> PauliOp -> Vector 2 := 
   fun psi op => (p1_int op) × psi.
+
+Check action.is_action.
 
 (* Attempt to use mathcomp.fingroup.action to formalize *)
 (* But failed *)
@@ -879,4 +881,37 @@ Abort.
       
 Fail Canonical act_p1 := action.Action act_p1_is_action.
 
-End Action.
+End MathCompAction.
+
+Require Import action.
+
+Module Action.
+
+Import P1Group.
+
+Definition apply_p1 : Vector 2 -> PauliOp -> Vector 2 := 
+  fun psi op => (p1_int op) × psi.
+
+Check is_action.
+
+Check (is_action PauliOp _ _ apply_p1).
+
+
+Fact act_p1_is_action:
+  is_action PauliOp _ _ apply_p1.
+Proof.
+  rewrite /is_action.
+  split.
+  {
+    rewrite /act_id /apply_p1 /=.
+    by rewrite Mmult_1_l. 
+  }
+  {
+    rewrite /act_morph /apply_p1 /= => a b.
+    case a; case b.
+    all: simpl; rewrite -Mmult_assoc; Qsimpl; try easy.
+    (* Without phase, this does not hold *)
+    (* Which means only p1g and png can be group actions *)
+Abort.
+
+End Action.  
