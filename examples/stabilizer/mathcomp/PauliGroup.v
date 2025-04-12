@@ -884,25 +884,60 @@ Proof.
   by rewrite /png_int /= Mscale_1_l.
 Qed.
 
+Lemma phase_int_comp: forall x y,
+phase_int (mult_phase x y) = phase_int x * phase_int y.
+Proof.
+  move => x y.
+  case x; case y;
+  simpl; lca.
+Qed.
+
+Print get_phase_pn.
+
+Lemma get_phase_pn_behead n:
+  forall x y (tx ty: PauliTuple n),
+  (get_phase_pn [tuple of y :: ty] [tuple of x :: tx]) = 
+    mult_phase (get_phase y x) (get_phase_pn ty tx).
+(* Do this proof after replace foldl in the implementation *)
+Admitted.
+
+
+Lemma p1_int_Mmult: forall x y,
+  p1_int y ×  p1_int x = phase_int (get_phase y x) .* p1_int (mulg y x).
+Proof.
+  move => x y.
+  case x; case y; simpl; lma'.
+Qed.
+
+
+Lemma pn_int_Mmult n: forall (x y: PauliTuple n),
+phase_int (get_phase_pn x y) .* pn_int (mult_pn x y) =
+(pn_int x × pn_int y).
+Proof.
+  move => x y.
+  induction n.
+  - rewrite tuple0 (tuple0 y) /=; lma'.
+  - case: x / tupleP; case : y / tupleP => x tx y ty.
+    rewrite /= !theadCons !beheadCons /= .
+    rewrite kron_mixed_product'; try easy.
+    rewrite mult_pn_behead mult_pn_thead get_phase_pn_behead.
+    rewrite phase_int_comp p1_int_Mmult -IHn.
+    rewrite !Mscale_kron_dist_l !Mscale_kron_dist_r.
+    by rewrite Mscale_assoc.
+Qed.
+    
+
 Lemma png_int_Mmult n:
   forall (x y: GenPauliTuple n),
   png_int x × png_int y = png_int (mulg x y).
 Proof.
-  induction n.
-  {
-    move => [sx x] [sy y].
-    rewrite (tuple0 x) (tuple0 y) /=.
-    case sy; case sx; simpl.
-    all: lma'.
-  }
-  {
-    move => [sx x] [sy y].
-    case: x / tupleP.
-    case: y / tupleP => hx tx hy ty.
-    simpl.
-    rewrite !theadCons !beheadCons mult_pn_thead.
-    rewrite mult_pn_behead.
-(* Things getting tough, come back later. *)
-Admitted.
+  move  => [sx x] [sy y].
+  rewrite /png_int /= /get_phase_png.
+  rewrite !Mscale_mult_dist_r !Mscale_mult_dist_l Mscale_assoc.
+  rewrite !phase_int_comp.
+  rewrite -pn_int_Mmult !Mscale_assoc.
+  rewrite Cmult_assoc Cmult_comm .
+  by rewrite (Cmult_comm (phase_int sy)) Cmult_assoc.
+Qed.
 
 End Interpretation.
