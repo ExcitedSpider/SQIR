@@ -22,9 +22,11 @@ Variables (aT : finGroupType) (D : {set aT}) (m n: nat).
 (* we restraint the applied set to be the hilbert space *)
 Implicit Type (to : Matrix m n -> aT -> Matrix m n).
 
-Definition act_morph to x := 
-  forall a b, to x (mulg a b) = to (to x a) b.
+(* compatibility *)
+Definition act_comp to x := 
+  forall a b, to x (mulg b a) = to (to x a) b.
 
+(* identity *)
 Definition act_id to x := to x (oneg aT) = x.
 
 (* From https://mathworld.wolfram.com/GroupAction.html *)
@@ -37,7 +39,7 @@ Definition act_id to x := to x (oneg aT) = x.
 (* In addition, we introduct a well-form assumption to make *) 
 (* sure x has valid physical meaning *)
 Definition is_action to :=
-  forall x, WF_Matrix x -> act_id to x /\ act_morph to x.
+  forall x, WF_Matrix x -> act_id to x /\ act_comp to x.
 
 Record action := Action {
   act :> Matrix m n -> aT -> Matrix m n; 
