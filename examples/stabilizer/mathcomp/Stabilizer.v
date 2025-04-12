@@ -1,7 +1,29 @@
 (* TODO: Use mathcomp action to formalize this *)
-
+From mathcomp Require Import fingroup.
 Require Import PauliGroup.
 Require Import SQIR.UnitaryOps.
+Require Import action.
+
+Section StabDef.
+
+Import PauliGroup.P1Group.
+Import PauliGroup.P1GGroup.
+
+Check GenPauliOp: finGroupType.
+
+Variable (m n:nat).
+Variable (aT : finGroupType).
+
+Definition actionType := (action aT m n).
+Check action.act.
+
+Definition astab (to: actionType) (state: Matrix m n) (op: aT) := 
+  action.act _ _ _ to state op = state. 
+
+(* TODO: use mathcomp finset to make aT to be {set aT}. *)
+Check astab: actionType -> Matrix m n -> aT -> Prop.
+
+End StabDef.
 
 Section Stabilizer1. 
 
@@ -154,6 +176,7 @@ Proof.
   by rewrite /stb' /stb.
 Qed.
 
+
 Lemma inv_stb_s:
   forall {n: nat} (pstr: PauliTuple n) (ψ:  Vector (2^n)),
   WF_Matrix ψ -> stb_s pstr ψ -> stb_s (inv_pn pstr) ψ.
@@ -184,7 +207,4 @@ Proof.
   rewrite H0 mulgV.
   by rewrite Mscale_1_l.
 Abort.
-
-
-
 
