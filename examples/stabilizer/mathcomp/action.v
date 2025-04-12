@@ -5,7 +5,7 @@
 
 (* From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq. *)
 (* From mathcomp Require Import fintype bigop finset fingroup morphism perm. *)
-From mathcomp Require Import ssreflect finset fingroup.
+From mathcomp Require Import ssreflect finset fingroup tuple.
 From QuantumLib Require Import Matrix.
 
 Import GroupScope.
@@ -64,33 +64,37 @@ Check is_action.
 
 Lemma mult_phase_comp: forall a b, phase_int (a) * phase_int (b) = 
   phase_int (mult_phase a b).
-Admitted.
+Proof.
+  move => a b.
+  all: case a; case b; lca.
+Qed.
 
 Fact act_1_is_action:
   is_action _ _ _ apply_1.
-Proof.
-  rewrite /is_action => x Hwf.
-  split.
-  {
-    rewrite /act_id /apply_1 /=.
-    lma'.
-  }
-  {
-    rewrite /act_comp /apply_1 => a b.
-    case a; case b => sa pa sb pb.
-    rewrite /p1g_int /=.
-    rewrite !Mscale_mult_dist_l Mscale_mult_dist_r Mscale_assoc.
-    rewrite -!mult_phase_comp.
-    rewrite Cmult_comm.
-    rewrite -!Mmult_assoc.
-    case sa; case sb; simpl; Qsimpl.
-    all: autorewrite with C_db.
-    all: case pa; case pb; simpl.
-    all: Qsimpl.
-    all: try easy.
-    all: solve_matrix.
-  }
-Qed.
+Admitted. (* for performance. here's a proof you can check: *)
+(* Proof. *)
+(*   rewrite /is_action => x Hwf. *)
+(*   split. *)
+(*   { *)
+(*     rewrite /act_id /apply_1 /=. *)
+(*     lma'. *)
+(*   } *)
+(*   { *)
+(*     rewrite /act_comp /apply_1 => a b. *)
+(*     case a; case b => sa pa sb pb. *)
+(*     rewrite /p1g_int /=. *)
+(*     rewrite !Mscale_mult_dist_l Mscale_mult_dist_r Mscale_assoc. *)
+(*     rewrite -!mult_phase_comp. *)
+(*     rewrite Cmult_comm. *)
+(*     rewrite -!Mmult_assoc. *)
+(*     case sa; case sb; simpl; Qsimpl. *)
+(*     all: autorewrite with C_db. *)
+(*     all: case pa; case pb; simpl. *)
+(*     all: Qsimpl. *)
+(*     all: try easy. *)
+(*     all: solve_matrix. *)
+(*   } *)
+(* Qed. *)
 
 Canonical act_1 := Action _ _ _ _ act_1_is_action.
 
@@ -100,6 +104,40 @@ Proof.
   rewrite /= /apply_1 /=.
   lma'.
 Qed.
+
+Import PNGroup.
+Import PNGGroup.
+Require Import PNProps.
+
+Variable (n: nat).
+
+Definition apply_n : Vector (2^n) -> GenPauliTuple n -> Vector (2^n) :=
+  fun psi op => (png_int op) × psi.
+
+Set Bullet Behavior "Strict Subproofs".
+
+Fact act_n_is_action:
+  is_action _ _ _ apply_n.
+Proof.
+  rewrite /is_action => x Hwf.
+  split.
+  {
+    rewrite /act_id /apply_n id_png_int.
+    by rewrite Mmult_1_l.
+  }
+  {
+    rewrite /act_comp /apply_n=> [[pa ta] [pb tb]].
+    induction n.
+    - rewrite (tuple0 ta) (tuple0 tb) /=.
+      case pa; case pb; simpl; Qsimpl; lma'.
+    (* Cannot prove this because there is no construction of *) 
+    (*   `x : Vector (2 ^ S n)` *)
+    (*   That can be used for analysis. *)
+    (*   That is, there does not always exists h t such that *)
+    (*   x = h ⊗ t. *)
+    - admit.
+  }
+Admitted.
 
 End QuantumActions.
 

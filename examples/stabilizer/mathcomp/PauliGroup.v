@@ -829,18 +829,24 @@ Proof.
 Qed.
 
 Definition id1_pn: PauliTuple 1 := [tuple I].
-
-Lemma pn_int_Mmult n:
-  forall (x y: PauliTuple n),
-  pn_int x × pn_int y = pn_int (mulg x y).
+Lemma mult_pn_thead n:
+forall (hy hx: PauliOp) (ty tx: PauliTuple n), 
+  thead (mult_pn [tuple of hy :: ty] [tuple of hx :: tx]) = (mulg hy hx) .
 Proof.
-  Search "mulg" "=".
   intros.
-  induction n.
-  {
-    rewrite (tuple0 x) (tuple0 y).
-  Abort.
-  
+  unfold mult_pn.
+  by rewrite zipCons mapCons theadCons.
+Qed.
+
+
+Lemma mult_pn_behead n:
+forall (hy hx: PauliOp) (ty tx: PauliTuple n), 
+  behead_tuple (mult_pn [tuple of hy :: ty] [tuple of hx :: tx]) = (mulg ty tx) .
+Proof.
+  intros.
+  unfold mult_pn.
+  by rewrite zipCons mapCons beheadCons.
+Qed.
 
 
 Check kron_assoc.
@@ -878,70 +884,25 @@ Proof.
   by rewrite /png_int /= Mscale_1_l.
 Qed.
 
-End Interpretation.
-
-
-Module MathCompAction.
-From mathcomp Require action.
-Import P1Group.
-
-Definition apply_p1 : Vector 2 -> PauliOp -> Vector 2 := 
-  fun psi op => (p1_int op) × psi.
-
-Check action.is_action.
-
-(* Attempt to use mathcomp.fingroup.action to formalize *)
-(* But failed *)
-(* Reason: *)
-(* 1. QuantumLib requires well-form evidence, which cannot be assumed
-   2. mathcomp Stabilizers are defined on finite type, but Matrix are infinite.
-*)
-Fact act_p1_is_action:
-  action.is_action [set: PauliOp] apply_p1.
+Lemma png_int_Mmult n:
+  forall (x y: GenPauliTuple n),
+  png_int x × png_int y = png_int (mulg x y).
 Proof.
-  rewrite /action.is_action.
-  split.
+  induction n.
   {
-    (* left_injective *)
-    rewrite /left_injective /= /injective /apply_p1 => x.
-    rewrite /= => A B.
-    eapply Mmult_cancel_l.
-    (* Problem: you need to show A and B is well formed, which is not possible *)
-Abort.
-      
-Fail Canonical act_p1 := action.Action act_p1_is_action.
-
-End MathCompAction.
-
-Require Import action.
-
-Module Action.
-
-Import P1Group.
-
-Definition apply_p1 : Vector 2 -> PauliOp -> Vector 2 := 
-  fun psi op => (p1_int op) × psi.
-
-Check is_action.
-
-Check (is_action PauliOp _ _ apply_p1).
-
-
-Fact act_p1_is_action:
-  is_action PauliOp _ _ apply_p1.
-Proof.
-  rewrite /is_action.
-  split.
-  {
-    rewrite /act_id /apply_p1 /=.
-    by rewrite Mmult_1_l. 
+    move => [sx x] [sy y].
+    rewrite (tuple0 x) (tuple0 y) /=.
+    case sy; case sx; simpl.
+    all: lma'.
   }
   {
-    rewrite /act_morph /apply_p1 /= => a b.
-    case a; case b.
-    all: simpl; rewrite -Mmult_assoc; Qsimpl; try easy.
-    (* Without phase, this does not hold *)
-    (* Which means only p1g and png can be group actions *)
-Abort.
+    move => [sx x] [sy y].
+    case: x / tupleP.
+    case: y / tupleP => hx tx hy ty.
+    simpl.
+    rewrite !theadCons !beheadCons mult_pn_thead.
+    rewrite mult_pn_behead.
+(* Things getting tough, come back later. *)
+Admitted.
 
-End Action.  
+End Interpretation.
