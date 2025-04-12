@@ -344,6 +344,13 @@ Check GenPauliOp: finType.
 (* We can also define product set *) 
 Definition GenPauliOpSet := setX [set: phase] [set: PauliOp].
 
+Definition p1g_of: phase -> PauliOp -> GenPauliOp := 
+  fun p o => pair p o.
+
+Check p1g_of One X.
+
+
+
 Lemma setx_correct: forall (gop: GenPauliOp),
   gop \in GenPauliOpSet.
 Proof.
@@ -376,6 +383,7 @@ Definition mult_p1g (a b: GenPauliOp): GenPauliOp :=
       mult_p1 pa pb
     ) 
   end. 
+
 
 Definition inv_p1g (a: GenPauliOp): GenPauliOp := 
   match a with
@@ -428,6 +436,28 @@ Qed.
 HB.instance Definition _ := Finite.on GenPauliOp.
 HB.instance Definition _ := isMulGroup.Build GenPauliOp
   mult_p1g_assoc mult_p1g_id mult_p1g_left_inv.
+
+Notation "%( x ; y )" := (p1g_of x y) (at level 60).
+
+Notation "% x" := (p1g_of One x)  (at level 60).
+
+
+(* San Check by Examples *)
+
+Goal mulg (% Y) (% X) = %(NImg; Z). 
+by []. Qed.
+
+Goal mulg (%(NImg; Y)) (% X) = %(NOne; Z). 
+by []. Qed.
+
+Goal mult_p1g (% X) (% Y) = %(Img; Z). 
+by []. Qed.
+
+Goal mult_p1g (% Z) (% Y) = %(NImg; X). 
+by []. Qed.
+
+Goal mult_p1g (% X) (% Z) = %(NImg; Y). 
+by []. Qed.
 
 End P1GGroup.
 
