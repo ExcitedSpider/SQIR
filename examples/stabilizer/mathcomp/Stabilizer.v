@@ -4,7 +4,7 @@ From mathcomp Require Import fintype bigop finset fingroup morphism perm.
 
 Require Import PauliGroup.
 Require Import SQIR.UnitaryOps.
-Require Import action.
+Require Import Action.
 Import P1Group.
 Import P1GGroup.
 
