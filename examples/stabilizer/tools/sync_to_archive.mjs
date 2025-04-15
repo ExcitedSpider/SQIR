@@ -10,7 +10,8 @@ try {
   await Promise.all(
     [
       $`rm -rf MCS-Proj/stabilizer/barebone/ && cp -r ../barebone/ MCS-Proj/stabilizer/barebone/`,
-      $`rm -rf MCS-Proj/stabilizer/mathcomp/ && cp -r ../mathcomp/ MCS-Proj/stabilizer/mathcomp/`
+      $`rm -rf MCS-Proj/stabilizer/mathcomp/ && cp -r ../mathcomp/ MCS-Proj/stabilizer/mathcomp/`,
+      $`rm MCS-Proj/stabilizer/readme.md && cp ../readme.md MCS-Proj/stabilizer/`
     ],
   )
 

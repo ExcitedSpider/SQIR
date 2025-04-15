@@ -48,7 +48,8 @@ HB.instance Definition _ := isMulGroup.Build g
 
 Goal forall (a b: g),
   mulg a b = mul a b.
-by [].Qed.
+by []. Qed.
+
 
 Check g: finGroupType.
 
@@ -69,6 +70,10 @@ Locate "^~".
 Fact n_act_is_action : is_action setT n_act.
 Proof. Admitted.
 
+(* astab: {set ?rT} -> action ?D ?rT -> {set ?aT} *)
+Check astab.
+
+Print astab.
 
 End NactionDef.
 

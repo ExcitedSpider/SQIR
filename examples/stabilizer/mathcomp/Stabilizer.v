@@ -1,8 +1,14 @@
 (* TODO: Use mathcomp action to formalize this *)
-From mathcomp Require Import fingroup.
+From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple.
+From mathcomp Require Import fintype bigop finset fingroup morphism perm.
+
 Require Import PauliGroup.
 Require Import SQIR.UnitaryOps.
 Require Import action.
+Import P1Group.
+Import P1GGroup.
+
+Check act_1 ∣0⟩ (% X) == ∣1⟩.
 
 Section StabDef.
 
@@ -11,19 +17,37 @@ Import PauliGroup.P1GGroup.
 
 Check GenPauliOp: finGroupType.
 
-Variable (m n:nat).
-Variable (aT : finGroupType).
+Definition actionTo {dim: nat} {aT: finGroupType} := 
+  ActionType aT dim.
 
-Definition actionType := (action aT m n).
-Check action.act.
+Fail Definition astab {dim: nat} {aT: finGroupType} (to: actionTo) (A: {set aT}) (psi: Vector (2^dim)):= 
+  (* Canot define. because mathcomp needs psi of eqType *) 
+  [set x | x in A & to psi x == psi]. 
 
-Definition astab (to: actionType) (state: Matrix m n) (op: aT) := 
-  action.act _ _ _ to state op = state. 
+(* Let's try can we define Vector to be eqType *)
+From HB Require Import structures.
 
-(* TODO: use mathcomp finset to make aT to be {set aT}. *)
-Check astab: actionType -> Matrix m n -> aT -> Prop.
+(* reflect (x = y) (e x y) where e: T -> T -> bool *)
+Print eq_axiom.
+
+(* QuantumLib does not define `==` to be a computable process *)
+(* i.e. A == B -> Prop not bool *) 
+Check ∣0⟩==∣1⟩.
+
+(* Therefore, we use this definition instead. *)
+Definition stab {dim: nat} {aT: finGroupType} (to: actionTo) (x: aT) (psi: Vector(2^dim)):= 
+  to psi x = psi.
 
 End StabDef.
+
+(* Z is the stabilizer *) 
+Goal stab act_1 (% Z) ∣0⟩.
+Proof.
+  rewrite /stab /= /apply_1 /=.
+  Qsimpl.
+  (* maybe we can make basic facts as lemmas. *)
+  lma'.
+Qed.
 
 Section Stabilizer1. 
 

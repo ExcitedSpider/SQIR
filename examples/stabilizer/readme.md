@@ -46,10 +46,11 @@ There are two packages in the project.
 │   ├── Stablizer.v # quantum stabilizer theory
 │   └── dune
 ├── mathcomp
-│   ├── ExtraSpecs.v # extra properties
-│   ├── P1Props.v # properties of 1-qubit pauli group
-│   ├── PNProps.v # properties of n-qubit pauli group
-│   ├── PauliGroup.v # mathcomp-based group definition
+│   ├── Action.v # definitions of group actions
+│   ├── ExtraSpecs.v # definitions of other properties
+│   ├── P1Props.v # verified properties of 1-qubit pauli group
+│   ├── PNProps.v # verified properties of n-qubit pauli group
+│   ├── PauliGroup.v # Pauli group definition based on math-comp
 │   ├── Stabilizer.v # quantum stabilizer theory
 │   └── dune
 └── readme.md
@@ -60,5 +61,5 @@ There are two packages in the project.
 - Done: The single-qubit Pauli group.
 - Done: The n-qubit Pauli group
 - Done: Theorems of stabilizer theories. e.g. commute/anti-commute relations.
-- WIP: Stabilizer Theories using mathcomp formalism
+Windows Terminal- WIP: Stabilizer Theories using mathcomp formalism
 - WIP: examples of proving larger QECC programs correct
