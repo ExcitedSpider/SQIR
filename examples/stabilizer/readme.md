@@ -11,29 +11,30 @@ https://qubit.guide/7-stabilisers
 ## Build this Project
 
 ```bash
+# clone the whole repo
+git clone git@github.com:ExcitedSpider/SQIR.git
+
 # install quantumlib
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam update
 opam install coq-quantumlib.1.5.1
 
 # install mathcomp 
 opam repo add coq-released https://coq.inria.fr/opam/released
 opam install coq-mathcomp-ssreflect.2.2.0
+opam install coq-mathcomp-fingroup.2.2.0
 
-# compile barebone package
-cd barebone
-dune build
+# compile SQIR core
+make 
 
-# compile mathcomp package
-cd mathcomp
-dune build
+# compile stabilizer
+make stabilizer
 ```
 
 ## Structure Description
 
 There are two packages in the project.
 - barebone. Barebone is the initial attempt to formalize stabilizer using a from-scratch style. Only quantumLib is used in the project.
-- mathcomp. As the name suggests, we later did the formalization again using mathcomp and ssreflect. This is more structural and principled. 
+- mathcomp. As the name suggests, we later did the formalization again using mathcomp and ssreflect, quantum-lib. 
 
 ```
 .
@@ -46,11 +47,11 @@ There are two packages in the project.
 │   ├── Stablizer.v # quantum stabilizer theory
 │   └── dune
 ├── mathcomp
-│   ├── Action.v # definitions of group actions
-│   ├── ExtraSpecs.v # definitions of other properties
+│   ├── PauliGroup.v # Pauli group definition based on math-comp, and entry-point to the formalization
 │   ├── P1Props.v # verified properties of 1-qubit pauli group
 │   ├── PNProps.v # verified properties of n-qubit pauli group
-│   ├── PauliGroup.v # Pauli group definition based on math-comp
+│   ├── Action.v # definitions of group actions
+│   ├── ExtraSpecs.v # definitions of other properties (TODO: replace with mathcomp)
 │   ├── Stabilizer.v # quantum stabilizer theory
 │   └── dune
 └── readme.md

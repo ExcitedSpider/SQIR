@@ -175,5 +175,61 @@ Proof.
   lma'.
 Qed.
 
+From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple.
+From mathcomp Require Import fintype bigop finset fingroup morphism perm.
+
+Require Import PauliGroup.
+Require Import SQIR.UnitaryOps.
+Import P1Group.
+Import P1GGroup.
+
+Check act_1 ∣0⟩ (% X) == ∣1⟩.
+
+Section StabDef.
+
+Import PauliGroup.P1Group.
+Import PauliGroup.P1GGroup.
+
+Check GenPauliOp: finGroupType.
+
+Definition actionTo {dim: nat} {aT: finGroupType} := 
+  ActionType aT dim.
+
+Fail Definition astab {dim: nat} {aT: finGroupType} (to: actionTo) (A: {set aT}) (psi: Vector (2^dim)):= 
+  (* Canot define. because mathcomp needs psi of eqType *) 
+  [set x | x in A & to psi x == psi]. 
+
+(* Let's try can we define Vector to be eqType *)
+From HB Require Import structures.
+
+(* reflect (x = y) (e x y) where e: T -> T -> bool *)
+Print eq_axiom.
+
+(* QuantumLib does not define `==` to be a computable process *)
+(* i.e. A == B -> Prop not bool *) 
+Check ∣0⟩==∣1⟩.
+
+(* Therefore, we use this definition instead. *)
+Definition stab {dim: nat} {aT: finGroupType} (to: actionTo) (x: aT) (psi: Vector(2^dim)):= 
+  to psi x = psi.
+
+End StabDef.
+
+Check Z0_spec.
+
+Ltac solve_stab1:=
+  rewrite /stab /= /apply_1 /=;
+  Qsimpl;
+  autorewrite with ket_db;
+  try by [];
+  try by lma'.
+
+Import P1GGroup.
+
+Lemma Z0_stab: stab act_1 (% Z) ∣0⟩.
+by solve_stab1. Qed.
+
+Lemma Z1_stab: stab act_1 (p1g_of NOne Z) ∣1⟩.
+by solve_stab1. Qed.
 
 

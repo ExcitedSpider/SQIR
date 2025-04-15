@@ -1,234 +1,414 @@
-(* TODO: Use mathcomp action to formalize this *)
+(* The stabilizer theories *)
+
+(* This was copied from barebone/Stabilizer.v 
+   and needs necessary refatorization before it can work *) 
+
+
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple.
 From mathcomp Require Import fintype bigop finset fingroup morphism perm.
 
-Require Import PauliGroup.
 Require Import SQIR.UnitaryOps.
 Require Import Action.
+Require Import PauliGroup.
 Import P1Group.
 Import P1GGroup.
+Import PNGroup.
+Import PNGGroup.
 
-Check act_1 ∣0⟩ (% X) == ∣1⟩.
+Definition stb {n:nat} (pstring: GenPauliTuple n) (psi: Vector (2^n)):= 
+  act_n n psi pstring = psi.
 
-Section StabDef.
 
-Import PauliGroup.P1Group.
-Import PauliGroup.P1GGroup.
+(* A fancy symbol for "stabilize" *)
+Notation "pstring ∝1 ψ" := (stb pstring ψ) (at level 50).
 
-Check GenPauliOp: finGroupType.
+Ltac simpl_stbn := 
+  rewrite /stb /act_n /apply_n /=;
+  Qsimpl;
+  try (lma'; auto with wf_db).
 
-Definition actionTo {dim: nat} {aT: finGroupType} := 
-  ActionType aT dim.
 
-Fail Definition astab {dim: nat} {aT: finGroupType} (to: actionTo) (A: {set aT}) (psi: Vector (2^dim)):= 
-  (* Canot define. because mathcomp needs psi of eqType *) 
-  [set x | x in A & to psi x == psi]. 
+(* Z stabilises ∣0⟩ *)
+Example stb_z0:
+  (One, [tuple of Z::[]]) ∝1 ∣0⟩.
+Proof. by simpl_stbn. Qed.
 
-(* Let's try can we define Vector to be eqType *)
-From HB Require Import structures.
+Example stb_z00:
+  (One, [tuple of Z::Z::[]]) ∝1 ∣0,0⟩.
+Proof. by simpl_stbn. Qed.
 
-(* reflect (x = y) (e x y) where e: T -> T -> bool *)
-Print eq_axiom.
+Example stb_z000:
+  (One, [tuple of Z::Z::Z::[]]) ∝1 ∣0,0,0⟩.
+Proof. by simpl_stbn. Qed. 
 
-(* QuantumLib does not define `==` to be a computable process *)
-(* i.e. A == B -> Prop not bool *) 
-Check ∣0⟩==∣1⟩.
 
-(* Therefore, we use this definition instead. *)
-Definition stab {dim: nat} {aT: finGroupType} (to: actionTo) (x: aT) (psi: Vector(2^dim)):= 
-  to psi x = psi.
+(* For length >= 4, using automation becomes lagging *)
+(* Try it if you trust your machine *)
+(* Example stb_z0000: *)
+(*   (One, [tuple of Z::Z::Z::Z::[]]) ∝1 ∣0,0,0,0⟩. *)
+(* Proof. by simpl_stbn. Qed. *) 
 
-End StabDef.
+(* -Z stabilises ∣1⟩ *)
+Example stb_nz0:
+  (NOne, [tuple of Z::[]]) ∝1 ∣1⟩.
+by simpl_stbn. Qed.
 
-(* Z is the stabilizer *) 
-Goal stab act_1 (% Z) ∣0⟩.
+(* X stabilize the bell ψ *)
+Example stb_xbell:
+  stb (One, X::[]) ( 1/√2 .* (∣0⟩ .+ ∣1⟩)).
+by simpl_stbn. Qed.
 Proof.
-  rewrite /stab /= /apply_1 /=.
-  Qsimpl.
-  (* maybe we can make basic facts as lemmas. *)
-  lma'.
-Qed.
-
-Section Stabilizer1. 
-
-Import PauliGroup.P1Group.
-Import PauliGroup.P1GGroup.
-
-
-(* Stabilizer of Operator length 1 *)
-Definition stb1 (op: PauliOp + GenPauliOp) (ψ: Vector 2) : Prop :=
-  match op with
-  | inl op => (p1_int op) × ψ = ψ
-  | inr op => (p1g_int op) × ψ = ψ
-  end.
-
-Example stb1_z0:
-  stb1 (inl Z) ∣ 0 ⟩.
-Proof.
-  unfold stb1.
+  unfold stb.
   simpl; Qsimpl.
-  rewrite Z0_spec.
-  easy.
-Qed.
-
-Example stb1_m:
-  stb1 (inr (NOne, X)) ∣ - ⟩.
-Proof.
-  unfold stb1.
-  simpl; Qsimpl.
-  distribute_plus.
-  repeat rewrite Mscale_mult_dist_r.
-  replace ∣ 0 ⟩ with ∣0⟩ by solve_matrix.
-  replace ∣ 1 ⟩ with ∣1⟩ by solve_matrix.
-  repeat rewrite Mscale_mult_dist_l.
-  repeat rewrite Mscale_assoc.
-  autorewrite with Q_db.
   solve_matrix.
 Qed.
 
-End Stabilizer1. 
-
-From mathcomp Require Import seq tuple.
-
-Section StabilizerN.
-Import PauliGroup.P1Group.
-Import PauliGroup.P1GGroup.
-Import PauliGroup.PNGroup.
-Import PauliGroup.PNGGroup.
-
-(* What can i gain from doing this? *)
-Definition PauliString (n: nat) := sum .
-
-Definition stb' {n: nat} (op: ((PauliTuple n)+ (GenPauliTuple n)) )(ψ: Vector (2^n)) : Prop := 
-  match op with
-  | inl opn => (pn_int opn)  × ψ = ψ
-  | inr opn => (png_int opn)  × ψ = ψ
-  end.
-
-
-Open Scope form_scope.
-
-(* Locate "[ tuple _ ; .. ; _ ]". *)
-(* Check [tuple of X :: Y :: []]. *)
-
-(* (1* Unknown interpretation for notation "_ ; _". *1) *)
-(* Fail Check [tuple X; Z; Y; I]. *)
-
-Notation "[ 'pauli' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..].
-
-Check [pauli X, Y, Z].
-
-(* Simplify Interpretations *)
-Ltac simpl_int :=
-  try unfold png_int;
-  try unfold pn_int;
+(* Y stabilize the |i> ψ *)
+Example stb_yibell:
+  stb (One, Y::[]) ( 1/√2 .* (∣0⟩ .+ Ci .* ∣1⟩)).
+Proof.
+  unfold stb.
   simpl; Qsimpl.
-
-Example stb'_bell00:
-  stb' (inl [pauli X, X]) ∣Φ+⟩.
-Proof.
-  unfold stb'.
-  lma'.
-  simpl_int.
-  auto with wf_db.
+  solve_matrix.
 Qed.
 
-Definition EPRpairM : Vector 4 := / (√ 2) .* (∣0,0⟩ .+ (-1) .* ∣1,1⟩).
-Notation "∣Φ-⟩" := EPRpairM.
 
-Lemma EPRpairM_WF: 
-  WF_Matrix ∣Φ-⟩.
+Example stb_x2bell2:
+  stb (One, X::X::[]) ( 1/2 .* (∣0,0⟩ .+ ∣1,1⟩)).
 Proof.
-  unfold EPRpairM.
-  auto with wf_db.
+  unfold stb.
+  simpl; Qsimpl.
+  autorewrite with C_db.
+  autorewrite with ket_db.
+  solve_matrix.
 Qed.
 
-Example stb'_bell11:
-  stb' (inr (NOne, [pauli X, X])) ∣Φ-⟩.
+Example stb_z2bell2:
+  stb (One, p[Z, Z]) ( 1/2 .* (∣0,0⟩ .+ ∣1,1⟩)).
 Proof.
-  unfold stb'.
-  lma'.
-  2: apply EPRpairM_WF.
-  simpl_int.
-  apply WF_mult.
-  auto with wf_db.
-  apply EPRpairM_WF.
+  unfold stb.
+  simpl; Qsimpl.
+  autorewrite with C_db.
+  autorewrite with ket_db.
+  solve_matrix.
 Qed.
 
-Require Import PNProps.
-From mathcomp Require Import ssreflect.
-
-Theorem one_stb'_all {n: nat}:
-  forall (ψ:  Vector (2^n)), WF_Matrix ψ -> stb' (inl (id_pn n)) ψ.
+Lemma one_stb_everything:
+  forall {n: nat} (ψ:  Vector (2^n)),
+  WF_Matrix ψ -> stb (pstr_identity n) ψ.
 Proof.
   intros.
-  unfold stb'; simpl.
-  rewrite id_pn_int.
-  by rewrite Mmult_1_l.
+  induction n.
+  { 
+    unfold stb.
+    simpl; Qsimpl; easy. 
+  }
+  {
+    unfold stb in *.
+    simpl; Qsimpl.
+    replace (pvec_to_matrix (const I n)) with (Matrix.I (2^n)). 
+    rewrite id_kron.
+    Qsimpl.
+    reflexivity.
+    rewrite pvec_id_to_matrix.
+    reflexivity.
+  }
 Qed.
 
-(* It's hard to define this using current definitions *)
 (* If S∣ψ⟩=∣ψ⟩, then (S^(-1))∣ψ⟩=∣ψ⟩ *)
-(* Let's make an alternative *)
-
-From mathcomp Require Import ssreflect fingroup.
-
-(* This is the most general paulituple *)
-Definition stb {n: nat} (pt: GenPauliTuple n) (ψ: Vector (2^n)) : Prop := 
-  (png_int pt)  × ψ = ψ.
-
-(* Sometimes the phase is just `One` *)
-(* We can use this simplified version of stb *)
-Definition stb_s {n: nat} (pt: PauliTuple n) (ψ: Vector (2^n)) : Prop := 
-  (pn_int pt) × ψ = ψ.
-
-(* Allow using simplified version when the phase is one *)
-Lemma phase_one_stb n:
-  forall (pt: PauliTuple n) (psi: Vector (2^n)),
-  stb_s pt psi <-> stb (One, pt) psi.
-Proof.
-  move => pt psi.
-  by rewrite /stb /stb_s png_int_one.
-Qed.
-
-(* The two definitions are equal *)
-Lemma stb_eq_stb' n:
-  forall (pt: GenPauliTuple n) (psi: Vector (2^n)),
-  stb pt psi <-> stb' (inr pt) psi.
-Proof.
-  move => pt psi.
-  by rewrite /stb' /stb.
-Qed.
-
-
-Lemma inv_stb_s:
-  forall {n: nat} (pstr: PauliTuple n) (ψ:  Vector (2^n)),
-  WF_Matrix ψ -> stb_s pstr ψ -> stb_s (inv_pn pstr) ψ.
-Proof.
-  move => n pstr psi Hpsi.
-  rewrite /stb_s => Hstb.
-  rewrite -Hstb -Mmult_assoc pn_int_Mmult.
-  rewrite mulVg Hstb id_pn_int.
-  by rewrite Mmult_1_l.
-Qed.
-
-(* From mathcomp Require Import fingroup. *)
-
-(* Seems problematic. Do a math proof first *)
 Lemma inv_stb:
-  forall {n: nat} (pstr: GenPauliTuple n) (ψ:  Vector (2^n)),
-  WF_Matrix ψ -> stb pstr ψ -> stb (inv_png pstr) ψ.
+  forall {n: nat} (pstr: PString n) (ψ:  Vector (2^n)),
+  WF_Matrix ψ -> stb pstr ψ -> stb (pstr_inv pstr) ψ.
 Proof.
-  move => n [p str] psi Hwf.
-  rewrite /stb /= => Hstb.
+  intros n pstr ψ Hwf Hstb.
+  unfold stb in *.
   rewrite <- Hstb at 1.
   rewrite <- Mmult_assoc.
-  rewrite !Mscale_mult_dist_r !Mscale_mult_dist_l.
-  rewrite !Mscale_assoc pn_int_Mmult mulVg.
-  assert ((pn_int (id_pn n) × psi) = psi) by admit.
+  rewrite psmul_correct.
+  rewrite pstr_inv_correct.
+  unfold pstr_identity.
+  apply one_stb_everything; easy.
+Qed.
+
+Print Vector.
+
+(* 
+If we take the tensor product of a two states, with stabiliser groups A and B (respectively), then the resulting tensor product state has stabiliser group given by the cartesian product A × B. 
+*)
+Theorem stb_compose:
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ1 ψ2:  Vector (2^n)),
+  let cpstring := compose_pstring pstr1 pstr2 in
+  pstr1 ∝1 ψ1 ->
+  pstr2 ∝1 ψ2 ->
+  cpstring ∝1 (ψ1 ⊗ ψ2).
+Proof.
+  intros.
+  assert (Hcomp: pstr_to_matrix (compose_pstring pstr1 pstr2) = pstr_to_matrix pstr1 ⊗ pstr_to_matrix pstr2) by apply compose_pstring_correct.
+  unfold stb in *.
+  unfold cpstring.
+  rewrite Hcomp.
+  restore_dims.
+  rewrite kron_mixed_product.
   rewrite H.
-  assert (phase_int p * phase_int (inv_phase p) = phase_int (mulg p (inv_phase p))) by admit.
-  rewrite H0 mulgV.
-  by rewrite Mscale_1_l.
-Abort.
+  rewrite H0.
+  reflexivity.
+Qed.
+  
+(* The vector space of EPR Pair can be defined by generator <XX, ZZ> *)
+Fact bell_stabilizer: 
+  (One, p[X,X]) ∝1 ∣Φ+⟩ /\ (One, p[Z,Z]) ∝1 ∣Φ+⟩.
+Proof.
+  split.
+  - unfold stb.
+    lma'.
+    simpl;Qsimpl.
+    auto with wf_db. 
+  - unfold stb.
+    lma'.
+    simpl;Qsimpl.
+    auto with wf_db.
+Qed. 
+
+Fact three_qubit_state_stabilizer:
+  (One, p[Z, Z, I]) ∝1 ∣000⟩ /\ (One, p[Z, Z, I]) ∝1 ∣000⟩.
+Proof.
+  split.
+  - unfold stb.
+    solve_matrix.
+  - unfold stb.
+    solve_matrix.
+Qed.
+
+Theorem stb_closed: 
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  pstr1 ∝1 ψ ->
+  pstr2 ∝1 ψ ->
+  psmul pstr1 pstr2 ∝1 ψ
+.
+Proof.
+  intros.
+  unfold stb in *.
+  (* Search psmul. *)
+  remember (psmul pstr1 pstr2) as pstr_prod.
+  assert (pstr_to_matrix pstr_prod = pstr_to_matrix pstr1 × pstr_to_matrix pstr2).
+  {
+    symmetry.
+    apply psmul_implies_Mmult.
+    easy.
+  }
+  rewrite H1. 
+  rewrite Mmult_assoc.
+  rewrite H0.
+  rewrite H.
+  easy.
+Qed.
+
+(* This is harder than expected *)
+Lemma pvec_id_interpret:
+  forall {n},
+  pvec_to_matrix (const I n) = Matrix.I (2^n).
+Proof.
+  intros.
+  induction n.
+  {
+    easy. 
+  }
+  {
+    simpl; Qsimpl. 
+    assert (Matrix.I (2 ^ n + (2 ^ n + 0)) = Matrix.I 2 ⊗ Matrix.I (2 ^ n)).
+    {
+      symmetry.
+      apply id_kron.
+    }
+    rewrite H.
+    rewrite IHn.
+    reflexivity.
+  }
+Qed.
+
+Theorem stb_by_id: 
+  forall {n: nat} (ψ:  Vector (2^n)), 
+  WF_Matrix ψ ->
+  (One, Vector.const I n) ∝1 ψ.
+Proof.
+  intros.
+  unfold stb.
+  simpl.
+  Qsimpl.
+  (* Search Matrix.I. *)
+  assert (pvec_to_matrix (const I n) = Matrix.I (2^n)) by apply pvec_id_interpret.
+  rewrite H0.
+  apply Mmult_1_l.
+  easy.
+Qed.
+
+(* 
+  TODO: This is apparent but actually hard to prove
+  As QuantumLib does not provide usable lemmas about ineq
+  *)
+Lemma negate_change_state n:
+  forall (ψ:  Vector n),
+  -1 .* ψ <> ψ.
+Admitted.
+
+(* there is no -1 in any stabilizer group *)
+Theorem stb_group_no_m1: 
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  pstr1 ∝1 ψ ->
+  pstr2 ∝1 ψ ->
+  WF_Matrix ψ ->
+  psmul pstr1 pstr2 <> (~𝟙 n).
+Proof.
+  unfold not.
+  intros.
+  assert ((~𝟙) n ∝1 ψ).
+  {
+    rewrite <- H2.
+    apply stb_closed; easy.
+  }
+  contradict H3.
+  unfold stb.
+  rewrite pstr_negate_states; try easy.
+  apply negate_change_state.
+Qed.
+
+Require Import ExtraSpecs.
+
+Theorem stabilizer_must_commute: 
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  pstr1 ∝1 ψ ->
+  pstr2 ∝1 ψ ->
+  commute_at psmul pstr1 pstr2.
+Proof.
+  intros.
+  assert (Hbicom: bicommute (@psmul n) (@psneg n)) by apply psmul_bicommute.
+  remember (Hbicom pstr1 pstr2) as HChoice.
+  destruct HChoice as [| Hanti].
+  easy.
+  clear  HeqHChoice.
+  remember (stb_closed pstr1 pstr2 ψ H H0) as HCompose.
+  (* now let's make a contradict using HCompose  *)
+  assert (Hcontra: ψ = -1 .* ψ). {
+    unfold stb in HCompose.
+    rewrite <- HCompose at 1.
+    unfold anticommute_at in Hanti.
+    clear HeqHCompose.
+    rewrite Hanti.
+    rewrite psneg_correct.
+    rewrite Mscale_mult_dist_l.
+    replace (pstr_to_matrix (psmul pstr2 pstr1) × ψ) with ψ.
+    easy.
+    symmetry.
+    apply stb_closed; easy.
+  }
+  symmetry in Hcontra.
+  apply negate_change_state in Hcontra.
+  contradiction Hcontra.
+Qed.
+
+(* 
+How to encode the idea of stabilizer group?
+1. use math comp. too hard to learn and what's the benefit?
+2. use custome define group in Group.v
+*)
+
+Theorem stb_compose_alt:
+  forall {n m: nat} (pstr1: PString n) (pstr2: PString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
+  let cpstring := compose_pstring pstr1 pstr2 in
+  pstr1 ∝1 ψ1 ->
+  pstr2 ∝1 ψ2 ->
+  cpstring ∝1 (ψ1 ⊗ ψ2).
+Proof.  (* similar to stb_compose *)
+  intros.
+  assert (Hcomp: pstr_to_matrix (compose_pstring pstr1 pstr2) = pstr_to_matrix pstr1 ⊗ pstr_to_matrix pstr2) by apply compose_pstring_correct.
+  unfold stb in *.
+  unfold cpstring.
+  rewrite Hcomp.
+  restore_dims.
+  rewrite kron_mixed_product.
+  rewrite H.
+  rewrite H0.
+  reflexivity.
+Qed.
+
+Lemma stb_addition:
+  forall {n: nat} (pstr: PString n) (ψ1 ψ2:  Vector (2^n)),
+  pstr ∝1 ψ1 ->
+  pstr ∝1 ψ2 ->
+  pstr ∝1 (ψ1 .+ ψ2).
+Proof.
+  intros.
+  unfold stb in *.
+  (* Search (_ × (_ .+ _) ). *)
+  rewrite Mmult_plus_distr_l.
+  rewrite H.
+  rewrite H0.
+  reflexivity.
+Qed.
+
+Section StbExample.
+
+Ltac normalize_kron_notation :=
+  repeat rewrite <- kron_assoc by auto 8 with wf_db;
+  try easy.
+
+Fact stb_04_fact:
+  (One, p[Z, I, I, I]) ∝1 ∣0,0,0,0⟩.
+(* 
+  manually use stb_compose to break down large states
+  we'll give a tactic later
+  *)
+Proof.
+  replace ∣0,0,0,0⟩ with (∣0,0⟩ ⊗ ∣0,0⟩) by normalize_kron_notation.
+  apply (stb_compose (One, p[Z, I]) (One, p[I, I])).
+  all: unfold stb; simpl; Qsimpl; lma'.
+Qed.
+
+Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
+
+(* Check (
+  (∣0,0,0⟩ .+ ∣1,1,1⟩) ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)
+). *)
+
+Check 
+  (∣0,0,0⟩ .+ ∣1,1,1⟩) ⊗ 
+  (2 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
+
+Check (One, p[Z, Z]): PString 2.
+Check (One, p[I]): PString 1.
+
+Ltac by_compose_stb s1 s2 :=
+  apply (stb_compose_alt s1 s2); Qsimpl;
+  (unfold stb; simpl; Qsimpl; lma').
+
+Ltac by_identity n := (* TODO: how to get n from the type*)
+    match goal with
+    | [ |- ((One, ?p) ∝1 _) ] =>
+        replace (One, p) with (𝟙 n) by reflexivity;
+        apply one_stb_everything;
+        auto with wf_db
+    end.
+
+Fact shor_code_part_stb:
+  (One, p[Z, Z, I])∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩).
+Proof.
+  apply stb_addition.
+  by_compose_stb (One, p[Z, Z]) (One, p[I]).
+  by_compose_stb (One, p[Z, Z]) (One, p[I]).
+Qed.
+  
+Fact shor_code_stb_fact:
+  (One, p[Z, Z, I, I, I, I, I, I, I]) ∝1 shor_code_0.
+Proof.
+  (* This could stuck Coq *)
+  (* by_compose_stb  (One, p[Z, Z, I, I, I, I]) (One, p[I, I, I]). *)
+  apply (stb_compose_alt (One, p[Z, Z, I, I, I, I]) (One, p[I, I, I])).
+  Qsimpl.
+  apply (stb_compose_alt (One, p[Z, Z, I]) (One, p[I, I, I])).
+  - (* [Z; Z; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩)  *)
+    apply shor_code_part_stb.
+  - (* [I; I; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩) *)
+    by_identity 3%nat.
+  - by_identity 3%nat.
+Qed.
 

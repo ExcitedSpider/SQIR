@@ -75,7 +75,6 @@ Definition inv_p1 (op: PauliOp): PauliOp := op.
 Definition id_p1 := I.
 
 (* Already Proved Properties *)
-
 Definition decode_EE (n: 'I_4) : PauliOp := nth I [:: I;X;Y;Z] (nat_of_ord n).
 Definition encode_EE (e: PauliOp) : 'I_4 := 
   match e with
@@ -119,6 +118,7 @@ Qed.
 
 HB.instance Definition _ := isMulGroup.Build PauliOp
   mult_p1_assoc mult_p1_id mult_p1_left_inv.
+
 
 Check PauliOp: finGroupType.
 
@@ -437,9 +437,9 @@ HB.instance Definition _ := Finite.on GenPauliOp.
 HB.instance Definition _ := isMulGroup.Build GenPauliOp
   mult_p1g_assoc mult_p1g_id mult_p1g_left_inv.
 
-Notation "%( x ; y )" := (p1g_of x y) (at level 60).
+Notation "%( x ; y )" := (p1g_of x y) (at level 210).
 
-Notation "% x" := (p1g_of One x)  (at level 60).
+Notation "% x" := (p1g_of One x)  (at level 210).
 
 
 (* San Check by Examples *)
@@ -550,8 +550,7 @@ Qed.
 Lemma get_phase_png_assoc n:
   forall (a b c: GenPauliTuple n),
   get_phase_png (get_phase_png a b, mult_pn a.2 b.2) c = 
-  get_phase_png a (get_phase_png b c, mult_pn b.2 c.2)
-  .
+  get_phase_png a (get_phase_png b c, mult_pn b.2 c.2).
 Proof.
   induction n.
   - move => [sx px] [sy py] [sz pz].
