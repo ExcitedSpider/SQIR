@@ -17,7 +17,9 @@ qec: FORCE
 	@dune build examples/error-correction
 
 stabilizer: FORCE
-	@dune build examples/stabilizer
+	@dune build examples/stabilizer/mathcomp
+	@dune build examples/stabilizer/barebone
+
 
 shor:
 	@dune build examples/shor
