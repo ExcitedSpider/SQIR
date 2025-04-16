@@ -4,7 +4,7 @@
 
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple.
 From mathcomp Require Import fintype bigop finset fingroup morphism perm.
-From mathcomp Require Import automorphism quotient.
+
 
 From QuantumLib Require Import Matrix.
 
@@ -50,6 +50,7 @@ Record action := Action {
   act :> Vector (2^dim) -> aT -> Vector(2^dim); 
   _ : is_action act
 }.
+
 
 End ActionDef.
 
@@ -99,10 +100,9 @@ Proof.
   }
 Qed.
 
-Check (Action GenPauliOp aTs 1 _ act_1_is_action).
-
 (* Interestingly, Coq can infer all types that depend on the final one. *)
 Canonical act_1 := (Action _ _ _ _ act_1_is_action).
+
 
 
 (* Sancheck *)
@@ -232,4 +232,17 @@ by solve_stab1. Qed.
 Lemma Z1_stab: stab act_1 (p1g_of NOne Z) ∣1⟩.
 by solve_stab1. Qed.
 
+Section Assumption.
 
+Variable (aT: finGroupType).
+Variable (D : {set aT}).
+Variable (n: nat).
+
+Check (action aT D n).
+Variable (to: action aT D n).
+
+(* TODO: How to use defs of act_id *)
+Lemma act_id_le: forall x, to x (oneg aT) == x.
+Admitted.
+
+End Assumption.

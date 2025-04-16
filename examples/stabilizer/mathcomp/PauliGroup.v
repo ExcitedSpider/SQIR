@@ -152,10 +152,6 @@ Example inv_pn_exp0:
   inv_pn [tuple X; Y; Z] = [tuple X; Y; Z].
 Proof. by apply/eqP. Qed.
 
-(* Lemma mult_pn_by_component n:
-  forall xh xt yh yt,
-  (@mult_pn n) [tuple of xh::xt] [tuple of yh::yt].  *)
-
 Lemma trivial_tuples (p q: PauliTuple 0) : p = q.
 Proof. by rewrite (tuple0 p) (tuple0 q). Qed.
 
@@ -521,6 +517,7 @@ Proof.
   by rewrite zipCons mapCons.
 Qed.
 
+
 Lemma mult_phase_comm:
   commutative mult_phase.
 Proof.
@@ -536,7 +533,6 @@ Proof.
   intros.
   rewrite /get_phase_pn  /=.
   rewrite mult_phase_comm.
-  Search foldl.
   rewrite -foldl_rcons /=.
   symmetry.
   rewrite (foldl_foldr mult_phase_assoc mult_phase_comm).
@@ -545,6 +541,16 @@ Proof.
   by rewrite (foldl_foldr mult_phase_assoc mult_phase_comm).
 Qed.  
 
+
+Lemma get_phase_png_cons {n: nat} :
+  forall px py hx hy (tx ty: PauliTuple n),
+    get_phase_png (px, [tuple of (hx :: tx)]) (py, [tuple of (hy :: ty)])
+  = mult_phase (get_phase hx hy) (get_phase_png (px, tx) (py, ty)).
+Proof.
+  move => *.
+  rewrite /get_phase_png get_phase_pn_cons.
+  by rewrite !mult_phase_assoc.
+Qed.
 
 
 Lemma get_phase_png_assoc n:
@@ -591,6 +597,15 @@ Proof.
 (* Need to construct some autowrite mechanism *) 
 Admitted.
 
+
+(* Do not try to attempt this! *)
+(* This is not valid *)
+Lemma get_phase_png_comm n:
+  forall (a b: GenPauliTuple n),
+  get_phase_png a b <>
+  get_phase_png b a.
+Abort.
+  
 
 Lemma mult_png_assoc n: 
   associative (@mult_png n).
@@ -665,6 +680,8 @@ Variable n: nat.
 HB.instance Definition _ := Finite.on (@GenPauliTuple n).
 HB.instance Definition _ := isMulGroup.Build
   (@GenPauliTuple n) (@mult_png_assoc n) (@mult_png_id n) (@mult_png_left_inv n).
+
+
 
 End Strcture.
 
@@ -940,3 +957,30 @@ Proof.
 Qed.
 
 End Interpretation.
+
+Section Operations.
+Import PNGGroup.
+Import PNGroup.
+Import P1GGroup.
+
+Compute mulg NOne NImg.
+
+Definition compose_pstring {n m: nat} (ps1 : GenPauliTuple n) (ps2 : GenPauliTuple m) : GenPauliTuple (n + m) :=
+  let s := mulg ps1.1 ps2.1 in
+  let v := cat_tuple ps1.2 ps2.2 in
+  (s, v).
+
+Theorem compose_pstring_correct:
+  forall {n m: nat}  (ps1: GenPauliTuple n) (ps2: GenPauliTuple m),
+  png_int (compose_pstring ps1 ps2) =
+  png_int ps1 ⊗ png_int ps2.
+(* Refer to the theorem of the same name in barebone *)
+Admitted.
+
+
+Definition pstr_negate_phase (n: nat) := (NOne, id_pn n).
+Notation "-1.⊗ n" := (pstr_negate_phase n) (at level 40).
+
+Check (-1.⊗3).
+
+End Operations.
