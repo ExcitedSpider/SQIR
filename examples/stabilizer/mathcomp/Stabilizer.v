@@ -399,32 +399,36 @@ Proof.
       - right. rewrite !phase_int_comp Hhead !Mscale_assoc !Cmult_assoc. 
           by rewrite !beheadCons !theadCons mult_p1_comm.
     }
-    {
-      (* tail anticommute *)
-      case (PauliOp_bicommute hx hy) => Hhead.
-        Set Bullet Behavior "Strict Subproofs".
-      - (* head commute *)
-        right. 
-        rewrite !get_phase_png_cons !theadCons !beheadCons.
-        rewrite !phase_int_comp /get_phase_png.
-        rewrite !Hhead.
-        rewrite /png_int /= /get_phase_png /= in H.
-        rewrite !phase_int_comp in H.
-        admit.
-      - left.
-        apply phase_neg in Hhead.
-        rewrite !get_phase_png_cons !Hhead.
-        apply pstring_neg in H.
-        rewrite /mulg /= /mult_png in H.
-        apply pair_inj in H.
-        destruct H.
-        rewrite H H0 mult_p1_comm.
-        rewrite mult_pn_id /get_phase_png get_phase_pn_id.
-        rewrite mult_phase_id !mult_phase_assoc.
-        by rewrite (mult_phase_comm _  NOne) mult_phase_assoc.
+    (* tail anticommute *)
+    case (PauliOp_bicommute hx hy) => Hhead.
+    - apply png_neg_alt in H.
+      rewrite /mult_png /= mult_pn_id /mulg /= /mult_png in H.
+      rewrite /get_phase_png get_phase_pn_id mult_phase_id in H.
+      apply pair_inj in H.
+      elim H => H0 H1.
+      right. 
+      rewrite !get_phase_png_cons !theadCons !beheadCons.
+      rewrite /get_phase_png.
+      rewrite !Hhead !H0 !H1.
+      rewrite phase_mult_p1_comm.
+      rewrite !phase_int_comp /= Mscale_assoc !Cmult_assoc.
+      remember (phase_int (get_phase hy hx)) as a.
+      remember (phase_int (get_phase_pn ty tx)) as b.
+      by rewrite (Cmult_comm a _).
+      exact Hhead.
+    - left.
+      apply phase_neg in Hhead.
+      rewrite !get_phase_png_cons !Hhead.
+      apply pstring_neg in H.
+      rewrite /mulg /= /mult_png in H.
+      apply pair_inj in H.
+      destruct H.
+      rewrite H H0 mult_p1_comm.
+      rewrite mult_pn_id /get_phase_png get_phase_pn_id.
+      rewrite mult_phase_id !mult_phase_assoc.
+      by rewrite (mult_phase_comm _  NOne) mult_phase_assoc.
     }
-(* TODO: fill in the holes *)
-Admitted.
+Qed.
       
   
 
