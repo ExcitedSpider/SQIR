@@ -300,6 +300,73 @@ Proof.
 Qed.
 
 
+Lemma phase_neg:
+  forall x y, phase_int x = -C1 * phase_int y -> 
+      x = mult_phase NOne y.
+Proof.
+  move => x y.
+  case x; case y; rewrite /=.
+  all: try by easy.
+  all: autorewrite with C_db.
+  all: 
+  intros H;
+  inversion H;
+  (* Check https://rocq-prover.org/doc/v8.15/stdlib/Coq.Reals.Reals.html *)
+  (* For proving goals like ?1<>0 *)
+  try (contradict H1; discrR);
+  try (contradict H2; discrR).
+Qed.  
+
+Lemma
+  png_int_injection: forall n px py (tx ty: PauliTuple n),
+  png_int (px, tx) = png_int (py, ty) -> px = py /\ tx = ty. 
+Admitted. (* I definately proved this in PNProps but i cannot find *)
+
+Lemma pstring_neg: 
+forall n (x y: PString n), 
+  png_int x = -C1 .* png_int y -> x = mult_png (NOne, id_pn n) y.
+Proof.
+  move => n [px tx] [py ty].
+  rewrite /= /mult_png => H. 
+  Qsimpl.
+  rewrite /get_phase_png get_phase_pn_id.
+  rewrite mult_phase_id mult_pn_id.
+  move: H.
+  assert (
+  forall n px (tx: PauliTuple n),
+    phase_int px .* pn_int tx = png_int (px, tx)
+  ). by easy.
+  rewrite H.
+  replace (phase_int px .* pn_int tx) with (png_int (px, tx)) by easy.
+  replace (-C1) with (phase_int NOne) by easy.
+  rewrite Mscale_assoc mult_phase_comp. 
+  rewrite H.
+  move => H1.
+  apply png_int_injection in H1.
+  elim H1 => Hp Ht.
+  by subst.
+Qed.
+
+Lemma phase_mult_p1_comm:
+  forall hx hy,
+  get_phase hx hy = get_phase hy hx ->
+  mult_p1 hx hy = mult_p1 hy hx.
+Proof.
+  move => x y.
+  by case x; case y.
+Qed.
+
+
+Lemma png_neg_alt:
+  forall n (x y: GenPauliTuple n),
+  png_int (mulg x y) = -C1 .* png_int (mulg y x) ->
+  mulg x y = mult_png (NOne, id_pn n) (mulg y x).
+Proof. 
+  move => n x y H.
+  by apply pstring_neg in H.
+Qed.
+
+
 (* all PauliOperators are either commute or anticommute *)
 (* TODO: the definition of anticommute is too loose. *)
 (* find something in mathcomp to make it work *)
@@ -335,20 +402,18 @@ Proof.
     {
       (* tail anticommute *)
       case (PauliOp_bicommute hx hy) => Hhead.
+        Set Bullet Behavior "Strict Subproofs".
       - (* head commute *)
-        right. admit.
+        right. 
+        rewrite !get_phase_png_cons !theadCons !beheadCons.
+        rewrite !phase_int_comp /get_phase_png.
+        rewrite !Hhead.
+        rewrite /png_int /= /get_phase_png /= in H.
+        rewrite !phase_int_comp in H.
+        admit.
       - left.
-        assert (phase_neg:
-          forall x y, phase_int x = -C1 * phase_int y -> 
-            x = mult_phase NOne y
-        ) by admit.
         apply phase_neg in Hhead.
         rewrite !get_phase_png_cons !Hhead.
-        assert (pstring_neg: 
-          forall n (x y: PString n), 
-          png_int x = -C1 .* png_int y ->
-            x = mult_png (NOne, id_pn n) y
-        ) by admit.
         apply pstring_neg in H.
         rewrite /mulg /= /mult_png in H.
         apply pair_inj in H.
@@ -358,6 +423,7 @@ Proof.
         rewrite mult_phase_id !mult_phase_assoc.
         by rewrite (mult_phase_comm _  NOne) mult_phase_assoc.
     }
+(* TODO: fill in the holes *)
 Admitted.
       
   
