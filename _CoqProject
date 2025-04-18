@@ -3,4 +3,5 @@
 -R _build/default/examples/shor Shor
 -R _build/default/examples/error-correction ErrorCorrection
 -R _build/default/VOQC VOQC
--R _build/default/examples/stabilizer Stabilizer
+-R _build/default/examples/stabilizer/mathcomp StabilizerMC
+-R _build/default/VOQC VOQC
