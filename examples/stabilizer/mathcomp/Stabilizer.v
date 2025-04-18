@@ -14,6 +14,7 @@ Import P1Group.
 Import P1GGroup.
 Import PNGroup.
 Import PNGGroup.
+Require Import WellForm.
 
 Definition PString := GenPauliTuple.
 
@@ -81,7 +82,7 @@ Proof.
   (* Search WF_Matrix ".*". *)
   apply WF_mult. 2: auto. 
   apply WF_scale. 
-  apply PNProps.pn_int_wf.
+  apply pn_int_wf.
   auto. 
 Qed.
 
@@ -266,7 +267,8 @@ Fact stb_04_fact:
 Proof.
   replace ∣0,0,0,0⟩ with (∣0,0⟩ ⊗ ∣0,0⟩) by normalize_kron_notation.
   apply (stb_compose (One, [tuple Z, I]) (One, [tuple I, I])).
-  all: unfold stb; simpl; Qsimpl; lma'.
+  all: unfold stb; simpl; Qsimpl; lma'; apply apply_n_wf.
+  all: auto with wf_db.
 Abort.
 
 (* Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
@@ -306,3 +308,5 @@ Proof.
   - by_identity 3%nat.
 Qed.
  *)
+
+End StbExample.

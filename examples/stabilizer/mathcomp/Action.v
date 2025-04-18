@@ -125,6 +125,7 @@ Set Bullet Behavior "Strict Subproofs".
 
 Definition aTsn := [set: GenPauliTuple n].
 
+
 Fact act_n_is_action:
   is_action _ aTsn _ apply_n.
 Proof.
@@ -133,6 +134,7 @@ Proof.
   {
     (* identity *)
     intros x Hwf.
+    (* TODO: solve dependency issue of PNProps. *)
     rewrite /act_id /apply_n id_png_int.
     by rewrite Mmult_1_l.
   }

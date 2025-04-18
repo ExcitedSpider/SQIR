@@ -644,34 +644,6 @@ End Adaptor.
 
 From mathcomp Require Import ssreflect.
 
-Section WellFormness.
-  
-Theorem pn_int_wf n:
-  forall (op: PauliTuple n),
-  WF_Matrix (pn_int op).
-Proof.
-  intros.
-  induction n.
-  - rewrite tuple0.
-    unfold pn_int.
-    simpl.
-    auto with wf_db.
-  - case: op / tupleP => x t.
-    apply WF_kron; try easy.
-    by apply p1_int_WF.
-Qed.
-
-
-Theorem png_int_wf n:
-  forall (op: GenPauliTuple n),
-  WF_Matrix (png_int op).
-Proof.
-  move => [p t].
-  rewrite /png_int.
-  apply: WF_scale. 
-  by apply: pn_int_wf.
-Qed.
-
 Lemma id_pn_int:
   forall (n: nat), pn_int (id_pn n) = Matrix.I (2^n).
 Proof.
@@ -694,5 +666,5 @@ Proof.
   by rewrite Mscale_1_l id_pn_int.
 Qed.
 
-End WellFormness.
+
 
