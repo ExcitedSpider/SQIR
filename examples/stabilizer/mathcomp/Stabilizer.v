@@ -18,11 +18,13 @@ Require Import WellForm.
 
 Definition PString := GenPauliTuple.
 
-Notation "[ 'tuple' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200): form_scope.
+Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200): form_scope.
 
-Definition stb {n:nat} (pstring: GenPauliTuple n) (psi: Vector (2^n)):= 
+(* When you have trivial phase 1, use this *)
+Notation "[ 'p1' x1 , .. , xn ]" := (One, [tuple of x1 :: .. [:: xn] ..]) (at level 200): form_scope.
+
+Definition stb {n:nat} (pstring: PString n) (psi: Vector (2^n)):= 
   act_n n psi pstring = psi.
-
 
 (* A fancy symbol for "stabilize" *)
 Notation "pstring ∝1 ψ" := (stb pstring ψ) (at level 50).
@@ -33,41 +35,42 @@ Ltac simpl_stbn :=
   try (lma'; auto with wf_db).
 
 
-Check [tuple Z, Z, X, Y].
+Check [p Z, Z, X, Y].
+Check [p1 Z, Z, X, Y].
 
 (* Z stabilises ∣0⟩ *)
 Example stb_z0:
-  (One, [tuple Z]) ∝1 ∣0⟩.
+  (One, [p Z]) ∝1 ∣0⟩.
 Proof. by simpl_stbn. Qed.
 
 Example stb_z00:
-  (One, [tuple Z , Z]) ∝1 ∣0,0⟩.
+  (One, [p Z , Z]) ∝1 ∣0,0⟩.
 Proof. by simpl_stbn. Qed.
 
 Example stb_z000:
-  (One, [tuple Z,Z,Z]) ∝1 ∣0,0,0⟩.
+  (One, [p Z,Z,Z]) ∝1 ∣0,0,0⟩.
 Proof. by simpl_stbn. Qed. 
 
 
 (* For length >= 4, it becomes lagging *)
 (* Try it if you trust your machine *)
 (* Example stb_z0000: *)
-(*   (One, [tuple of Z::Z::Z::Z::[]]) ∝1 ∣0,0,0,0⟩. *)
+(*   (One, [p of Z::Z::Z::Z::[]]) ∝1 ∣0,0,0,0⟩. *)
 (* Proof. by simpl_stbn. Qed. *) 
 
 (* -Z stabilises ∣1⟩ *)
 Example stb_nz0:
-  (NOne, [tuple Z]) ∝1 ∣1⟩.
+  (NOne, [p Z]) ∝1 ∣1⟩.
 Proof. by simpl_stbn. Qed.
 
 (* X stabilize the bell ψ *)
 Example stb_xbell:
-  stb (One, [tuple X]) ( 1/√2 .* (∣0⟩ .+ ∣1⟩)).
+  stb (One, [p X]) ( 1/√2 .* (∣0⟩ .+ ∣1⟩)).
 Proof. by simpl_stbn. Qed.
 
 (* Y stabilize the |i> ψ *)
 Example stb_yibell:
-  stb (One, [tuple Y]) ( 1/√2 .* (∣0⟩ .+ Ci .* ∣1⟩)).
+  stb (One, [p Y]) ( 1/√2 .* (∣0⟩ .+ Ci .* ∣1⟩)).
 Proof. by simpl_stbn. Qed. 
 
 Lemma one_stb_everything:
@@ -88,7 +91,7 @@ Qed.
 
 (* If S∣ψ⟩=∣ψ⟩, then (S^(-1))∣ψ⟩=∣ψ⟩ *)
 Lemma inv_stb:
-  forall {n: nat} (pstr: GenPauliTuple n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr: PString n) (ψ:  Vector (2^n)),
   WF_Matrix ψ -> stb pstr ψ -> stb (pstr^-1) ψ.
 Proof.
   intros n pstr ψ Hwf Hstb.
@@ -113,7 +116,7 @@ rewrite /stb /act_n /apply_n /=.
 If we take the tensor product of a two states, with stabiliser groups A and B (respectively), then the resulting tensor product state has stabiliser group given by the cartesian product A × B. 
 *)
 Theorem stb_compose:
-  forall {n: nat} (pstr1 pstr2: GenPauliTuple n) (ψ1 ψ2:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PString n) (ψ1 ψ2:  Vector (2^n)),
   let cpstring := compose_pstring pstr1 pstr2 in
   pstr1 ∝1 ψ1 ->
   pstr2 ∝1 ψ2 ->
@@ -132,7 +135,7 @@ Qed.
   
 (* The vector space of EPR Pair can be defined by generator <XX, ZZ> *)
 Fact bell_stabilizer: 
-  (One, [tuple X,X]) ∝1 ∣Φ+⟩ /\ (One, [tuple Z,Z]) ∝1 ∣Φ+⟩.
+  (One, [p X,X]) ∝1 ∣Φ+⟩ /\ (One, [p Z,Z]) ∝1 ∣Φ+⟩.
 Proof.
   split.
   - unfold stb.
@@ -148,7 +151,7 @@ Proof.
 Qed. 
 
 Fact three_qubit_state_stabilizer:
-  (One, [tuple Z, Z, I]) ∝1 ∣000⟩ /\ (One, [tuple Z, Z, I]) ∝1 ∣000⟩.
+  (One, [p Z, Z, I]) ∝1 ∣000⟩ /\ (One, [p Z, Z, I]) ∝1 ∣000⟩.
 Proof.
   split.
   - unfold_stb; Qsimpl.
@@ -225,7 +228,8 @@ Proof.
   }
 Qed.
 
-
+(* TODO This is not so efficient *)
+(* Try using seq.take and drop  *)
 Theorem stb_compose_alt:
   forall {n m: nat} (pstr1: PString n) (pstr2: PString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
   let cpstring := compose_pstring pstr1 pstr2 in
@@ -243,6 +247,20 @@ Proof.
   reflexivity.
   all: try by rewrite - Nat.pow_add_r.
 Qed.
+
+Definition take_pstr { n } m (pstr: PString n): PString (minn m n) :=
+  (pstr.1, [tuple of take m pstr.2]).
+  
+Definition drop_pstr { n } m (pstr: PString n): PString (n - m) :=
+  (One, [tuple of drop m pstr.2]).
+
+Theorem stb_compose_split {n: nat} :
+  forall m (pstr: PString n) (ψ1:  Vector (2^m)) (ψ2:  Vector (2^(n - m))),
+  take_pstr m pstr ∝1 ψ1 ->
+  drop_pstr m pstr ∝1 ψ2 ->
+  pstr ∝1 (ψ1 ⊗ ψ2).
+Admitted.
+
 
 Lemma stb_addition:
   forall {n: nat} (pstr: PString n) (ψ1 ψ2:  Vector (2^n)),
@@ -263,16 +281,15 @@ Ltac normalize_kron_notation :=
   try easy.
 
 Fact stb_04_fact:
-  (One, [tuple Z, I, I, I]) ∝1 ∣0,0,0,0⟩.
+  (One, [p Z, I, I, I]) ∝1 ∣0,0,0,0⟩.
 Proof.
   replace ∣0,0,0,0⟩ with (∣0,0⟩ ⊗ ∣0,0⟩) by normalize_kron_notation.
-  apply (stb_compose (One, [tuple Z, I]) (One, [tuple I, I])).
+  apply (stb_compose ([p1 Z, I]) ([p1 I, I])).
   all: unfold stb; simpl; Qsimpl; lma'; apply apply_n_wf.
   all: auto with wf_db.
 Abort.
 
 Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
-
 
 Ltac by_compose_stb s1 s2 :=
   apply (stb_compose_alt s1 s2); Qsimpl;
@@ -281,13 +298,27 @@ Ltac by_compose_stb s1 s2 :=
 
 
 Fact shor_code_part_stb:
-  (One, [tuple Z, Z, I])∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩).
+  [p1 Z, Z, I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩).
 Proof.
   apply stb_addition.
-  by_compose_stb (One, [tuple Z, Z]) (One, [tuple I]).
-  by_compose_stb (One, [tuple Z, Z]) (One, [tuple I]).
+  by_compose_stb ([p1 Z, Z]) ([p1 I]).
+  by_compose_stb ([p1 Z, Z]) ([p1 I]).
 Qed.
 
+Fact shor_code_stb_fact:
+  [p1 Z, Z, I, I, I, I, I, I, I] ∝1 shor_code_0.
+Proof.
+(* 
+  apply (stb_compose_alt ([p1 Z, Z, I, I, I, I]) ([p1 I, I, I])).
+  (* apply (stb_compose_alt ([p1 Z, Z, I, I, I, I]) ([p1 I, I, I])).
+  Qsimpl.
+  apply (stb_compose_alt (One, p[Z, Z, I]) (One, p[I, I, I])).
+  - (* [Z; Z; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩)  *)
+    apply shor_code_part_stb.
+  - (* [I; I; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩) *)
+    by_identity 3%nat.
+  - by_identity 3%nat. *)
+Qed. *)
 
 
 (*
@@ -300,11 +331,11 @@ Ltac by_identity n := (* TODO: how to get n from the type*)
     end.
 
     Fact shor_code_stb_fact:
-  (One, [tuple Z, Z, I, I, I, I, I, I, I]) ∝1 shor_code_0.
+  (One, [p Z, Z, I, I, I, I, I, I, I]) ∝1 shor_code_0.
 Proof.
   (* This could stuck Coq *)
   (* by_compose_stb  (One, p[Z, Z, I, I, I, I]) (One, p[I, I, I]). *)
-  apply (stb_compose_alt (One, [tuple Z, Z, I, I, I, I]) (One, [tuple I, I, I])).
+  apply (stb_compose_alt (One, [p Z, Z, I, I, I, I]) (One, [p I, I, I])).
   Qsimpl.
   apply (stb_compose_alt (One, p[Z, Z, I]) (One, p[I, I, I])).
   - (* [Z; Z; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩)  *)
