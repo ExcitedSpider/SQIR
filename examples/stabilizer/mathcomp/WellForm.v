@@ -43,7 +43,7 @@ Proof.
     auto with wf_db.
   - case: op / tupleP => x t.
     apply WF_kron; try easy.
-    by apply p1_int_WF.
+    by apply p1_int_wf.
 Qed.
 
 Theorem png_int_wf n:

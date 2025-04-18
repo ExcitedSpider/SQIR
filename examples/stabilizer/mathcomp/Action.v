@@ -265,7 +265,7 @@ Import PNGroup.
 Import PNGGroup.
 Import P1Group.
 Import P1GGroup.
-Import ExtraSpecs.
+Require Import ExtraSpecs.
 From mathcomp Require Import eqtype ssrbool.
 
 Notation PString := GenPauliTuple.

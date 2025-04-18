@@ -831,33 +831,4 @@ Proof.
   reflexivity.
 Qed.
 
-Section PauliProperties.
-
-From mathcomp Require Import ssrfun.
-Require Import ExtraSpecs.
-
-Theorem pmul_bicommute:
-  bicommute pmul pneg.
-Proof.
-  intros.
-  unfold bicommute.
-  intros a b.
-  destruct a as [sa pa];
-  destruct b as [sb pb];
-  destruct sa, sb, pa, pb;
-  simpl.
-  all: try (left; easy).
-  all: try (right; easy). 
-Qed.
-
-Lemma op_prod_self_inverse: 
-  self_inverse I op_prod_op.
-Proof. 
-  unfold self_inverse.
-  intros.
-  destruct x; easy.
-Qed.
-  
-End PauliProperties.
-
 End Pauli.

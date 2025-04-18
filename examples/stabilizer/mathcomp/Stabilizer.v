@@ -271,12 +271,26 @@ Proof.
   all: auto with wf_db.
 Abort.
 
-(* Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
+Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
+
 
 Ltac by_compose_stb s1 s2 :=
   apply (stb_compose_alt s1 s2); Qsimpl;
-  (unfold stb; simpl; Qsimpl; lma').
+  (unfold stb; simpl; Qsimpl; lma');
+  apply apply_n_wf; auto with wf_db.
 
+
+Fact shor_code_part_stb:
+  (One, [tuple Z, Z, I])∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩).
+Proof.
+  apply stb_addition.
+  by_compose_stb (One, [tuple Z, Z]) (One, [tuple I]).
+  by_compose_stb (One, [tuple Z, Z]) (One, [tuple I]).
+Qed.
+
+
+
+(*
 Ltac by_identity n := (* TODO: how to get n from the type*)
     match goal with
     | [ |- ((One, ?p) ∝1 _) ] =>
@@ -285,20 +299,12 @@ Ltac by_identity n := (* TODO: how to get n from the type*)
         auto with wf_db
     end.
 
-Fact shor_code_part_stb:
-  (One, p[Z, Z, I])∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩).
-Proof.
-  apply stb_addition.
-  by_compose_stb (One, p[Z, Z]) (One, p[I]).
-  by_compose_stb (One, p[Z, Z]) (One, p[I]).
-Qed.
-  
-Fact shor_code_stb_fact:
-  (One, p[Z, Z, I, I, I, I, I, I, I]) ∝1 shor_code_0.
+    Fact shor_code_stb_fact:
+  (One, [tuple Z, Z, I, I, I, I, I, I, I]) ∝1 shor_code_0.
 Proof.
   (* This could stuck Coq *)
   (* by_compose_stb  (One, p[Z, Z, I, I, I, I]) (One, p[I, I, I]). *)
-  apply (stb_compose_alt (One, p[Z, Z, I, I, I, I]) (One, p[I, I, I])).
+  apply (stb_compose_alt (One, [tuple Z, Z, I, I, I, I]) (One, [tuple I, I, I])).
   Qsimpl.
   apply (stb_compose_alt (One, p[Z, Z, I]) (One, p[I, I, I])).
   - (* [Z; Z; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩)  *)
@@ -307,6 +313,9 @@ Proof.
     by_identity 3%nat.
   - by_identity 3%nat.
 Qed.
+
+  
+
  *)
 
 End StbExample.
