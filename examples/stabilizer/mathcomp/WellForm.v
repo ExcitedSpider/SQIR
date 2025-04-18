@@ -10,6 +10,27 @@ Import P1GGroup.
 Import PNGroup.
 Import PNGGroup.
 
+
+Lemma p1_int_wf:
+  forall p: PauliOp,
+  WF_Matrix (p1_int p).
+Proof.
+  case;
+  rewrite /=;
+  by auto with wf_db.
+Qed.
+
+Lemma p1g_int_wf:
+  forall p: GenPauliOp,
+  WF_Matrix (p1g_int p).
+Proof.
+  move => p.
+  case p => ph op.
+  rewrite /p1g_int.
+  apply WF_scale.
+  apply p1_int_wf.
+Qed.
+
 Theorem pn_int_wf n:
   forall (op: PauliTuple n),
   WF_Matrix (pn_int op).
@@ -25,7 +46,6 @@ Proof.
     by apply p1_int_WF.
 Qed.
 
-
 Theorem png_int_wf n:
   forall (op: GenPauliTuple n),
   WF_Matrix (png_int op).
@@ -36,6 +56,15 @@ Proof.
   by apply: pn_int_wf.
 Qed.
 
+Lemma apply_1_wf:
+  forall (op: GenPauliOp) (v: Vector 2),
+  WF_Matrix v -> WF_Matrix (apply_1 v op).
+Proof.
+  move => op v.
+  rewrite /apply_1.
+  apply WF_mult.
+  apply p1g_int_wf.
+Qed.
 
 Lemma apply_n_wf n:
   forall (op: GenPauliTuple n) (v: Vector (2^n)),
@@ -46,6 +75,5 @@ Proof.
   apply WF_mult.
   apply png_int_wf.
 Qed.
-
 
 End WellFormness.

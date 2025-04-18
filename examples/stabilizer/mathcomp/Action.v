@@ -1,3 +1,12 @@
+(* 
+This file includes the formalization of 
+  - quantum group action.
+  - phase negation
+  - commutativity of Pauli operators
+*)
+
+
+
 (* Refer to https://math-comp.github.io/htmldoc_2_2_0/mathcomp.fingroup.action.html *)
 (* We do not use mathcomp's definition because it requires finite structures, but quantumLib *)
 (* works on infinite structure (Hilbert Space) *)
