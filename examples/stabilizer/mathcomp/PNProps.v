@@ -241,20 +241,6 @@ Lemma vector0:
   forall (p: PauliVector 0), p = [].
 Proof. apply length_0_vector. Qed.
 
-Lemma p_prod_one_step:
-  forall n (p1 p2: PauliVector (S n)) h1 tl1 h2 tl2,
-  p1 = h1::tl1 ->
-  p2 = h2::tl2 ->
-  (pvec_to_matrix p1) × (pvec_to_matrix p2) = 
-    (pauli_to_matrix (p1g_of One h1) × pauli_to_matrix (p1g_of One h2))
-    ⊗ ((pvec_to_matrix tl1) × (pvec_to_matrix tl2)).
-Proof.
-  intros.
-  rewrite H, H0.
-  simpl.
-  Qsimpl.
-  reflexivity.
-Qed.
 
 (* Ltac contradict_c_eq H :=
 field_simplify_eq in H;
@@ -407,17 +393,6 @@ Proof.
   reflexivity.
 Qed.
 
-(* assert (H3: exists sx opx, pauli_to_matrix x = (scalar_to_complex sx) .* (op_to_matrix opx)). *)
-Lemma pauli_construct:
-  forall (p: GenPauliOp),
-  exists s op,
-  pauli_to_matrix p = (scalar_to_complex s) .* (op_to_matrix op).
-Proof.
-  intros.
-  destruct p as [sp opp].
-  exists sp, opp.
-  reflexivity.
-Qed.
 
 Ltac unalias :=
   unfold op_to_matrix, pauli_to_matrix, scalar_to_complex in *.
@@ -492,7 +467,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma pvmul_correct:
+Theorem pvmul_correct:
   forall (n: nat) (p1 p2: PauliVector n) sc vecc, 
   (sc, vecc) = pvmul p1 p2 ->
   (pvec_to_matrix p1) × (pvec_to_matrix p2) = (scalar_to_complex sc) .* (pvec_to_matrix vecc).
@@ -551,13 +526,11 @@ Proof.
   reflexivity.
 Qed.
 
-
 End PauliString.
 
 Module Adaptor.
 
 Import PauliString.
-
 
 From Coq Require Import ssreflect.
 
