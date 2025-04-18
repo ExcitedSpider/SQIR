@@ -639,10 +639,13 @@ Proof.
   by rewrite tupleToVector_correct.
 Qed.
 
+(* Certified Translation from Tuple to Vector *)
 End Adaptor.
 
 From mathcomp Require Import ssreflect.
 
+Section WellFormness.
+  
 Theorem pn_int_wf n:
   forall (op: PauliTuple n),
   WF_Matrix (pn_int op).
@@ -691,4 +694,5 @@ Proof.
   by rewrite Mscale_1_l id_pn_int.
 Qed.
 
+End WellFormness.
 
