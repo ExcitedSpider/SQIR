@@ -332,7 +332,7 @@ Definition GenPauliOp := prod phase PauliOp.
 
 (* Mathcomp has provided finType structure for prod *)
 (* which you can find by *) 
-Search "fin" "prod".
+(* Search "fin" "prod". *)
 Check Datatypes_prod__canonical__fintype_Finite.
 
 Check GenPauliOp: finType.

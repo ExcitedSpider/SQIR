@@ -168,45 +168,6 @@ Proof.
   by rewrite Mmult_assoc H1 H0.
 Qed.
 
-(* This is harder than expected *)
-(* Lemma pvec_id_interpret: *)
-(*   forall {n}, *)
-(*   pvec_to_matrix (const I n) = Matrix.I (2^n). *)
-(* Proof. *)
-(*   intros. *)
-(*   induction n. *)
-(*   { *)
-(*     easy. *) 
-(*   } *)
-(*   { *)
-(*     simpl; Qsimpl. *) 
-(*     assert (Matrix.I (2 ^ n + (2 ^ n + 0)) = Matrix.I 2 ⊗ Matrix.I (2 ^ n)). *)
-(*     { *)
-(*       symmetry. *)
-(*       apply id_kron. *)
-(*     } *)
-(*     rewrite H. *)
-(*     rewrite IHn. *)
-(*     reflexivity. *)
-(*   } *)
-(* Qed. *)
-
-(* Theorem stb_by_id: *) 
-(*   forall {n: nat} (ψ:  Vector (2^n)), *) 
-(*   WF_Matrix ψ -> *)
-(*   (One, Vector.const I n) ∝1 ψ. *)
-(* Proof. *)
-(*   intros. *)
-(*   unfold stb. *)
-(*   simpl. *)
-(*   Qsimpl. *)
-(*   (1* Search Matrix.I. *1) *)
-(*   assert (pvec_to_matrix (const I n) = Matrix.I (2^n)) by apply pvec_id_interpret. *)
-(*   rewrite H0. *)
-(*   apply Mmult_1_l. *)
-(*   easy. *)
-(* Qed. *)
-
 (* 
   TODO: This is apparent but actually hard to prove
   As QuantumLib does not provide usable lemmas about ineq
@@ -222,7 +183,7 @@ Theorem stb_group_no_m1:
   pstr1 ∝1 ψ ->
   pstr2 ∝1 ψ ->
   WF_Matrix ψ ->
-  mulg pstr1 pstr2 <>  (NOne, id_pn n).
+  mulg pstr1 pstr2 <> (NOne, id_pn n).
 Proof.
   unfold not.
   intros.
@@ -237,7 +198,6 @@ Proof.
   rewrite Mscale_mult_dist_l Hid.
   apply negate_change_state. 
 Qed.
-
 
 Locate commute.
 
@@ -272,8 +232,7 @@ Import PNGroup.
 Lemma commute_png_implies n:
   forall (px py: phase) (tx ty: PauliTuple n),
   commute_at mult_png (px, tx) (py, ty)-> mult_pn tx ty = mult_pn ty tx /\
-   get_phase_png (px, tx) (py, ty) =
-	get_phase_png (py, ty) (px, tx).
+   get_phase_png (px, tx) (py, ty) = get_phase_png (py, ty) (px, tx).
 Proof.
   rewrite /commute_at /mult_png /= => px py tx ty H.
   apply pair_inj in H.
@@ -499,28 +458,13 @@ Ltac normalize_kron_notation :=
 
 Fact stb_04_fact:
   (One, [tuple Z, I, I, I]) ∝1 ∣0,0,0,0⟩.
-(* 
-  manually use stb_compose to break down large states
-  we'll give a tactic later
-  *)
 Proof.
   replace ∣0,0,0,0⟩ with (∣0,0⟩ ⊗ ∣0,0⟩) by normalize_kron_notation.
   apply (stb_compose (One, [tuple Z, I]) (One, [tuple I, I])).
   all: unfold stb; simpl; Qsimpl; lma'.
-Qed.
+Abort.
 
-Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
-
-(* Check (
-  (∣0,0,0⟩ .+ ∣1,1,1⟩) ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)
-). *)
-
-Check 
-  (∣0,0,0⟩ .+ ∣1,1,1⟩) ⊗ 
-  (2 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
-
-Check (One, p[Z, Z]): PString 2.
-Check (One, p[I]): PString 1.
+(* Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
 
 Ltac by_compose_stb s1 s2 :=
   apply (stb_compose_alt s1 s2); Qsimpl;
@@ -556,4 +500,4 @@ Proof.
     by_identity 3%nat.
   - by_identity 3%nat.
 Qed.
-
+ *)
