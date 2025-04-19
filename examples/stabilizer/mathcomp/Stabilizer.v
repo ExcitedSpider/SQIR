@@ -326,7 +326,7 @@ Admitted.
 
 
 (* Solves goals like [p ... ] = compose_pstring [p ...] [p ...]  *)
-Ltac by_cat_pstring :=
+Ltac by_compose_pstring :=
     rewrite /compose_pstring /mulg /=;
     apply injective_projections; simpl;
     [by easy | by apply /eqP].
@@ -347,8 +347,8 @@ Proof.
   (* but without it coq will hanging *)
   replace ∣ 0, 0, 0, 1, 1, 1⟩ with (∣ 0, 0⟩ ⊗ ∣0, 1, 1, 1⟩) by normalize_kron_notation .
   apply (stb_compose_alt' ([p1 Z, Z]) ([p1 I, I, I, I])).
-  by_cat_pstring. 
-  apply (stb_compose_alt' ([p1 Z ]) ([p1 Z])). by_cat_pstring.
+  by_compose_pstring. 
+  apply (stb_compose_alt' ([p1 Z ]) ([p1 Z])). by_compose_pstring.
   all: auto with stab_db.
   replace ([ p1 I, I, I, I]) with (id_png 4) by by_unify_ids.
   apply one_stb_everything. 
@@ -364,14 +364,14 @@ Ltac by_id_stb n :=
     auto with wf_db
   end.
 
-Goal [p1 Z, Z, I, I, I, I, I, I, I] ∝1 shor_code_0.
+Lemma shor_code_stb: [p1 Z, Z, I, I, I, I, I, I, I] ∝1 shor_code_0.
 Proof.
   rewrite /shor_code_0.
   rewrite /kron_n kron_1_l.
   apply (stb_compose_alt' ([p1 Z, Z, I, I, I, I]) ([p1 I, I, I])). 
-    by_cat_pstring.
+    by_compose_pstring.
   apply (stb_compose_alt' ([p1 Z, Z, I]) ([p1 I, I, I])).
-    by_cat_pstring.
+    by_compose_pstring.
   apply shor_code_part_stb.
   all: try (by_id_stb 3%nat).
   auto with wf_db.
