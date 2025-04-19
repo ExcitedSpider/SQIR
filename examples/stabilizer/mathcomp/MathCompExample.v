@@ -2,6 +2,20 @@ From mathcomp Require Import all_ssreflect fingroup.
 From HB Require Import structures.
 Set Bullet Behavior "Strict Subproofs".
 
+
+
+Definition t1 := [tuple 1; 2].
+Definition t2 := [tuple 3; 4].
+
+Goal [tuple of t1 ++ t2] == [tuple 1; 2; 3; 4].
+Proof. by []. Qed.
+
+Goal take 3 [tuple 1; 2; 3; 4] == [tuple 1; 2; 3].
+Proof. by []. Qed.
+
+Goal drop 1 [tuple 1; 2; 3; 4] == [tuple 2; 3; 4].
+Proof. by []. Qed.
+
 Inductive alphabet := A | B | C.
 Definition decode_EE (n: 'I_3) : alphabet := nth A [:: A;B;C] (nat_of_ord n).
 Definition encode_EE (e: alphabet) : 'I_3 := 
@@ -76,4 +90,12 @@ Check astab.
 Print astab.
 
 End NactionDef.
+
+
+
+
+
+
+
+
 

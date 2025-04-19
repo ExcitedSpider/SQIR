@@ -23,6 +23,12 @@ Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200)
 (* When you have trivial phase 1, use this *)
 Notation "[ 'p1' x1 , .. , xn ]" := (One, [tuple of x1 :: .. [:: xn] ..]) (at level 200): form_scope.
 
+Notation "[ 'p-1' x1 , .. , xn ]" := (NOne, [tuple of x1 :: .. [:: xn] ..]) (at level 200): form_scope.
+
+Notation "[ 'pi' x1 , .. , xn ]" := (Img, [tuple of x1 :: .. [:: xn] ..]) (at level 200): form_scope.
+
+Notation "[ 'p-i' x1 , .. , xn ]" := (NImg, [tuple of x1 :: .. [:: xn] ..]) (at level 200): form_scope.
+
 Definition stb {n:nat} (pstring: PString n) (psi: Vector (2^n)):= 
   act_n n psi pstring = psi.
 
@@ -40,54 +46,68 @@ Check [p1 Z, Z, X, Y].
 
 (* Z stabilises ∣0⟩ *)
 Example stb_z0:
-  (One, [p Z]) ∝1 ∣0⟩.
+  [p1 Z] ∝1 ∣0⟩.
 Proof. by simpl_stbn. Qed.
 
+Example stb_z1:
+  [p-1 Z] ∝1 ∣1⟩.
+Proof. by simpl_stbn. Qed.
+
+(* this proof can scale to two and three qubits *)
 Example stb_z00:
   (One, [p Z , Z]) ∝1 ∣0,0⟩.
 Proof. by simpl_stbn. Qed.
 
-Example stb_z000:
-  (One, [p Z,Z,Z]) ∝1 ∣0,0,0⟩.
-Proof. by simpl_stbn. Qed. 
+(* For length >= 4, it becomes unscalable *)
+Example stb_z0000:
+  [p1 Z,Z,Z,Z] ∝1 ∣0,0,0,0⟩.
+Proof. 
+Fail Timeout 1 by simpl_stbn. 
+Abort.
 
-
-(* For length >= 4, it becomes lagging *)
-(* Try it if you trust your machine *)
-(* Example stb_z0000: *)
-(*   (One, [p of Z::Z::Z::Z::[]]) ∝1 ∣0,0,0,0⟩. *)
-(* Proof. by simpl_stbn. Qed. *) 
-
-(* -Z stabilises ∣1⟩ *)
-Example stb_nz0:
-  (NOne, [p Z]) ∝1 ∣1⟩.
+Example stb_y0:
+  [p1 Y] ∝1  ∣R⟩.
 Proof. by simpl_stbn. Qed.
 
-(* X stabilize the bell ψ *)
-Example stb_xbell:
-  stb (One, [p X]) ( 1/√2 .* (∣0⟩ .+ ∣1⟩)).
+Example stb_y1:
+  [p-1 Y] ∝1 ∣L⟩.
 Proof. by simpl_stbn. Qed.
 
-(* Y stabilize the |i> ψ *)
-Example stb_yibell:
-  stb (One, [p Y]) ( 1/√2 .* (∣0⟩ .+ Ci .* ∣1⟩)).
-Proof. by simpl_stbn. Qed. 
+Example stb_x0:
+  [p1 X] ∝1 ∣+⟩.
+Proof. by simpl_stbn. Qed.
+
+Example stb_x1:
+  [p-1 X] ∝1 ∣-⟩.
+Proof. by simpl_stbn. Qed.
+
+(* this does not auto applied because of a hypothesiss *)
+Lemma stb_id:
+  forall psi,
+  WF_Matrix psi -> [p1 I] ∝1 psi.
+Proof.
+  move => psi H.
+  rewrite /stb /act_n /= /apply_n.
+  rewrite /png_int /pn_int /=.
+  Qsimpl; auto.
+Qed.
+
+#[export] Hint Resolve stb_z0 stb_z1 stb_y0 stb_y1 stb_x0 stb_x1 stb_id : stab_db.
+
 
 Lemma one_stb_everything:
   forall {n: nat} (ψ:  Vector (2^n)),
   WF_Matrix ψ -> stb (id_png n) ψ.
 Proof.
-  rewrite /stb => n psi Hwf.
-  remember (act_id_le _ _ _ (act_n n)).
-  apply mat_equiv_eq.
-  rewrite /act_n /apply_n /=.
-  2: auto.
-  (* Search WF_Matrix ".*". *)
-  apply WF_mult. 2: auto. 
-  apply WF_scale. 
-  apply pn_int_wf.
-  auto. 
+  intros.
+  unfold stb. 
+  (* This is how you get obligations *)
+  case act_n => to obligations.
+  simpl.
+  case obligations => act_to_id _.
+  by apply act_to_id.
 Qed.
+
 
 (* If S∣ψ⟩=∣ψ⟩, then (S^(-1))∣ψ⟩=∣ψ⟩ *)
 Lemma inv_stb:
@@ -248,18 +268,6 @@ Proof.
   all: try by rewrite - Nat.pow_add_r.
 Qed.
 
-Definition take_pstr { n } m (pstr: PString n): PString (minn m n) :=
-  (pstr.1, [tuple of take m pstr.2]).
-  
-Definition drop_pstr { n } m (pstr: PString n): PString (n - m) :=
-  (One, [tuple of drop m pstr.2]).
-
-Theorem stb_compose_split {n: nat} :
-  forall m (pstr: PString n) (ψ1:  Vector (2^m)) (ψ2:  Vector (2^(n - m))),
-  take_pstr m pstr ∝1 ψ1 ->
-  drop_pstr m pstr ∝1 ψ2 ->
-  pstr ∝1 (ψ1 ⊗ ψ2).
-Admitted.
 
 
 Lemma stb_addition:
@@ -287,7 +295,7 @@ Proof.
   apply (stb_compose ([p1 Z, I]) ([p1 I, I])).
   all: unfold stb; simpl; Qsimpl; lma'; apply apply_n_wf.
   all: auto with wf_db.
-Abort.
+Qed.
 
 Definition shor_code_0 := (3 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
 
@@ -296,8 +304,8 @@ Ltac by_compose_stb s1 s2 :=
   (unfold stb; simpl; Qsimpl; lma');
   apply apply_n_wf; auto with wf_db.
 
-
-Fact shor_code_part_stb:
+(* Sing part of shor's code  *)
+Lemma shor_code_part_stb:
   [p1 Z, Z, I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩).
 Proof.
   apply stb_addition.
@@ -305,48 +313,68 @@ Proof.
   by_compose_stb ([p1 Z, Z]) ([p1 I]).
 Qed.
 
-Fact shor_code_stb_fact:
-  [p1 Z, Z, I, I, I, I, I, I, I] ∝1 shor_code_0.
-Proof.
-(* 
-  apply (stb_compose_alt ([p1 Z, Z, I, I, I, I]) ([p1 I, I, I])).
-  (* apply (stb_compose_alt ([p1 Z, Z, I, I, I, I]) ([p1 I, I, I])).
-  Qsimpl.
-  apply (stb_compose_alt (One, p[Z, Z, I]) (One, p[I, I, I])).
-  - (* [Z; Z; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩)  *)
-    apply shor_code_part_stb.
-  - (* [I; I; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩) *)
-    by_identity 3%nat.
-  - by_identity 3%nat. *)
-Qed. *)
+Theorem stb_compose_alt':
+  forall {n m: nat} 
+    (substr1: PString n) 
+    (substr2: PString m) 
+    (pstr: PString (n + m))
+    (ψ1:  Vector (2^n)) 
+    (ψ2:  Vector (2^m)),
+    (pstr = compose_pstring substr1 substr2) ->
+   substr1 ∝1 ψ1 -> substr2 ∝1 ψ2 -> pstr ∝1 (ψ1 ⊗ ψ2).
+Admitted.
 
 
-(*
-Ltac by_identity n := (* TODO: how to get n from the type*)
-    match goal with
-    | [ |- ((One, ?p) ∝1 _) ] =>
-        replace (One, p) with (𝟙 n) by reflexivity;
-        apply one_stb_everything;
-        auto with wf_db
-    end.
+(* Solves goals like [p ... ] = compose_pstring [p ...] [p ...]  *)
+Ltac by_cat_pstring :=
+    rewrite /compose_pstring /mulg /=;
+    apply injective_projections; simpl;
+    [by easy | by apply /eqP].
 
-    Fact shor_code_stb_fact:
-  (One, [p Z, Z, I, I, I, I, I, I, I]) ∝1 shor_code_0.
-Proof.
-  (* This could stuck Coq *)
-  (* by_compose_stb  (One, p[Z, Z, I, I, I, I]) (One, p[I, I, I]). *)
-  apply (stb_compose_alt (One, [p Z, Z, I, I, I, I]) (One, [p I, I, I])).
-  Qsimpl.
-  apply (stb_compose_alt (One, p[Z, Z, I]) (One, p[I, I, I])).
-  - (* [Z; Z; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩)  *)
-    apply shor_code_part_stb.
-  - (* [I; I; I] ∝1 (∣ 0, 0, 0 ⟩ .+ ∣ 1, 1, 1 ⟩) *)
-    by_identity 3%nat.
-  - by_identity 3%nat.
-Qed.
 
+(* Solve goals like [p1 I ...] = id_png n *)
+Ltac by_unify_ids :=
+  rewrite /id_png;
+  apply injective_projections; 
+  [by easy | rewrite /id_pn /=; by apply /eqP]. 
   
 
- *)
+Set Default Timeout 5.
+
+Goal [p1 Z, Z, I, I, I, I] ∝1 ∣ 0, 0, 0, 1, 1, 1⟩.
+Proof.
+  (* this is theoritical not necessary, *)
+  (* but without it coq will hanging *)
+  replace ∣ 0, 0, 0, 1, 1, 1⟩ with (∣ 0, 0⟩ ⊗ ∣0, 1, 1, 1⟩) by normalize_kron_notation .
+  apply (stb_compose_alt' ([p1 Z, Z]) ([p1 I, I, I, I])).
+  by_cat_pstring. 
+  apply (stb_compose_alt' ([p1 Z ]) ([p1 Z])). by_cat_pstring.
+  all: auto with stab_db.
+  replace ([ p1 I, I, I, I]) with (id_png 4) by by_unify_ids.
+  apply one_stb_everything. 
+  auto with wf_db.
+Qed.
+
+(* solve goals like [p1 I ...] ∝1 ∣... ⟩ *)
+Ltac by_id_stb n :=
+  match goal with
+  | [ |- (?pstr ∝1 _) ] =>
+    replace pstr with (id_png n) by by_unify_ids;
+    apply one_stb_everything;
+    auto with wf_db
+  end.
+
+Goal [p1 Z, Z, I, I, I, I, I, I, I] ∝1 shor_code_0.
+Proof.
+  rewrite /shor_code_0.
+  rewrite /kron_n kron_1_l.
+  apply (stb_compose_alt' ([p1 Z, Z, I, I, I, I]) ([p1 I, I, I])). 
+    by_cat_pstring.
+  apply (stb_compose_alt' ([p1 Z, Z, I]) ([p1 I, I, I])).
+    by_cat_pstring.
+  apply shor_code_part_stb.
+  all: try (by_id_stb 3%nat).
+  auto with wf_db.
+Qed.
 
 End StbExample.
