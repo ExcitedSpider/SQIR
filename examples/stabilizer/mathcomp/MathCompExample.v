@@ -91,7 +91,10 @@ Print astab.
 
 End NactionDef.
 
+From mathcomp Require Import div.
 
+Goal 5 = 1 %[mod 2].
+Proof. by apply /eqP. Qed.
 
 
 

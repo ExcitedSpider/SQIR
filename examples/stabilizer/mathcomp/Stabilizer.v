@@ -1,7 +1,5 @@
-(* The stabilizer theories *)
-
-(* This was copied from barebone/Stabilizer.v 
-   and needs necessary refatorization before it can work *) 
+(* The quantum stabilizer theories and examples          *)
+(* also provided some ltacs to prove stabilize relations *) 
 
 
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple.
@@ -38,8 +36,7 @@ Notation "pstring ∝1 ψ" := (stb pstring ψ) (at level 50).
 Ltac simpl_stbn := 
   rewrite /stb /act_n /apply_n /=;
   Qsimpl;
-  try (lma'; auto with wf_db).
-
+  try (lma'; try (apply apply_n_wf);auto with wf_db).
 
 Check [p Z, Z, X, Y].
 Check [p1 Z, Z, X, Y].
@@ -313,16 +310,15 @@ Proof.
   by_compose_stb ([p1 Z, Z]) ([p1 I]).
 Qed.
 
+(* basically the same as the original *)
+(* but it is more efficient in computing *)
 Theorem stb_compose_alt':
   forall {n m: nat} 
-    (substr1: PString n) 
-    (substr2: PString m) 
-    (pstr: PString (n + m))
-    (ψ1:  Vector (2^n)) 
-    (ψ2:  Vector (2^m)),
+    (substr1: PString n) (substr2: PString m) (pstr: PString (n + m))
+    (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
     (pstr = compose_pstring substr1 substr2) ->
    substr1 ∝1 ψ1 -> substr2 ∝1 ψ2 -> pstr ∝1 (ψ1 ⊗ ψ2).
-Admitted.
+Proof. move => *. by subst; apply stb_compose_alt. Qed.
 
 
 (* Solves goals like [p ... ] = compose_pstring [p ...] [p ...]  *)
@@ -346,7 +342,7 @@ Proof.
   (* this is theoritical not necessary, *)
   (* but without it coq will hanging *)
   replace ∣ 0, 0, 0, 1, 1, 1⟩ with (∣ 0, 0⟩ ⊗ ∣0, 1, 1, 1⟩) by normalize_kron_notation .
-  apply (stb_compose_alt' ([p1 Z, Z]) ([p1 I, I, I, I])).
+  apply (stb_compose_alt'([p1 Z, Z]) ([p1 I, I, I, I])).
   by_compose_pstring. 
   apply (stb_compose_alt' ([p1 Z ]) ([p1 Z])). by_compose_pstring.
   all: auto with stab_db.
@@ -378,3 +374,74 @@ Proof.
 Qed.
 
 End StbExample.
+
+(* theories related to syndrome detection *)
+Section Syndrome.
+
+(* aka anti-stabilizer *)
+Definition flip_sign {n: nat} (pstring: PString n) (psi: Vector (2^n)) :=
+  act_n n psi pstring = -1 .* psi.
+
+(* A fancy symbol for "stabilize" *)
+Notation "pstring ∝-1 ψ" := (flip_sign pstring ψ) (at level 50).
+
+Example z1_f:
+  [ p1 Z ] ∝-1  ∣ 1 ⟩.
+Proof. by simpl_stbn. Qed.
+
+Goal ∣ 1, 0, 1 ⟩ == kron (kron (ket 1) (ket 0)) (ket 1).
+Proof. by []. Qed.
+
+Goal ∣ 1, 0, 1 ⟩ = ∣ 1  ⟩ ⊗ ∣ 0 ⟩ ⊗ ∣ 1 ⟩.
+Proof. by []. Qed.
+
+Check ∣ 1, 0, 1 ⟩: Square 8.
+
+(* two anti-stabilizers combine into a stabilizer under the tensor product *)
+Theorem even_sign_flip_stb:
+  forall {n m: nat} (pstr1: PString n) (pstr2: PString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
+  let cpstring := compose_pstring pstr1 pstr2 in
+  pstr1 ∝-1 ψ1 ->
+  pstr2 ∝-1 ψ2 ->
+  cpstring ∝1 (ψ1 ⊗ ψ2).
+Admitted.
+
+Example stb_z11:
+  ([ p1 Z, Z]) ∝1 ∣ 1, 1 ⟩.
+Proof.
+  apply (even_sign_flip_stb ([p1 Z]) ( [p1 Z])).
+  by simpl_stbn.
+  by simpl_stbn.
+Qed.
+
+Theorem perm_symm_stb:
+  forall {n: nat} (pstr: PString n) (ψ1 ψ2:  Vector (2^n)),
+  act_n n ψ1 pstr =  ψ2 ->
+  act_n n ψ2 pstr =  ψ1 ->
+  pstr ∝1 (ψ1 .+ ψ2).
+Admitted.
+  
+(* This is part of the [4,4,2] codewords which has to be proved *)
+(* by perm_symm_stb *)
+Example stb_422_part0:
+  [p1 X,X,X,X] ∝1  (∣ 0, 0, 1, 1 ⟩ .+ ∣ 1, 1, 0, 0 ⟩).
+Proof.
+  apply perm_symm_stb.
+  - rewrite /= /apply_n /=. Qsimpl. 
+    repeat rewrite kron_assoc;  auto with wf_db.
+    rewrite kron_mixed_product; Qsimpl.
+    (* This does not work. why? TODO *)
+    rewrite !MmultX1 !MmultX0.
+    by rewrite -!kron_assoc; auto with wf_db.
+  - rewrite /= /apply_n /=. Qsimpl. 
+    repeat rewrite kron_assoc;  auto with wf_db.
+    rewrite kron_mixed_product; Qsimpl.
+    rewrite !MmultX1 !MmultX0.
+    by rewrite -!kron_assoc; auto with wf_db.
+Qed.
+
+
+End Syndrome.
+
+
+
