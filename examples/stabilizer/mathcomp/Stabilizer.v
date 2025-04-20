@@ -14,7 +14,7 @@ Import PNGroup.
 Import PNGGroup.
 Require Import WellForm.
 
-Definition PString := GenPauliTuple.
+Notation PString := GenPauliTuple.
 
 Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200): form_scope.
 
@@ -489,4 +489,47 @@ Proof.
     by apply stb_closed.
 Qed.
 
-End Generator.
+(* an n-qubit stabilizer group is any subgroup of P^n that is 
+abelian (commutative) and dos not contain -1  *)
+Definition is_generator {n} (S: { set PString n }) :=
+  forall a b, a \in S -> b \in S -> mulg a b = mulg b a /\ 
+  minus_id_png n \in << S >>.
+
+
+(* The weight of a Pauli operator is the number of non-I 1-qubit operator *)
+(* This is not the same as the weight of a stabilizer group *)
+(* The weight of a stabilizer group is the number of qubits that are not I *)
+(* in the stabilizer group *)
+Definition weight {n} (pstr: PString n): nat := 
+  count (fun x => x != I) (snd pstr) .
+
+Goal weight ([p1 Z, Z, I]) = 2%nat.
+Proof.
+  by rewrite /weight.
+Qed.
+
+Section Syndrome.
+
+Variable n: nat.
+(* The generator set *)
+Variable g: {set PString n}.
+Hypothesis H: is_generator g.
+
+(* an detectable error is an error that  *)
+(* note that we usually require the phase of error operator to be 1 *)
+(* Otherwise, it will be Z (negate phase) *)
+Definition detectable (E: PString n) := 
+  exists (pstr: PString n), pstr \in g /\ fst E = One /\ 
+  (mulg pstr E != mulg E pstr).
+
+(* The dimension of the code space 
+, which is typically, the numbef of physical qubits - number of independent generator *)
+Definition dimension := subn n #|g|.
+
+(* the distance of a generator = weight(E)  *)
+(* where E is an error and E cannot be detected *)
+(* Missing: E should be the of the minimal weight *)
+Definition distance (E: PString n) (d: nat) :=  
+  not (detectable E) /\ weight E = d.
+
+End Syndrome.
