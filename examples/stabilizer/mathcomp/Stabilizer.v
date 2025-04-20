@@ -375,8 +375,13 @@ Qed.
 
 End StbExample.
 
-(* theories related to syndrome detection *)
-Section Syndrome.
+(* 
+This section introduces additional properties and lemmas related to stabilizers.
+It defines the concept of "flip_sign" (anti-stabilizer) and provides examples and theorems 
+demonstrating how stabilizers and anti-stabilizers interact under operations like tensor products.
+Key results include the combination of two anti-stabilizers into a stabilizer and 
+the symmetry of stabilizers under certain transformations. *)
+Section MoreProps.
 
 (* aka anti-stabilizer *)
 Definition flip_sign {n: nat} (pstring: PString n) (psi: Vector (2^n)) :=
@@ -448,17 +453,40 @@ Example stb_422_part0:
   [p1 X,X,X,X] ∝1  (∣ 0, 0, 1, 1 ⟩ .+ ∣ 1, 1, 0, 0 ⟩).
 Proof.
   apply perm_symm_stb.
+  - rewrite /= /apply_n /=; Qsimpl. 
+    repeat rewrite kron_assoc;  auto with wf_db.
+    rewrite kron_mixed_product; Qsimpl.
+    by rewrite !MmultX1 !MmultX0.
   - rewrite /= /apply_n /=. Qsimpl. 
     repeat rewrite kron_assoc;  auto with wf_db.
     rewrite kron_mixed_product; Qsimpl.
-    rewrite !MmultX1 !MmultX0.
-    by rewrite -!kron_assoc; auto with wf_db.
-  - rewrite /= /apply_n /=. Qsimpl. 
-    repeat rewrite kron_assoc;  auto with wf_db.
-    rewrite kron_mixed_product; Qsimpl.
-    rewrite !MmultX1 !MmultX0.
-    by rewrite -!kron_assoc; auto with wf_db.
+    by rewrite !MmultX1 !MmultX0.
+Qed.
+  
+End MoreProps.
+
+Section Generator.
+
+(* Cannot do this because quantumlib do not provide a computable process *)
+(* of Mmult *)
+Fail Definition generator {n: nat} (psi: Vector (2^n)) :=
+  [set x | stb x psi].
+
+(* Instead, we can define using Coq subtype  *)
+Definition generator {n: nat} (psi: Vector (2^n)) := { 
+  op: PString n | op ∝1 psi \/ exists (a b:PString n), a ∝1 psi /\ b ∝1 psi /\ op = mulg a b 
+}.
+
+Theorem generated_stb n:
+  forall (psi: Vector (2^n)) (gen: generator psi),
+    `gen ∝1 psi.
+Proof.
+  move => psi [op [Hop1 | Hop2]].
+  - apply Hop1.
+  - move: Hop2 => [a [b H]].
+    move: H => [Ha [Hb Hc]].
+    subst. simpl.
+    by apply stb_closed.
 Qed.
 
-
-
+End Generator.
