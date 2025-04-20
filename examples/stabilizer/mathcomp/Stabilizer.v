@@ -404,7 +404,22 @@ Theorem even_sign_flip_stb:
   pstr1 ∝-1 ψ1 ->
   pstr2 ∝-1 ψ2 ->
   cpstring ∝1 (ψ1 ⊗ ψ2).
-Admitted.
+Proof.
+  move => n m ps1 ps2 psi1 psi2.
+  move: (compose_pstring_correct ps1 ps2).
+  unfold_stb  => H0 H1 H2.
+  restore_dims.
+  rewrite H0.
+  rewrite kron_mixed_product'; try by auto.
+  move: H1 H2. rewrite /flip_sign /act_n /= /apply_n => H1 H2.
+  rewrite H1 H2 Mscale_kron_dist_r.
+  restore_dims. 
+  rewrite Mscale_kron_dist_l.
+  rewrite Mscale_assoc.
+  replace (-1 * -1) with C1 by lca.
+  by Qsimpl.
+  all: try by rewrite - Nat.pow_add_r.
+Qed.
 
 Example stb_z11:
   ([ p1 Z, Z]) ∝1 ∣ 1, 1 ⟩.
@@ -419,7 +434,13 @@ Theorem perm_symm_stb:
   act_n n ψ1 pstr =  ψ2 ->
   act_n n ψ2 pstr =  ψ1 ->
   pstr ∝1 (ψ1 .+ ψ2).
-Admitted.
+Proof.
+  unfold_stb => n pstr psi1 psi2 H0 H1.
+  rewrite /stb /act_n /= /apply_n /=.
+  rewrite Mmult_plus_distr_l.
+  rewrite H0 H1.
+  by rewrite Mplus_comm.
+Qed.
   
 (* This is part of the [4,4,2] codewords which has to be proved *)
 (* by perm_symm_stb *)
@@ -430,7 +451,6 @@ Proof.
   - rewrite /= /apply_n /=. Qsimpl. 
     repeat rewrite kron_assoc;  auto with wf_db.
     rewrite kron_mixed_product; Qsimpl.
-    (* This does not work. why? TODO *)
     rewrite !MmultX1 !MmultX0.
     by rewrite -!kron_assoc; auto with wf_db.
   - rewrite /= /apply_n /=. Qsimpl. 
@@ -439,9 +459,6 @@ Proof.
     rewrite !MmultX1 !MmultX0.
     by rewrite -!kron_assoc; auto with wf_db.
 Qed.
-
-
-End Syndrome.
 
 
 
