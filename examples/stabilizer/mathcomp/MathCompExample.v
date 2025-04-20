@@ -1,4 +1,4 @@
-From mathcomp Require Import all_ssreflect fingroup.
+From mathcomp Require Import all_ssreflect fingroup ssrnat.
 From HB Require Import structures.
 Set Bullet Behavior "Strict Subproofs".
 
@@ -33,8 +33,6 @@ Qed.
 HB.instance Definition _ := Equality.copy alphabet (can_type code_decodeEE).
 HB.instance Definition _ := Finite.copy alphabet (can_type code_decodeEE).
 Check alphabet: finType.
-
-
 
 Definition g := alphabet.
 Variable mul: g -> g -> g.
@@ -97,7 +95,24 @@ Goal 5 = 1 %[mod 2].
 Proof. by apply /eqP. Qed.
 
 
+Module Generator.
 
+Variable (gT : finGroupType) (A B: gT).
+
+Definition generator := [set A; B].
+
+Hypothesis AB_neq : A != B.
+
+Definition gengroup := generated generator.
+
+Lemma generators_size_2 : #|generator| == 2.
+Proof. Admitted.
+
+Lemma ab_in_gengroup : 
+  mulg A B \in gengroup.
+Proof. Admitted.
+
+End Generator.
 
 
 
