@@ -469,16 +469,16 @@ Section Generator.
 
 (* Cannot do this because quantumlib do not provide a computable process *)
 (* of Mmult *)
-Fail Definition generator {n: nat} (psi: Vector (2^n)) :=
+Fail Definition stb_s {n: nat} (psi: Vector (2^n)) :=
   [set x | stb x psi].
 
 (* Instead, we can define using Coq subtype  *)
-Definition generator {n: nat} (psi: Vector (2^n)) := { 
+Definition stb_s {n: nat} (psi: Vector (2^n)) := { 
   op: PString n | op ∝1 psi \/ exists (a b:PString n), a ∝1 psi /\ b ∝1 psi /\ op = mulg a b 
 }.
 
-Theorem generated_stb n:
-  forall (psi: Vector (2^n)) (gen: generator psi),
+Theorem stb_s_correct n:
+  forall (psi: Vector (2^n)) (gen: stb_s psi),
     `gen ∝1 psi.
 Proof.
   move => psi [op [Hop1 | Hop2]].
