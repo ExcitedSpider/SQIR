@@ -493,43 +493,49 @@ Qed.
 abelian (commutative) and dos not contain -1  *)
 Definition is_generator {n} (S: { set PString n }) :=
   forall a b, a \in S -> b \in S -> mulg a b = mulg b a /\ 
-  minus_id_png n \in << S >>.
+  ~~ (minus_id_png n \in << S >>).
 
-
-(* The weight of a Pauli operator is the number of non-I 1-qubit operator *)
-(* This is not the same as the weight of a stabilizer group *)
 (* The weight of a stabilizer group is the number of qubits that are not I *)
 (* in the stabilizer group *)
-Definition weight {n} (pstr: PString n): nat := 
-  count (fun x => x != I) (snd pstr) .
+Definition weight {n} (pt: PauliTuple n): nat := 
+  count (fun x => x != I) pt.
 
-Goal weight ([p1 Z, Z, I]) = 2%nat.
+Goal weight ([p Z, Z, I]) = 2%nat.
 Proof.
   by rewrite /weight.
 Qed.
 
+(* Describe the error detection ability *)
 Section Syndrome.
 
+(* The number of physical qubits *)
 Variable n: nat.
 (* The generator set *)
 Variable g: {set PString n}.
 Hypothesis H: is_generator g.
 
+Definition with_1 (pt: PauliTuple n): PString n := (One, pt).
+
 (* an detectable error is an error that  *)
 (* note that we usually require the phase of error operator to be 1 *)
 (* Otherwise, it will be Z (negate phase) *)
-Definition detectable (E: PString n) := 
-  exists (pstr: PString n), pstr \in g /\ fst E = One /\ 
-  (mulg pstr E != mulg E pstr).
+Definition detectable (E: PauliTuple n) := 
+  exists (pstr: PString n), pstr \in g /\ 
+  (mulg pstr (with_1 E) != mulg (with_1 E) pstr).
 
 (* The dimension of the code space 
 , which is typically, the numbef of physical qubits - number of independent generator *)
+(* A future work is to prove this holds in principle *)
 Definition dimension := subn n #|g|.
 
 (* the distance of a generator = weight(E)  *)
 (* where E is an error and E cannot be detected *)
-(* Missing: E should be the of the minimal weight *)
-Definition distance (E: PString n) (d: nat) :=  
+Definition distance_spec (E: PauliTuple n) (d: nat) :=
   not (detectable E) /\ weight E = d.
+
+(* The distance of a code is the minimal weight of an undetectable error *)
+Definition distance (d: nat):= 
+  exists (E: PauliTuple n), distance_spec E d /\
+    forall (E': PauliTuple n) d', distance_spec E' d' -> leq d d'.
 
 End Syndrome.
