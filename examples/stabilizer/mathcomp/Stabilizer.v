@@ -373,15 +373,13 @@ Proof.
   auto with wf_db.
 Qed.
 
-End StbExample.
-
 (* 
 This section introduces additional properties and lemmas related to stabilizers.
 It defines the concept of "flip_sign" (anti-stabilizer) and provides examples and theorems 
 demonstrating how stabilizers and anti-stabilizers interact under operations like tensor products.
 Key results include the combination of two anti-stabilizers into a stabilizer and 
 the symmetry of stabilizers under certain transformations. *)
-Section MoreProps.
+(* Section MoreProps. *)
 
 (* aka anti-stabilizer *)
 Definition flip_sign {n: nat} (pstring: PString n) (psi: Vector (2^n)) :=
@@ -403,7 +401,7 @@ Proof. by []. Qed.
 Check ∣ 1, 0, 1 ⟩: Square 8.
 
 (* two anti-stabilizers combine into a stabilizer under the tensor product *)
-Theorem even_sign_flip_stb:
+Theorem stb_even_slign_flip:
   forall {n m: nat} (pstr1: PString n) (pstr2: PString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
   let cpstring := compose_pstring pstr1 pstr2 in
   pstr1 ∝-1 ψ1 ->
@@ -429,12 +427,12 @@ Qed.
 Example stb_z11:
   ([ p1 Z, Z]) ∝1 ∣ 1, 1 ⟩.
 Proof.
-  apply (even_sign_flip_stb ([p1 Z]) ( [p1 Z])).
+  apply (stb_even_slign_flip ([p1 Z]) ( [p1 Z])).
   by simpl_stbn.
   by simpl_stbn.
 Qed.
 
-Theorem perm_symm_stb:
+Theorem stb_symm_perm:
   forall {n: nat} (pstr: PString n) (ψ1 ψ2:  Vector (2^n)),
   act_n n ψ1 pstr =  ψ2 ->
   act_n n ψ2 pstr =  ψ1 ->
@@ -448,11 +446,11 @@ Proof.
 Qed.
   
 (* This is part of the [4,4,2] codewords which has to be proved *)
-(* by perm_symm_stb *)
+(* by stb_symm_perm *)
 Example stb_422_part0:
   [p1 X,X,X,X] ∝1  (∣ 0, 0, 1, 1 ⟩ .+ ∣ 1, 1, 0, 0 ⟩).
 Proof.
-  apply perm_symm_stb.
+  apply stb_symm_perm.
   - rewrite /= /apply_n /=; Qsimpl. 
     repeat rewrite kron_assoc;  auto with wf_db.
     rewrite kron_mixed_product; Qsimpl.
@@ -463,10 +461,6 @@ Proof.
     by rewrite !MmultX1 !MmultX0.
 Qed.
   
-End MoreProps.
-
-Section Generator.
-
 (* Cannot do this because quantumlib do not provide a computable process *)
 (* of Mmult *)
 Fail Definition stb_s {n: nat} (psi: Vector (2^n)) :=
@@ -491,9 +485,57 @@ Qed.
 
 (* an n-qubit stabilizer group is any subgroup of P^n that is 
 abelian (commutative) and dos not contain -1  *)
-Definition is_generator {n} (S: { set PString n }) :=
-  forall a b, a \in S -> b \in S -> mulg a b = mulg b a /\ 
+Definition is_stb_set {n} (S: { set PString n }) :=
+  forall a b, a \in <<S>> -> b \in <<S>> -> mulg a b = mulg b a /\ 
   ~~ (minus_id_png n \in << S >>).
+
+Definition is_stb_set_spec {n} (S: {set PString n}) (v: Vector (2^n)):=
+  forall x, x \in << S >> -> x ∝1 v.
+
+(* TODO: consider make this equivalent *)
+Theorem is_stb_set_correct:
+  forall {n} (S: {set PString n}),
+  (exists v, WF_Matrix v /\ is_stb_set_spec S v) <-> is_stb_set S.
+Proof.
+  move => n S.
+  split.
+  {
+    rewrite /is_stb_set_spec /is_stb_set /=.
+    move => [v [Hwf H]] a b Ha Hb.
+    move: (H a Ha) => Has.
+    move: (H b Hb) => Hbs.
+    split.
+    - move: (stabilizer_must_commute a b v Has Hbs).
+      rewrite /fingroup.commute /= /mulg /= => H0.
+      apply H0.
+    (* - move: (stb_group_no_m1 a b v Ha Hb) => H0.
+      apply H0 in Hwf; clear H0. *)
+    - unfold minus_id_png.
+      move: (stb_group_no_m1 a b v Has Hbs Hwf) => H0.
+      (* Ha : a  \in <<S>>
+      Hb : b  \in <<S>>
+      Has : a ∝1 v
+      Hbs : b ∝1 v
+      H0 : mulg a b <> (NOne, id_pn n) *)
+      (* Do not know how to do this proof in ssreflect *)
+      (* TODO: Ask Zoe *)
+      admit.
+  }
+  {
+    rewrite /is_stb_set /is_stb_set_spec /= => H.
+    (* for this part, we need a way to construct the eigenvector
+    of a and b  *)
+    (* TODO Maybe Ask Udaya for this *)
+Abort.
+
+(* If all the generatar stabilize v *)
+(* then all elements in the generated group stabilize v *)
+Lemma stb_generator {n}:
+  forall (g: { set (PString n) }) (v: Vector (2^n)), 
+    (forall x, x \in g -> x ∝1 v) -> forall y, y \in <<g>> -> y ∝1 v.
+Admitted.
+
+(* TODO *)
 
 (* The weight of a stabilizer group is the number of qubits that are not I *)
 (* in the stabilizer group *)
@@ -512,7 +554,7 @@ Section Syndrome.
 Variable n: nat.
 (* The generator set *)
 Variable g: {set PString n}.
-Hypothesis H: is_generator g.
+Hypothesis H: is_stb_set g.
 
 Definition with_1 (pt: PauliTuple n): PString n := (One, pt).
 
@@ -522,6 +564,7 @@ Definition with_1 (pt: PauliTuple n): PString n := (One, pt).
 Definition detectable (E: PauliTuple n) := 
   exists (pstr: PString n), pstr \in g /\ 
   (mulg pstr (with_1 E) != mulg (with_1 E) pstr).
+
 
 (* The dimension of the code space 
 , which is typically, the numbef of physical qubits - number of independent generator *)
@@ -538,4 +581,107 @@ Definition distance (d: nat):=
   exists (E: PauliTuple n), distance_spec E d /\
     forall (E': PauliTuple n) d', distance_spec E' d' -> leq d d'.
 
+(* A sound difinition of distance, which does not require to show 
+  the error is the minimum in the whole world  
+*)
+Definition distance_s (d: nat):= 
+  exists (E: PauliTuple n), distance_spec E d.
+  
+
+(* TODO: *)
+(* These definitions are very axiomatic and not verified from principle *)
+(* It's very good to verify their physical meanning later *)
+(* Prove that detectable is correct *)
+
 End Syndrome.
+
+Lemma not_detactable n:
+  forall (E: PauliTuple n) (s: {set PString n}),
+  ( exists (pstr: PString n), 
+    pstr \in s /\  mulg pstr (with_1 _ E) = mulg (with_1 _ E) pstr)
+    -> not (detectable _ s E) 
+    .
+Admitted.
+
+
+(* Now let's reason about the [4,2,2] code *)
+
+Definition zzzz := [p1 Z, Z, Z, Z]: PString 4.
+Definition xxxx := [p1 X, X, X, X]: PString 4.
+
+Definition g422 := setU [set zzzz] [set xxxx].
+
+Lemma is_stb_set_g422:
+  is_stb_set g422.
+Proof.
+  (* Ask Zeo about this  *)
+Admitted.
+
+Lemma zzzz_stb:
+  zzzz ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
+Proof.
+  rewrite /zzzz.
+  apply stb_addition.
+  - replace ∣ 0, 0, 0, 0⟩ with (∣ 0, 0⟩ ⊗ ∣ 0, 0 ⟩) by normalize_kron_notation. 
+    apply (stb_compose_alt' ([p1 Z, Z]) ([p1 Z, Z])). by_compose_pstring. 
+    simpl_stbn. simpl_stbn.
+  - replace ∣ 1, 1, 1, 1⟩ with (∣ 1, 1⟩ ⊗ ∣ 1, 1 ⟩) by normalize_kron_notation. 
+    apply (stb_compose_alt' ([p1 Z, Z]) ([p1 Z, Z])). by_compose_pstring. 
+    simpl_stbn. simpl_stbn.
+Qed.
+
+
+Lemma xxxx_stb:
+  xxxx ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
+Proof.
+  rewrite /xxxx.
+apply stb_symm_perm.
+  - rewrite /act_n /apply_n /=. Qsimpl.  
+    repeat rewrite kron_assoc;  auto with wf_db.
+    rewrite kron_mixed_product; Qsimpl.
+    by rewrite !MmultX0.
+  - rewrite /act_n /apply_n /=. Qsimpl.  
+    repeat rewrite kron_assoc;  auto with wf_db.
+    rewrite kron_mixed_product; Qsimpl.
+    by rewrite !MmultX1.
+Qed.
+
+Theorem is_stb_set_g422':
+  is_stb_set_spec g422 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
+Proof.
+  rewrite /is_stb_set_spec /is_stb_set /= => x Hx.
+  move: (stb_generator g422 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩)) => H.
+  apply (H); auto.
+  rewrite /= => a.
+  rewrite inE => Ha.
+  case/orP: Ha; rewrite inE => Ha;
+  move/eqP: Ha => Ha; subst;
+  rewrite /zzzz /xxxx.
+  - by apply zzzz_stb. 
+  - by apply xxxx_stb.
+Qed.
+
+Theorem g422_distance:
+  distance_s _ g422 2.
+Proof.
+  rewrite /distance_s .
+  exists ([p Z, Z, I, I]).
+  split.
+  - apply not_detactable.
+    exists zzzz.
+    split.
+    {
+      rewrite inE.
+      apply/orP; left.
+      by rewrite inE.
+    }
+    rewrite /zzzz /with_1 /=.
+    by apply /eqP. (* this is benefit from mathcomp *)
+  - by rewrite /weight /=. 
+Qed.
+
+Theorem g422_dimension_2: 
+  dimension _ g422 = 2%nat.
+Proof.
+  by rewrite /dimension cards2 /=.
+Qed.
