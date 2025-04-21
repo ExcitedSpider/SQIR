@@ -334,7 +334,6 @@ Proof.
   reflexivity.
 Qed.
 
-Section StbExample.
 
 Ltac normalize_kron_notation :=
   repeat rewrite <- kron_assoc by auto 8 with wf_db;

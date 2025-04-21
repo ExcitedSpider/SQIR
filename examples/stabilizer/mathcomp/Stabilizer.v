@@ -279,8 +279,6 @@ Proof.
   by rewrite H0 H1.
 Qed.
 
-Section StbExample.
-
 Ltac normalize_kron_notation :=
   repeat rewrite <- kron_assoc by auto 8 with wf_db;
   try easy.
@@ -588,11 +586,9 @@ Definition distance_s (d: nat):=
   exists (E: PauliTuple n), distance_spec E d.
   
 
-(* TODO: *)
 (* These definitions are very axiomatic and not verified from principle *)
-(* It's very good to verify their physical meanning later *)
+(* It's nice if we can verify their physical meanning *)
 (* Prove that detectable is correct *)
-
 End Syndrome.
 
 Lemma not_detactable n:
@@ -603,85 +599,3 @@ Lemma not_detactable n:
     .
 Admitted.
 
-
-(* Now let's reason about the [4,2,2] code *)
-
-Definition zzzz := [p1 Z, Z, Z, Z]: PString 4.
-Definition xxxx := [p1 X, X, X, X]: PString 4.
-
-Definition g422 := setU [set zzzz] [set xxxx].
-
-Lemma is_stb_set_g422:
-  is_stb_set g422.
-Proof.
-  (* Ask Zeo about this  *)
-Admitted.
-
-Lemma zzzz_stb:
-  zzzz ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
-Proof.
-  rewrite /zzzz.
-  apply stb_addition.
-  - replace ∣ 0, 0, 0, 0⟩ with (∣ 0, 0⟩ ⊗ ∣ 0, 0 ⟩) by normalize_kron_notation. 
-    apply (stb_compose_alt' ([p1 Z, Z]) ([p1 Z, Z])). by_compose_pstring. 
-    simpl_stbn. simpl_stbn.
-  - replace ∣ 1, 1, 1, 1⟩ with (∣ 1, 1⟩ ⊗ ∣ 1, 1 ⟩) by normalize_kron_notation. 
-    apply (stb_compose_alt' ([p1 Z, Z]) ([p1 Z, Z])). by_compose_pstring. 
-    simpl_stbn. simpl_stbn.
-Qed.
-
-
-Lemma xxxx_stb:
-  xxxx ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
-Proof.
-  rewrite /xxxx.
-apply stb_symm_perm.
-  - rewrite /act_n /apply_n /=. Qsimpl.  
-    repeat rewrite kron_assoc;  auto with wf_db.
-    rewrite kron_mixed_product; Qsimpl.
-    by rewrite !MmultX0.
-  - rewrite /act_n /apply_n /=. Qsimpl.  
-    repeat rewrite kron_assoc;  auto with wf_db.
-    rewrite kron_mixed_product; Qsimpl.
-    by rewrite !MmultX1.
-Qed.
-
-Theorem is_stb_set_g422':
-  is_stb_set_spec g422 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
-Proof.
-  rewrite /is_stb_set_spec /is_stb_set /= => x Hx.
-  move: (stb_generator g422 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩)) => H.
-  apply (H); auto.
-  rewrite /= => a.
-  rewrite inE => Ha.
-  case/orP: Ha; rewrite inE => Ha;
-  move/eqP: Ha => Ha; subst;
-  rewrite /zzzz /xxxx.
-  - by apply zzzz_stb. 
-  - by apply xxxx_stb.
-Qed.
-
-Theorem g422_distance:
-  distance_s _ g422 2.
-Proof.
-  rewrite /distance_s .
-  exists ([p Z, Z, I, I]).
-  split.
-  - apply not_detactable.
-    exists zzzz.
-    split.
-    {
-      rewrite inE.
-      apply/orP; left.
-      by rewrite inE.
-    }
-    rewrite /zzzz /with_1 /=.
-    by apply /eqP. (* this is benefit from mathcomp *)
-  - by rewrite /weight /=. 
-Qed.
-
-Theorem g422_dimension_2: 
-  dimension _ g422 = 2%nat.
-Proof.
-  by rewrite /dimension cards2 /=.
-Qed.
