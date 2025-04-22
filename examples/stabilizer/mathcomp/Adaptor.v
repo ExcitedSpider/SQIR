@@ -18,7 +18,7 @@ Import PNGGroup.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 
-(* This module is the old definition of PauliString, using  *)
+(* This module is a copy old definition of barebone.PauliString  *)
 Module PauliString.
 Definition PauliVector n := Vector.t PauliOp n.
 Definition PVector0 := Vector.nil PauliOp.
@@ -524,6 +524,8 @@ Qed.
 
 End PauliString.
 
+(* We show that the two sets of definiton can be transformed from one to 
+the another, thus they are of equivalent power *)
 Module Adaptor.
 
 Import PauliString.
