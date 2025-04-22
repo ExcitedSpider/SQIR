@@ -34,7 +34,7 @@ Lemma is_stb_set_g422:
   is_stb_set g422.
 Proof.
   (* Ask Zeo about this  *)
-Admitted.
+Admitted. (* TODO *)
 
 Lemma zzzz_stb:
   zzzz ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).

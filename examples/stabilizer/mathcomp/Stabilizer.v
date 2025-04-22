@@ -15,6 +15,7 @@ Import PNGGroup.
 Require Import WellForm.
 Require Import Assumption.
 
+Require Import Operations.
 Notation PString := GenPauliTuple.
 
 Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200): form_scope.

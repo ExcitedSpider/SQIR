@@ -64,7 +64,7 @@ Record action := Action {
 End ActionDef.
 
 Require Import PauliGroup.
-Require Import P1Props.
+Require Import PauliProps.
 
 Section QuantumActions. 
 
@@ -279,7 +279,7 @@ Qed.
 
 Lemma png_int_injection: forall n px py (tx ty: PauliTuple n),
   png_int (px, tx) = png_int (py, ty) -> px = py /\ tx = ty.
-Admitted.
+Admitted. (* TODO *)
 
 Lemma eq_by_contra n (a b : PString n):
   (a != b -> False) -> a = b.

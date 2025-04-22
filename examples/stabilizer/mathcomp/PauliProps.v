@@ -1,6 +1,7 @@
 Require Export SQIR.UnitaryOps.
 Require Export QuantumLib.Matrix.
 From mathcomp Require Import ssrfun fingroup eqtype fintype.
+Require Import Assumption.
 
 Require Import PauliGroup.
 Import PauliGroup.P1Group.
@@ -716,64 +717,20 @@ Proof.
   destruct x; reflexivity.
 Qed.
 
-(* Have some troubles proving function inequalities*)
-(* But this is a known simple fact in math that all GenPauliOp operators are orthogonal*)
-(* So we skip this proof *)
-Lemma pauli_orthogonal:
-  forall sa opa sb opb,
-  scalar_to_complex sa .* op_to_matrix opa =
-  scalar_to_complex sb .* op_to_matrix opb ->
-  sa = sb /\ opa = opb.
-Proof. 
-  intros.
-  destruct sa, sb, opa, opb.
-  all: simpl in H; try easy.
-  all: contradict H; Qsimpl.
-  apply ix_ineq.
-  apply iy_ineq.
-  (* There are 238 cases just like ix_ineq and iy_ineq *)
-  (* Let me write a ltac later *)
-  Admitted. 
+From Coq Require Import Classical.
 
-
-
-Lemma pauli_to_matrix_correct:
-  forall p s op, 
-  p = pair s op <->
-  pauli_to_matrix p = scalar_to_complex s .* op_to_matrix op.
+Lemma op_to_matrix_correct_eq:
+  forall (op: PauliOp),
+  is_basic_op (op_to_matrix op).
 Proof.
   intros.
-  split; intros H.
-  - subst. reflexivity.
-  - destruct p as [sp opp]. 
-    simpl in H.
-    apply pauli_orthogonal in H.
-    destruct H.
-    subst.
-    reflexivity.
+  destruct op; simpl.
+  unfold is_basic_op.
+  repeat (try (left; reflexivity); right). reflexivity.
+  repeat (try (left; reflexivity); right). 
+  repeat (try (left; reflexivity); right). 
+  repeat (try (left; reflexivity); right). 
 Qed.
-
-Lemma op_prod_correct_eq:
-  forall oa ob sab oab p,
-  op_to_matrix oa × op_to_matrix ob = pauli_to_matrix p ->
-  p = pair sab oab ->
-  op_prod oa ob = (sab, oab).
-Proof.
-  intros.
-  specialize (op_prod_correct oa ob) as Hexists.
-  destruct Hexists as [s [op [Heq Hprod]]].
-  subst.
-  simpl in H.
-  assert (sab = s /\ oab = op).
-  { apply pauli_orthogonal.
-    replace p1_int with op_to_matrix in H by easy.
-    replace phase_int with scalar_to_complex in H by easy.
-    congruence. }
-  destruct H0.
-  congruence.
-Qed.
-
-Search "commutative".
 
 Lemma s_prod_comm:
   commutative s_prod.
@@ -798,17 +755,6 @@ Proof.
   simpl.
   destruct x; easy.
 Qed.
-
-(* A More Usable Variant *)
-Lemma op_prod_correct_eq_var:
-  forall oa ob s op,
-  op_to_matrix oa × op_to_matrix ob = pauli_to_matrix (s · op) ->
-  op_prod oa ob = (s, op).
-Proof.
-  intros.
-  remember (s · op) as p.
-  apply (op_prod_correct_eq _ _ _ _ p); assumption.
-Qed.  
 
 Lemma op_prod_snd_assoc:
   forall a b c, 
