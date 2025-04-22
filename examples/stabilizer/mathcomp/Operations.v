@@ -8,10 +8,6 @@ Import PNGroup.
 Import P1GGroup.
 Import P1Group.
 
-Require Import WellForm.
-
-Compute mulg NOne NImg.
-
 Definition compose_pstring {n m: nat} 
   (ps1 : GenPauliTuple n) (ps2 : GenPauliTuple m) : GenPauliTuple (n + m) :=
   let s := mulg ps1.1 ps2.1 in
@@ -23,8 +19,6 @@ Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200)
 (* When you have trivial phase 1, use this *)
 Notation "[ 'p1' x1 , .. , xn ]" := (One, [tuple of x1 :: .. [:: xn] ..]) (at level 200): form_scope.
   
-Compute compose_pstring ([p1 X, Y]) ([p1 Z, I]).
-
 
 Goal compose_pstring ([p1 X, Y]) ([p1 Z, I]) = ([p1 X, Y, Z, I]).
 Proof.
@@ -33,7 +27,6 @@ Proof.
   - by rewrite /=.
   - apply /eqP. by [].
 Qed.
-
 
 Lemma pn_int_comp_concat :
   forall {n m: nat} (ps1: PauliTuple n) (ps2: PauliTuple m),
@@ -44,15 +37,18 @@ Proof.
   induction n.
   - rewrite (tuple0 ps1) /=.
     Qsimpl.
-    admit.
-    apply pn_int_wf.
+    rewrite tupleE.
+    by rewrite catNil.
+    Fail by apply pn_int_wf.
+    admit. (* Dependency Issues, fix later *) 
   - induction m.
     + case: ps1 / tupleP => hx tx.
       Qsimpl.
       rewrite (tuple0 ps2) /=.
+      assert (tx ++ [::] = tx). admit.
       (* Some dependent type eroor *)
       Fail rewrite cats0.
-Admitted. (* Coq Cannonical Type Issue*)
+Admitted. (* Coq dependent type error*)
 
 
 Theorem compose_pstring_correct:

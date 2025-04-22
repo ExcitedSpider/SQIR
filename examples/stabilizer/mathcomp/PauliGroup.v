@@ -37,6 +37,14 @@ Lemma mapCons {n A B} (f: A -> B) b (p: n.-tuple A) :
   map_tuple f [tuple of b :: p] = [tuple of f b :: map_tuple f p].
 Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth (f b)). Qed.
 
+Lemma catCons {n1 n2 A} (a:A) (aa:n1.-tuple A) (bb:n2.-tuple A) :
+  cat_tuple [tuple of a::aa] bb = [tuple of a::cat_tuple aa bb].
+Proof. by apply: eq_from_tnth=> i; rewrite !(tnth_nth a). Qed.
+
+Lemma catNil {n A} (aa:n.-tuple A) :
+  cat_tuple [tuple] aa = aa.
+Proof. exact: val_inj. Qed.
+  
 End TupleExtras. 
 
 Module P1Group.
@@ -583,19 +591,8 @@ Proof.
       ((mult_phase (get_phase (mult_p1 hx hy) hz) (get_phase hx hy))) as const.
     rewrite -mult_phase_assoc.
     rewrite (mult_phase_comm _ pt).
-    have: (
-    (mult_phase pt
-     (mult_phase (get_phase_pn tx ty) (mult_phase sx (mult_phase sy sz))))
-    = 
-    (mult_phase pt
-     (mult_phase (mult_phase (get_phase_pn tx ty) (mult_phase sx sy)) sz)
-    )).
-    by rewrite ?mult_phase_assoc.
-    move => H0.
-    rewrite H0 IHn0.
 (* Too Tedious to continue *)
-(* Need to construct some autowrite mechanism *) 
-Admitted.
+Admitted. (* Need to construct some autowrite mechanism *) 
 
 
 (* Do not try to attempt this! *)
@@ -833,9 +830,10 @@ Lemma get_phase_pn_behead n:
   forall x y (tx ty: PauliTuple n),
   (get_phase_pn [tuple of y :: ty] [tuple of x :: tx]) = 
     mult_phase (get_phase y x) (get_phase_pn ty tx).
-(* Do this proof after replace foldl in the implementation *)
-Admitted.
-
+Proof.
+  move => x y tx ty.
+  by rewrite get_phase_pn_cons.
+Qed.
 
 Lemma p1_int_Mmult: forall x y,
   p1_int y ×  p1_int x = phase_int (get_phase y x) .* p1_int (mulg y x).
