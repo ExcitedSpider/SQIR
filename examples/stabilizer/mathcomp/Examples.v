@@ -1,4 +1,9 @@
 (* We present some examples of stabiliser code for case study. *)
+(* TODO: add examples for 
+  - pauli operator 
+  - stabilizer 
+*)
+
 
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple finset.
 Require Export SQIR.UnitaryOps.

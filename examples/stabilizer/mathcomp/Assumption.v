@@ -14,15 +14,6 @@ Admitted.
 
 Definition σi := Matrix.I 2.
 
-Lemma neqxy: σx <> σy . Admitted.
-Lemma neqxz: σx <> σz . Admitted.
-Lemma neqx1: σx <> σi . Admitted.
-Lemma neqyz: σy <> σz . Admitted.
-Lemma neqyi: σy <> σi . Admitted.
-Lemma neqzi: σz <> σi . Admitted.
-
-Hint Resolve neqxy neqxz neqx1 neqyz neqyi neqzi: pauli_unique.
-
 Definition is_basic_op U :=
   U = σx \/ U = σy \/ U = σz \/ U = σi.
 
@@ -33,6 +24,9 @@ Lemma basic_op_orthogonal U V:
   U <> V -> c1 .* U <> c2 .* V.
 Admitted.
 
+(* We assume that if you apply a nontrivial global phase 
+to a quantum state vector, then the resulting vector 
+is different from the original  *)
 Lemma phase_change_state n:
   forall (ψ:  Vector n) (c: C),
   c <> C1 -> c .* ψ <> ψ.

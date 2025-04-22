@@ -5,8 +5,6 @@ This file includes the formalization of
   - commutativity of Pauli operators
 *)
 
-
-
 (* Refer to https://math-comp.github.io/htmldoc_2_2_0/mathcomp.fingroup.action.html *)
 (* We do not use mathcomp's definition because it requires finite structures, but quantumLib *)
 (* works on infinite structure (Hilbert Space) *)
@@ -289,8 +287,10 @@ Proof.
     case : (classic (tx = ty)) => Hc2.
     + by rewrite Hc2.
     + intros H. 
-      (* tx <> ty -> there exists an index i such that tx[i] <> ty[i] *)   
+      (* tx <> ty -> there exists an index i such that tx[i] <> ty[i] *)
       (* therefore, we know that pn_int tx <> pn_int ty *)
+      (* because pauli string are interpreted by component *)
+      (* e.g. [[X, Y]] = σx ⊗ σy  *)
       (* and this contradict with H *)
       admit.
   - intros H.
@@ -305,14 +305,8 @@ Proof.
       (* We have $Hc : px <> py$ and $Hc2 : tx <> ty$ *)
       (* Therefore, it is impossible to have H *)
       (* H : phase_int px .* pn_int tx = phase_int py .* pn_int ty *)
-Admitted. (* Made an informal proof but don't know how to translate *)
+Admitted. (* An informal proof is presented instead due to the difficulty in quantumlib *)
 
-Lemma eq_by_contra n (a b : PString n):
-  (a != b -> False) -> a = b.
-Proof.
-  by apply contra_not_eq.
-Qed.
-  
 End Prerequisites.
 
 Section Negation.

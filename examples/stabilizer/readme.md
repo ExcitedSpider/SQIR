@@ -54,6 +54,7 @@ There are two packages in the project.
 │   ├── ExtraSpecs.v # extra definitions of specifications (TODO: replace with mathcomp)
 │   ├── WellForm.v # theories related to well-formness
 │   ├── Example.v # Some examples for demonstrating stabilizers
+│   ├── Assumption.v # Assumptions we used for 
 │   ├── Adapter.v # adaptor to barebone/PauliString
 │   └── dune
 └── readme.md

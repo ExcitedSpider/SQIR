@@ -717,21 +717,6 @@ Proof.
   destruct x; reflexivity.
 Qed.
 
-From Coq Require Import Classical.
-
-Lemma op_to_matrix_correct_eq:
-  forall (op: PauliOp),
-  is_basic_op (op_to_matrix op).
-Proof.
-  intros.
-  destruct op; simpl.
-  unfold is_basic_op.
-  repeat (try (left; reflexivity); right). reflexivity.
-  repeat (try (left; reflexivity); right). 
-  repeat (try (left; reflexivity); right). 
-  repeat (try (left; reflexivity); right). 
-Qed.
-
 Lemma s_prod_comm:
   commutative s_prod.
 Proof.
