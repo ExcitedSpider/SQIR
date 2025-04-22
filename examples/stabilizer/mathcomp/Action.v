@@ -163,7 +163,7 @@ Proof.
     (* But it's hard to do it in Coq *)
     - admit.
   }
-Admitted.
+Admitted. (* Need a lemma to decomposite x = Sum_i alpha_i x_i *)
 
 Canonical act_n := (Action _ _ _ _ act_n_is_action).
 
@@ -251,9 +251,7 @@ Variable (n: nat).
 Check (action aT D n).
 Variable (to: action aT D n).
 
-(* TODO: How to use defs of act_id *)
-Lemma act_id_le: forall x, to x (oneg aT) == x.
-Admitted.
+
 
 End Assumption.
 
@@ -271,15 +269,6 @@ Notation PString := GenPauliTuple.
 
 Section Prerequisites.
 
-(* 
-  TODO: This is apparent but actually hard to prove
-  As QuantumLib does not provide usable lemmas about ineq
-  *)
-Lemma negate_change_state n:
-  forall (ψ:  Vector n),
-  -C1 .* ψ <> ψ.
-Admitted.
-
 Lemma pair_inj:
 (forall T R (a b: T) (x y: R), (a, x) = (b, y) -> a = b /\ x = y).
   {
@@ -288,10 +277,9 @@ Lemma pair_inj:
   }
 Qed.
 
-Lemma
-  png_int_injection: forall n px py (tx ty: PauliTuple n),
-  png_int (px, tx) = png_int (py, ty) -> px = py /\ tx = ty. 
-Admitted. (* I definately proved this in PNProps but i cannot find *)
+Lemma png_int_injection: forall n px py (tx ty: PauliTuple n),
+  png_int (px, tx) = png_int (py, ty) -> px = py /\ tx = ty.
+Admitted.
 
 Lemma eq_by_contra n (a b : PString n):
   (a != b -> False) -> a = b.

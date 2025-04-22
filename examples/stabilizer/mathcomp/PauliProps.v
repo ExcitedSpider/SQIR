@@ -734,7 +734,7 @@ Proof.
   (* There are 238 cases just like ix_ineq and iy_ineq *)
   (* Let me write a ltac later *)
   Admitted. 
- 
+
 
 
 Lemma pauli_to_matrix_correct:

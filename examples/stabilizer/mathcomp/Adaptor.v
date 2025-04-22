@@ -591,11 +591,6 @@ Proof.
   by rewrite IHn.
 Qed.
 
-Lemma vector_view n:
-  forall (a b: PauliVector n),
-  pvmul_v a b = tupleToVector (mult_pn (vectorToTuple a) (vectorToTuple b)).
-Proof.
-  Admitted.
 
 Definition pngToPString {n} (png: GenPauliTuple n): PString n :=
   match png with

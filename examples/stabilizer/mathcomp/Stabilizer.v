@@ -13,6 +13,7 @@ Import P1GGroup.
 Import PNGroup.
 Import PNGGroup.
 Require Import WellForm.
+Require Import Assumption.
 
 Notation PString := GenPauliTuple.
 
@@ -531,9 +532,7 @@ Abort.
 Lemma stb_generator {n}:
   forall (g: { set (PString n) }) (v: Vector (2^n)), 
     (forall x, x \in g -> x ∝1 v) -> forall y, y \in <<g>> -> y ∝1 v.
-Admitted.
-
-(* TODO *)
+Admitted. (* Related to generated group *)
 
 (* The weight of a stabilizer group is the number of qubits that are not I *)
 (* in the stabilizer group *)
@@ -597,5 +596,6 @@ Lemma not_detactable n:
     pstr \in s /\  mulg pstr (with_1 _ E) = mulg (with_1 _ E) pstr)
     -> not (detectable _ s E) 
     .
-Admitted.
+Admitted. (* Related to generated group *)
+
 
