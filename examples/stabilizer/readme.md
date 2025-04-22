@@ -64,5 +64,6 @@ There are two packages in the project.
 - Done: The single-qubit Pauli group.
 - Done: The n-qubit Pauli group
 - Done: Theorems of stabilizer theories. e.g. commute/anti-commute relations.
-Windows Terminal- WIP: Stabilizer Theories using mathcomp formalism
+- Done: Stabilizer Theories using mathcomp formalism
 - WIP: examples of proving larger QECC programs correct
+- WIP: fill in the holes of formalism.
