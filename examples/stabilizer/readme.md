@@ -42,17 +42,18 @@ There are two packages in the project.
 │   ├── ExtraSpecs.v # extra properties
 │   ├── Group.v # from-scratch group definition
 │   ├── PauliList.v # Coq.List based n-qubit pauli string
-│   ├── PauliString_vector.v # Coq.Vector-based n-qubit pauli string
+│   ├── PauliString.v # Coq.Vector-based n-qubit pauli string
 │   ├── Pauli.v # inductively defined 1-qubit pauli operator
 │   ├── Stablizer.v # quantum stabilizer theory
 │   └── dune
 ├── mathcomp
-│   ├── PauliGroup.v # Pauli group definition based on math-comp, and entry-point to the formalization
-│   ├── P1Props.v # verified properties of 1-qubit pauli group
-│   ├── PNProps.v # verified properties of n-qubit pauli group
+│   ├── PauliGroup.v # Pauli group definition based on math-comp
 │   ├── Action.v # definitions of group actions
-│   ├── ExtraSpecs.v # definitions of other properties (TODO: replace with mathcomp)
 │   ├── Stabilizer.v # quantum stabilizer theory
+│   ├── PauliProps.v # extra verified properties of pauli group
+│   ├── ExtraSpecs.v # extra definitions of specifications (TODO: replace with mathcomp)
+│   ├── WellForm.v # theories related to well-formness
+│   ├── Adapter.v # adaptor to barebone/PauliString
 │   └── dune
 └── readme.md
 ```
