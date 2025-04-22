@@ -2,9 +2,9 @@
    - [] make a similar properties based on PauliGroup.v
  *)
 
-Require Import PauliString_vector.
+Require Import PauliString.
 Require Import SQIR.UnitaryOps.
-Require Import Pauli_legacy.
+Require Import Pauli.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 

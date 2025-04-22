@@ -1,4 +1,4 @@
-Require Import Pauli_legacy.
+Require Import Pauli.
 (* This line helps to write X instead of Pauli.X *)
 Import Pauli.
 Require Import Coq.Vectors.Vector.
