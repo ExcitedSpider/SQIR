@@ -264,6 +264,7 @@ Import P1Group.
 Import P1GGroup.
 Require Import ExtraSpecs.
 From mathcomp Require Import eqtype ssrbool.
+Require Import Classical.
 
 Notation PString := GenPauliTuple.
 
@@ -277,9 +278,34 @@ Lemma pair_inj:
   }
 Qed.
 
+
 Lemma png_int_injection: forall n px py (tx ty: PauliTuple n),
   png_int (px, tx) = png_int (py, ty) -> px = py /\ tx = ty.
-Admitted. (* TODO *)
+Proof.
+  move => n px py tx ty.
+  rewrite /png_int /=.
+  case: (classic (px=py)) => Hc.
+  - rewrite Hc.
+    case : (classic (tx = ty)) => Hc2.
+    + by rewrite Hc2.
+    + intros H. 
+      (* tx <> ty -> there exists an index i such that tx[i] <> ty[i] *)   
+      (* therefore, we know that pn_int tx <> pn_int ty *)
+      (* and this contradict with H *)
+      admit.
+  - intros H.
+    case : (classic (tx = ty)) => Hc2.
+    + exfalso.
+      apply Hc. subst.
+      (* since H:  phase_int px .* pn_int ty = phase_int py .* pn_int ty  *)
+      (* we know that px = py *)
+      (* this contradicts with Hc: px <> py *)
+      admit.
+    + exfalso.
+      (* We have $Hc : px <> py$ and $Hc2 : tx <> ty$ *)
+      (* Therefore, it is impossible to have H *)
+      (* H : phase_int px .* pn_int tx = phase_int py .* pn_int ty *)
+Admitted. (* Made an informal proof but don't know how to translate *)
 
 Lemma eq_by_contra n (a b : PString n):
   (a != b -> False) -> a = b.
