@@ -53,6 +53,7 @@ There are two packages in the project.
 │   ├── PauliProps.v # extra verified properties of pauli group
 │   ├── ExtraSpecs.v # extra definitions of specifications (TODO: replace with mathcomp)
 │   ├── WellForm.v # theories related to well-formness
+│   ├── Example.v # Some examples for demonstrating stabilizers
 │   ├── Adapter.v # adaptor to barebone/PauliString
 │   └── dune
 └── readme.md
