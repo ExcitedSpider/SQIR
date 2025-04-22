@@ -123,7 +123,6 @@ Qed.
 
 Import PNGroup.
 Import PNGGroup.
-Require Import PNProps.
 
 Variable (n: nat).
 

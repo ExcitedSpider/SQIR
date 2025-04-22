@@ -832,3 +832,30 @@ Proof.
 Qed.
 
 End Pauli.
+
+Import PNGroup.
+Import PNGGroup.
+
+From mathcomp Require Import ssreflect.
+
+Lemma id_pn_int:
+  forall (n: nat), pn_int (id_pn n) = Matrix.I (2^n).
+Proof.
+  intros.
+  induction n.
+    by rewrite /pn_int.
+  rewrite pn_idP.
+  rewrite /= beheadCons IHn.
+  restore_dims.
+  rewrite id_kron.
+  lma'.
+Qed.
+
+Lemma id_png_int:
+  forall (n: nat), png_int (id_png n) = Matrix.I (2^n).
+Proof.
+  move => n.
+  rewrite /id_png /png_int /=.
+  by rewrite Mscale_1_l id_pn_int.
+Qed.
+

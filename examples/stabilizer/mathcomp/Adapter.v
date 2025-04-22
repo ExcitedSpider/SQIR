@@ -18,14 +18,10 @@ Import PNGGroup.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 
-Check X: PauliOp.
-Check Img: phase.
-Check tuple_of.
-
+(* This module is the old definition of PauliString, using  *)
 Module PauliString.
 Definition PauliVector n := Vector.t PauliOp n.
 Definition PVector0 := Vector.nil PauliOp.
-Check PVector0.
 
 Fixpoint pvmul {n: nat} (a b : PauliVector n) : phase * PauliVector n :=
   (* Looks like dark magic *)
@@ -641,30 +637,5 @@ Qed.
 
 (* Certified Translation from Tuple to Vector *)
 End Adaptor.
-
-From mathcomp Require Import ssreflect.
-
-Lemma id_pn_int:
-  forall (n: nat), pn_int (id_pn n) = Matrix.I (2^n).
-Proof.
-  intros.
-  induction n.
-    by rewrite /pn_int.
-  rewrite pn_idP.
-  rewrite /= beheadCons IHn.
-  restore_dims.
-  rewrite id_kron.
-  lma'.
-Qed.
-
-
-Lemma id_png_int:
-  forall (n: nat), png_int (id_png n) = Matrix.I (2^n).
-Proof.
-  move => n.
-  rewrite /id_png /png_int /=.
-  by rewrite Mscale_1_l id_pn_int.
-Qed.
-
 
 
