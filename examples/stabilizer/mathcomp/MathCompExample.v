@@ -1,8 +1,18 @@
-From mathcomp Require Import all_ssreflect fingroup ssrnat.
+From mathcomp Require Import all_ssreflect fingroup finset ssrnat seq tuple.
 From HB Require Import structures.
 Set Bullet Behavior "Strict Subproofs".
 
+Example seq_on_tuple n (t : n.-tuple nat) :
+  size (rev [seq 2 * x | x <- rev t]) = size t.
+Proof.
+  rewrite map_rev.
+  rewrite revK.
+  by rewrite size_map.
 
+
+Example seq_on_tuple n (t : n.-tuple nat) :
+  size (rev [seq 2 * x | x <- rev t]) = size t.
+Proof. by rewrite !size_tuple.
 
 Definition t1 := [tuple 1; 2].
 Definition t2 := [tuple 3; 4].
@@ -34,7 +44,7 @@ HB.instance Definition _ := Equality.copy alphabet (can_type code_decodeEE).
 HB.instance Definition _ := Finite.copy alphabet (can_type code_decodeEE).
 Check alphabet: finType.
 
-Definition g := alphabet.
+Notation g := alphabet.
 Variable mul: g -> g -> g.
 Variable mul_id: g.
 Variable mul_inv: g -> g.
@@ -52,8 +62,6 @@ Proof.
 Admitted.
 
 
-Check Finite g.
-HB.about Finite.
 HB.instance Definition _ := Finite.on g.
 HB.instance Definition _ := isMulGroup.Build g
   thing1 thing2 thing3.
@@ -65,6 +73,20 @@ by []. Qed.
 
 Check g: finGroupType.
 
+Definition gen1 := generated [set (A: g); (B: g)].
+
+Hypothesis AB_eq_C: mulg A B = C.
+
+Goal C \in gen1.
+Proof. 
+  rewrite /gen1.
+  move: AB_eq_C => <-.
+  apply: groupM.
+  apply mem_gen.
+  apply set21.
+  apply mem_gen.
+  apply set22.
+Qed.
 
 Section NactionDef.
 
