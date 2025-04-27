@@ -53,16 +53,38 @@ Set Bullet Behavior "Strict Subproofs".
 Lemma g422_full_group:
   <<g422>> = s422.
 Proof.
-  rewrite /s422 /g422 /=.
-  assert (mulg zzzz xxxx = yyyy).
-    by apply /eqP.
-  rewrite H.
+  (* First we show that s44 forms a group *)
+  have: group_set s422.
+  {
+     apply /group_setP.
+     rewrite /=.
+     split.
+     -  have: (oneg (PString 4) = id_png 4) by apply /eqP.
+        move => ->. 
+        by rewrite !inE.
+      - move => x y.
+        rewrite !inE.
+        rewrite -!orb_assoc => Hx Hy.
+        case/or4P: Hx => Hx;
+        case/or4P: Hy => Hy;
+        move/eqP: Hx => Hx; 
+        move/eqP: Hy => Hy; 
+        by subst.
+  }
+  move => H.
   apply /eqP.
   rewrite eqEsubset.
-  apply /andP. split.
-  (* How to show that s422 is a group *)
-  - Fail rewrite gen_subG.
-Admitted.
+  apply /andP.
+  split.
+  (* <<g422>> \subset s422 *)
+  - apply gen_set_id in H.
+    rewrite <- H.
+    apply genS.
+    rewrite /s422.
+    rewrite -setUA.
+    apply subsetUl.
+  - (* s422 \subst <<g422>> *)
+Admitted. (* TODO: How to do case analysis for each element in s422? *)
 
 Lemma is_stb_set_g422:
   is_stb_set g422.
