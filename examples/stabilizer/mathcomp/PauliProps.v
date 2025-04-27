@@ -616,6 +616,7 @@ all: try (inversion H0).
 Qed.
 
 (* 
+TODO: Replace this with ExtraSpecs
 the definition has a slight issue: it depends on how `apply_s` is defiend. Although `apply_s` is straightforward, but it is not certified. 
 *)
 Inductive anticommute: GenPauliOp -> GenPauliOp -> Prop :=
