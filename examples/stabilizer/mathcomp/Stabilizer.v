@@ -511,6 +511,8 @@ Proof.
     (* - move: (stb_group_no_m1 a b v Ha Hb) => H0.
       apply H0 in Hwf; clear H0. *)
     - unfold minus_id_png.
+      Search (_ \in << _ >>).
+      rewrite /negb.
       move: (stb_group_no_m1 a b v Has Hbs Hwf) => H0.
       (* Ha : a  \in <<S>>
       Hb : b  \in <<S>>
@@ -527,13 +529,6 @@ Proof.
     of a and b  *)
     (* TODO Maybe Ask Udaya for this *)
 Abort.
-
-(* If all the generatar stabilize v *)
-(* then all elements in the generated group stabilize v *)
-Lemma stb_generator {n}:
-  forall (g: { set (PString n) }) (v: Vector (2^n)), 
-    (forall x, x \in g -> x ∝1 v) -> forall y, y \in <<g>> -> y ∝1 v.
-Admitted. (* Related to generated group *)
 
 (* The weight of a stabilizer group is the number of qubits that are not I *)
 (* in the stabilizer group *)

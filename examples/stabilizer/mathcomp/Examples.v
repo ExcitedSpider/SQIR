@@ -4,8 +4,8 @@
   - stabilizer 
 *)
 
-
-From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple finset.
+From mathcomp Require Import all_ssreflect ssrbool 
+ssrfun eqtype ssrnat div seq tuple finset fingroup.
 Require Export SQIR.UnitaryOps.
 Require Import QuantumLib.Measurement.
 Require Import Stabilizer.
@@ -32,14 +32,81 @@ Module FourQubitDetection.
 
 Definition zzzz := [p1 Z, Z, Z, Z]: PString 4.
 Definition xxxx := [p1 X, X, X, X]: PString 4.
+Definition iiii := [p1 I, I, I, I]: PString 4.
+Definition yyyy := [p1 Y, Y, Y, Y]: PString 4.
 
-Definition g422 := setU [set zzzz] [set xxxx].
+(* We can use the stabilizer generator to generate the stabilizer group. *)
+
+Import Commutativity.
+
+Definition g422 := [set zzzz] :|: [set xxxx].
+Definition s422 := g422 :|: [set (mulg zzzz xxxx)] :|: [set iiii].
+
+(* We can use the stabilizer generator to generate the stabilizer group. *)
+
+Definition ψ := ∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩.
+
+Check generated.
+
+Set Bullet Behavior "Strict Subproofs".
+
+Lemma g422_full_group:
+  <<g422>> = s422.
+Proof.
+  rewrite /s422 /g422 /=.
+  assert (mulg zzzz xxxx = yyyy).
+    by apply /eqP.
+  rewrite H.
+  apply /eqP.
+  rewrite eqEsubset.
+  apply /andP. split.
+  (* How to show that s422 is a group *)
+  - Fail rewrite gen_subG.
+Admitted.
 
 Lemma is_stb_set_g422:
   is_stb_set g422.
 Proof.
-  (* Ask Zeo about this  *)
-Admitted. (* TODO *)
+  rewrite /is_stb_set //= => x y.
+  rewrite g422_full_group /s422.
+  split.
+  apply (stabilizer_must_commute _ _ ψ).
+  {
+    move: H.
+    rewrite !inE.
+    rewrite -!orb_assoc => orH.
+    case/or4P: orH => Hx;
+    move/eqP: Hx => Hx; rewrite Hx.
+    (* it's tedious but definately doable. *)
+  (* but actually this is not needed. *)
+  (* We present a much easier proof below *)
+    all: admit.
+  }
+  admit. (* same as x *)
+  (* have H: (stb_group_no_m1 x y ψ).
+Admitted. TODO *)
+Abort.
+
+
+Lemma is_stb_set_g422:
+  is_stb_set g422.
+Proof. 
+  rewrite /is_stb_set //= => x y.
+  rewrite g422_full_group => Hx Hy.
+  split.
+  {
+    move: Hx Hy.
+    rewrite !inE -!orb_assoc => Hx Hy.
+    case/or4P: Hx => /eqP Hx;
+    case/or4P: Hy => /eqP Hy;
+    subst; by apply /eqP.
+  }
+  {
+    move {Hx Hy}.
+    apply /idP.
+    by rewrite !inE.
+  }
+Qed.
 
 Lemma zzzz_stb:
   zzzz ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
