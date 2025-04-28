@@ -874,3 +874,11 @@ Proof.
 Qed.
 
 End Interpretation.
+
+
+Module all_pauligroup.
+  Export P1Group.
+  Export P1GGroup.
+  Export PNGroup.
+  Export PNGGroup.
+End all_pauligroup.

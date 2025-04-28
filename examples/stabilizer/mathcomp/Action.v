@@ -11,8 +11,6 @@ This file includes the formalization of
 
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq tuple.
 From mathcomp Require Import fintype bigop finset fingroup morphism perm.
-
-
 From QuantumLib Require Import Matrix.
 
 Import GroupScope.
@@ -64,10 +62,10 @@ End ActionDef.
 Require Import PauliGroup.
 Require Import PauliProps.
 
+Import all_pauligroup.
+
 Section QuantumActions. 
 
-Import P1Group.
-Import P1GGroup.
 
 (* Apply a single-qubit pauli operator *)
 Definition apply_1 : Vector 2 -> PauliOp -> Vector 2 :=
@@ -110,7 +108,7 @@ Qed.
 (* Interestingly, Coq can infer all types that depend on the final one. *)
 Canonical act_1 := (Action _ _ _ _ act_1_is_action).
 
-
+Locate X.
 
 (* Sancheck *)
 Goal act_1 ∣0⟩ (% X) = ∣1⟩.
@@ -119,8 +117,6 @@ Proof.
   lma'.
 Qed.
 
-Import PNGroup.
-Import PNGGroup.
 
 Variable (n: nat).
 
@@ -168,10 +164,6 @@ Canonical act_n := (Action _ _ _ _ act_n_is_action).
 (* Had to close here awardly because we don't want n to remain variable *)
 End QuantumActions.
 
-Import PNGroup.
-Import PNGGroup.
-Import P1GGroup.
-Import P1Group.
 
 Definition xxx: PauliTuple 3 := (One, [tuple of X :: X :: X :: []]).
 
@@ -188,17 +180,10 @@ From mathcomp Require Import fintype bigop finset fingroup morphism perm.
 
 Require Import PauliGroup.
 Require Import SQIR.UnitaryOps.
-Import P1Group.
-Import P1GGroup.
-
-Check act_1 ∣0⟩ (% X) == ∣1⟩.
 
 Section StabDef.
 
-Import PauliGroup.P1Group.
-Import PauliGroup.P1GGroup.
-
-Check PauliOp: finGroupType.
+Import all_pauligroup.
 
 Definition actionTo {dim: nat} {aT: finGroupType} := 
   ActionType aT dim.
@@ -232,7 +217,8 @@ Ltac solve_stab1:=
   try by [];
   try by lma'.
 
-Import P1GGroup.
+
+Import all_pauligroup.
 
 Lemma Z0_stab: stab act_1 (% Z) ∣0⟩.
 by solve_stab1. Qed.
@@ -256,10 +242,6 @@ End Assumption.
 (* Theories about -1 * pt%g *)
 Module Commutativity.
 
-Import PNGroup.
-Import PNGGroup.
-Import P1Group.
-Import P1GGroup.
 Require Import ExtraSpecs.
 From mathcomp Require Import eqtype ssrbool.
 Require Import Classical.
