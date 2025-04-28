@@ -70,7 +70,7 @@ Import P1Group.
 Import P1GGroup.
 
 (* Apply a single-qubit pauli operator *)
-Definition apply_1 : Vector 2 -> GenPauliOp -> Vector 2 :=
+Definition apply_1 : Vector 2 -> PauliOp -> Vector 2 :=
   fun psi op => (p1g_int op) × psi.
 
 Check is_action.
@@ -82,7 +82,7 @@ Proof.
   all: case a; case b; lca.
 Qed.
 
-Definition aTs := [set: GenPauliOp].
+Definition aTs := [set: PauliOp].
 
 
 Fact act_1_is_action:
@@ -124,12 +124,12 @@ Import PNGGroup.
 
 Variable (n: nat).
 
-Definition apply_n : Vector (2^n) -> GenPauliTuple n -> Vector (2^n) :=
+Definition apply_n : Vector (2^n) -> PauliTuple n -> Vector (2^n) :=
   fun psi op => (png_int op) × psi.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Definition aTsn := [set: GenPauliTuple n].
+Definition aTsn := [set: PauliTuple n].
 
 
 Fact act_n_is_action:
@@ -173,7 +173,7 @@ Import PNGGroup.
 Import P1GGroup.
 Import P1Group.
 
-Definition xxx: GenPauliTuple 3 := (One, [tuple of X :: X :: X :: []]).
+Definition xxx: PauliTuple 3 := (One, [tuple of X :: X :: X :: []]).
 
 (* sancheck *)
 Goal act_n _ ∣0,0,0⟩ xxx = ∣1,1,1⟩.
@@ -198,7 +198,7 @@ Section StabDef.
 Import PauliGroup.P1Group.
 Import PauliGroup.P1GGroup.
 
-Check GenPauliOp: finGroupType.
+Check PauliOp: finGroupType.
 
 Definition actionTo {dim: nat} {aT: finGroupType} := 
   ActionType aT dim.
@@ -264,7 +264,7 @@ Require Import ExtraSpecs.
 From mathcomp Require Import eqtype ssrbool.
 Require Import Classical.
 
-Notation PString := GenPauliTuple.
+Notation PString := PauliTuple.
 
 Section Prerequisites.
 
@@ -277,7 +277,7 @@ Lemma pair_inj:
 Qed.
 
 
-Lemma png_int_injection: forall n px py (tx ty: PauliTuple n),
+Lemma png_int_injection: forall n px py (tx ty: PauliTupleBase n),
   png_int (px, tx) = png_int (py, ty) -> px = py /\ tx = ty.
 Proof.
   move => n px py tx ty.
@@ -321,7 +321,7 @@ Definition neg_png n (p: PString n) : PString n :=
   | (phase, tuple) => (mulg NOne phase, tuple)
   end.
 
-Definition neg_p1g (p: GenPauliOp): GenPauliOp :=
+Definition neg_p1g (p: PauliOp): PauliOp :=
   match p with
   | (phase, tuple) => (mulg NOne phase, tuple)
   end.
@@ -364,7 +364,7 @@ Proof.
   rewrite mult_phase_id mult_pn_id.
   move: H.
   assert (
-  forall n px (tx: PauliTuple n),
+  forall n px (tx: PauliTupleBase n),
     phase_int px .* pn_int tx = png_int (px, tx)
   ). by easy.
   rewrite H.
@@ -379,7 +379,7 @@ Proof.
 Qed.
 
 Lemma png_neg_alt:
-  forall n (x y: GenPauliTuple n),
+  forall n (x y: PauliTuple n),
   png_int (mulg x y) = -C1 .* png_int (mulg y x) ->
   mulg x y = mult_png (NOne, id_pn n) (mulg y x).
 Proof. 
@@ -405,7 +405,7 @@ End Negation.
 
 
 Lemma phase_comm n:
- forall (sx sy:phase) (pt: PauliTuple n),
+ forall (sx sy:phase) (pt: PauliTupleBase n),
  (* mulg cannot be inferenced here *)
  mult_png (sx, pt) (sy, pt) = mult_png (sy, pt) (sx, pt).
 Proof.
@@ -414,7 +414,7 @@ Proof.
 Qed.
 
 Lemma commute_png_implies n:
-  forall (px py: phase) (tx ty: PauliTuple n),
+  forall (px py: phase) (tx ty: PauliTupleBase n),
   commute_at mult_png (px, tx) (py, ty)-> mult_pn tx ty = mult_pn ty tx /\
    get_phase_png (px, tx) (py, ty) = get_phase_png (py, ty) (px, tx).
 Proof.

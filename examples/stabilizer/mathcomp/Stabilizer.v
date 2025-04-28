@@ -16,7 +16,7 @@ Require Import WellForm.
 Require Import Assumption.
 
 Require Import Operations.
-Notation PString := GenPauliTuple.
+Notation PString := PauliTuple.
 
 Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200): form_scope.
 
@@ -532,7 +532,7 @@ Abort.
 
 (* The weight of a stabilizer group is the number of qubits that are not I *)
 (* in the stabilizer group *)
-Definition weight {n} (pt: PauliTuple n): nat := 
+Definition weight {n} (pt: PauliTupleBase n): nat := 
   count (fun x => x != I) pt.
 
 Goal weight ([p Z, Z, I]) = 2%nat.
@@ -549,12 +549,12 @@ Variable n: nat.
 Variable g: {set PString n}.
 Hypothesis H: is_stb_set g.
 
-Definition with_1 (pt: PauliTuple n): PString n := (One, pt).
+Definition with_1 (pt: PauliTupleBase n): PString n := (One, pt).
 
 (* an detectable error is an error that  *)
 (* note that we usually require the phase of error operator to be 1 *)
 (* Otherwise, it will be Z (negate phase) *)
-Definition detectable (E: PauliTuple n) := 
+Definition detectable (E: PauliTupleBase n) := 
   exists (pstr: PString n), pstr \in g /\ 
   (mulg pstr (with_1 E) != mulg (with_1 E) pstr).
 
@@ -566,19 +566,19 @@ Definition dimension := subn n #|g|.
 
 (* the distance of a generator = weight(E)  *)
 (* where E is an error and E cannot be detected *)
-Definition distance_spec (E: PauliTuple n) (d: nat) :=
+Definition distance_spec (E: PauliTupleBase n) (d: nat) :=
   not (detectable E) /\ weight E = d.
 
 (* The distance of a code is the minimal weight of an undetectable error *)
 Definition distance (d: nat):= 
-  exists (E: PauliTuple n), distance_spec E d /\
-    forall (E': PauliTuple n) d', distance_spec E' d' -> leq d d'.
+  exists (E: PauliTupleBase n), distance_spec E d /\
+    forall (E': PauliTupleBase n) d', distance_spec E' d' -> leq d d'.
 
 (* A sound difinition of distance, which does not require to show 
   the error is the minimum in the whole world  
 *)
 Definition distance_s (d: nat):= 
-  exists (E: PauliTuple n), distance_spec E d.
+  exists (E: PauliTupleBase n), distance_spec E d.
   
 
 (* These definitions are very axiomatic and not verified from principle *)
@@ -587,7 +587,7 @@ Definition distance_s (d: nat):=
 End Syndrome.
 
 Lemma not_detactable n:
-  forall (E: PauliTuple n) (s: {set PString n}),
+  forall (E: PauliTupleBase n) (s: {set PString n}),
   ( exists (pstr: PString n), 
     pstr \in s /\  mulg pstr (with_1 _ E) = mulg (with_1 _ E) pstr)
     -> not (detectable _ s E) 

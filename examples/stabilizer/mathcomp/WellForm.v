@@ -12,7 +12,7 @@ Import PNGGroup.
 
 
 Lemma p1_int_wf:
-  forall p: PauliOp,
+  forall p: PauliBase,
   WF_Matrix (p1_int p).
 Proof.
   case;
@@ -21,7 +21,7 @@ Proof.
 Qed.
 
 Lemma p1g_int_wf:
-  forall p: GenPauliOp,
+  forall p: PauliOp,
   WF_Matrix (p1g_int p).
 Proof.
   move => p.
@@ -32,7 +32,7 @@ Proof.
 Qed.
 
 Theorem pn_int_wf n:
-  forall (op: PauliTuple n),
+  forall (op: PauliTupleBase n),
   WF_Matrix (pn_int op).
 Proof.
   intros.
@@ -47,7 +47,7 @@ Proof.
 Qed.
 
 Theorem png_int_wf n:
-  forall (op: GenPauliTuple n),
+  forall (op: PauliTuple n),
   WF_Matrix (png_int op).
 Proof.
   move => [p t].
@@ -57,7 +57,7 @@ Proof.
 Qed.
 
 Lemma apply_1_wf:
-  forall (op: GenPauliOp) (v: Vector 2),
+  forall (op: PauliOp) (v: Vector 2),
   WF_Matrix v -> WF_Matrix (apply_1 v op).
 Proof.
   move => op v.
@@ -67,7 +67,7 @@ Proof.
 Qed.
 
 Lemma apply_n_wf n:
-  forall (op: GenPauliTuple n) (v: Vector (2^n)),
+  forall (op: PauliTuple n) (v: Vector (2^n)),
   WF_Matrix v -> WF_Matrix (apply_n _ v op).
 Proof.
   move => op v.

@@ -9,7 +9,7 @@ Import P1GGroup.
 Import P1Group.
 
 Definition compose_pstring {n m: nat} 
-  (ps1 : GenPauliTuple n) (ps2 : GenPauliTuple m) : GenPauliTuple (n + m) :=
+  (ps1 : PauliTuple n) (ps2 : PauliTuple m) : PauliTuple (n + m) :=
   let s := mulg ps1.1 ps2.1 in
   let v := [tuple of ps1.2 ++ ps2.2] in
   (s, v).
@@ -29,7 +29,7 @@ Proof.
 Qed.
 
 Lemma pn_int_comp_concat :
-  forall {n m: nat} (ps1: PauliTuple n) (ps2: PauliTuple m),
+  forall {n m: nat} (ps1: PauliTupleBase n) (ps2: PauliTupleBase m),
   pn_int ([tuple of ps1 ++ ps2]) =
   pn_int ps1 ⊗ pn_int ps2.
 Proof.
@@ -52,7 +52,7 @@ Admitted. (* Coq dependent type error*)
 
 
 Theorem compose_pstring_correct:
-  forall {n m: nat}  (ps1: GenPauliTuple n) (ps2: GenPauliTuple m),
+  forall {n m: nat}  (ps1: PauliTuple n) (ps2: PauliTuple m),
   png_int (compose_pstring ps1 ps2) =
   png_int ps1 ⊗ png_int ps2.
 Proof.

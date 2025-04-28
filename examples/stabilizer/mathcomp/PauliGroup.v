@@ -49,14 +49,14 @@ End TupleExtras.
 
 Module P1Group.
 
-Inductive PauliOp : Type :=
-| I : PauliOp
-| X : PauliOp
-| Y : PauliOp
-| Z : PauliOp.
+Inductive PauliBase : Type :=
+| I : PauliBase
+| X : PauliBase
+| Y : PauliBase
+| Z : PauliBase.
 
-(* multiplication on PauliOp *)
-Definition mult_p1(a b: PauliOp): PauliOp :=
+(* multiplication on PauliBase *)
+Definition mult_p1(a b: PauliBase): PauliBase :=
   match a, b with
   | I, p => p
   | p, I => p  
@@ -76,15 +76,15 @@ Definition mult_p1(a b: PauliOp): PauliOp :=
 end.
 
 (* All pauli op squares to I *)
-Definition inv_p1 (op: PauliOp): PauliOp := op.
+Definition inv_p1 (op: PauliBase): PauliBase := op.
 
 
 (* ID of Pauli_1 group *)
 Definition id_p1 := I.
 
 (* Already Proved Properties *)
-Definition decode_EE (n: 'I_4) : PauliOp := nth I [:: I;X;Y;Z] (nat_of_ord n).
-Definition encode_EE (e: PauliOp) : 'I_4 := 
+Definition decode_EE (n: 'I_4) : PauliBase := nth I [:: I;X;Y;Z] (nat_of_ord n).
+Definition encode_EE (e: PauliBase) : 'I_4 := 
   match e with
   | I => Ordinal (n:=4) (m:=0) is_true_true
   | X => Ordinal (n:=4) (m:=1) is_true_true
@@ -97,8 +97,8 @@ Proof.
   by case.
 Qed.
 
-HB.instance Definition _ := Equality.copy PauliOp (can_type code_decodeEE).
-HB.instance Definition _ := Finite.copy PauliOp (can_type code_decodeEE).
+HB.instance Definition _ := Equality.copy PauliBase (can_type code_decodeEE).
+HB.instance Definition _ := Finite.copy PauliBase (can_type code_decodeEE).
 
 Lemma mult_p1_assoc: associative mult_p1.
 Proof. 
@@ -124,11 +124,11 @@ Proof.
   by case: x.
 Qed.
 
-HB.instance Definition _ := isMulGroup.Build PauliOp
+HB.instance Definition _ := isMulGroup.Build PauliBase
   mult_p1_assoc mult_p1_id mult_p1_left_inv.
 
 
-Check PauliOp: finGroupType.
+Check PauliBase: finGroupType.
 
 End P1Group.
 
@@ -136,16 +136,16 @@ Module PNGroup.
 Import P1Group.
 
 (* Pauli Group with fixed length n *)
-Definition PauliTuple n := {tuple n of PauliOp}.
+Definition PauliTupleBase n := {tuple n of PauliBase}.
 
 (* Multiolication on Pauli Group with fixed length n *)
-Definition mult_pn {n: nat} (a b: PauliTuple n): PauliTuple n := 
+Definition mult_pn {n: nat} (a b: PauliTupleBase n): PauliTupleBase n := 
   (map_tuple (fun x => (mult_p1 x.1 x.2))) (zip_tuple a b).
 
 Definition id_pn n := [tuple of nseq n I].
 (* Definition id_pn n := nseq_tuple n I. *)
 
-Definition inv_pn {n: nat} (pt: PauliTuple n): PauliTuple n := map_tuple inv_p1 pt.
+Definition inv_pn {n: nat} (pt: PauliTupleBase n): PauliTupleBase n := map_tuple inv_p1 pt.
 
 Example mult_pn_exp0:
   mult_pn [tuple X; X] [tuple X; X] == [tuple I; I].
@@ -160,7 +160,7 @@ Example inv_pn_exp0:
   inv_pn [tuple X; Y; Z] = [tuple X; Y; Z].
 Proof. by apply/eqP. Qed.
 
-Lemma trivial_tuples (p q: PauliTuple 0) : p = q.
+Lemma trivial_tuples (p q: PauliTupleBase 0) : p = q.
 Proof. by rewrite (tuple0 p) (tuple0 q). Qed.
 
 Lemma mult_pn_assoc n: associative (@mult_pn n). 
@@ -233,12 +233,12 @@ Section Structure.
 
 Variable n:nat.
 
-HB.instance Definition _ := Finite.on (@PauliTuple n).
+HB.instance Definition _ := Finite.on (@PauliTupleBase n).
 
 HB.instance Definition _ := isMulGroup.Build 
-  (@PauliTuple n) (@mult_pn_assoc n) (@mult_pn_id n) (@mult_pn_left_inv n).
+  (@PauliTupleBase n) (@mult_pn_assoc n) (@mult_pn_id n) (@mult_pn_left_inv n).
 
-Check (@PauliTuple n): finGroupType.
+Check (@PauliTupleBase n): finGroupType.
 
 End Structure.
 
@@ -324,9 +324,9 @@ HB.instance Definition _ := isMulGroup.Build phase
   mult_phase_assoc mult_phase_id mult_phase_left_inv.
 
 (* Define Generalized Pauli Operator as *)
-(* Cartisian Product of phase and PauliOp *)
+(* Cartisian Product of phase and PauliBase *)
 Check phase: finType.
-Check PauliOp: finType.
+Check PauliBase: finType.
 Definition phaseSet := [set: phase].
 
 Goal One \in phaseSet.
@@ -336,34 +336,34 @@ Check prod.
 Locate prod.
 
 (* for "Generalized Pauli Operator" *)
-Definition GenPauliOp := prod phase PauliOp.
+Definition PauliOp := prod phase PauliBase.
 
 (* Mathcomp has provided finType structure for prod *)
 (* which you can find by *) 
 (* Search "fin" "prod". *)
 Check Datatypes_prod__canonical__fintype_Finite.
 
-Check GenPauliOp: finType.
+Check PauliOp: finType.
 
 (* We can also define product set *) 
-Definition GenPauliOpSet := setX [set: phase] [set: PauliOp].
+Definition PauliOpSet := setX [set: phase] [set: PauliBase].
 
-Definition p1g_of: phase -> PauliOp -> GenPauliOp := 
+Definition p1g_of: phase -> PauliBase -> PauliOp := 
   fun p o => pair p o.
 
 Check p1g_of One X.
 
 
 
-Lemma setx_correct: forall (gop: GenPauliOp),
-  gop \in GenPauliOpSet.
+Lemma setx_correct: forall (gop: PauliOp),
+  gop \in PauliOpSet.
 Proof.
   move => gop.
   case gop => *.
   by apply /setXP.
 Qed.
 
-Definition get_phase(a b: PauliOp): phase :=
+Definition get_phase(a b: PauliBase): phase :=
   match a, b with  
   | I, _ => One
   | _, I => One
@@ -380,7 +380,7 @@ Definition get_phase(a b: PauliOp): phase :=
   | X, Z => NImg
   end.
 
-Definition mult_p1g (a b: GenPauliOp): GenPauliOp := 
+Definition mult_p1g (a b: PauliOp): PauliOp := 
   match (a, b) with
   | (pair sa pa, pair sb pb) => (
       mult_phase (get_phase pa pb) (mult_phase sa sb), 
@@ -389,7 +389,7 @@ Definition mult_p1g (a b: GenPauliOp): GenPauliOp :=
   end. 
 
 
-Definition inv_p1g (a: GenPauliOp): GenPauliOp := 
+Definition inv_p1g (a: PauliOp): PauliOp := 
   match a with
   | pair s p => (inv_phase s, inv_p1 p)
   end.
@@ -437,8 +437,8 @@ Proof.
   by rewrite /=.
 Qed.
 
-HB.instance Definition _ := Finite.on GenPauliOp.
-HB.instance Definition _ := isMulGroup.Build GenPauliOp
+HB.instance Definition _ := Finite.on PauliOp.
+HB.instance Definition _ := isMulGroup.Build PauliOp
   mult_p1g_assoc mult_p1g_id mult_p1g_left_inv.
 
 Notation "%( x ; y )" := (p1g_of x y) (at level 210).
@@ -471,7 +471,7 @@ Import P1GGroup.
 Import PNGroup.
 Import P1Group.
 
-Definition get_phase_pn {n: nat} (a b: PauliTuple n): phase := 
+Definition get_phase_pn {n: nat} (a b: PauliTupleBase n): phase := 
   foldl mult_phase One (
     map (fun item => get_phase item.1 item.2)  (zip_tuple a b)
   ).  
@@ -479,16 +479,16 @@ Definition get_phase_pn {n: nat} (a b: PauliTuple n): phase :=
 (* -1 *)
 Compute get_phase_pn [tuple X;X;Y;Y] [tuple I;I;X;X].
 
-Definition GenPauliTuple (n: nat) := prod phase (PauliTuple n).
+Definition PauliTuple (n: nat) := prod phase (PauliTupleBase n).
 
-Definition get_phase_png {n: nat} (a b: GenPauliTuple n): phase :=
+Definition get_phase_png {n: nat} (a b: PauliTuple n): phase :=
   match (a, b) with
   | (pair sa pa, pair sb pb) => (
       mult_phase (get_phase_pn pa pb) (mult_phase sa sb)
     )
   end.
 
-Definition mult_png {n: nat} (a b: GenPauliTuple n): GenPauliTuple n :=
+Definition mult_png {n: nat} (a b: PauliTuple n): PauliTuple n :=
   match (a, b) with
   | (pair sa pa, pair sb pb) => (
       get_phase_png a b,
@@ -496,7 +496,7 @@ Definition mult_png {n: nat} (a b: GenPauliTuple n): GenPauliTuple n :=
     ) 
 end.
 
-Definition inv_png {n}( a: GenPauliTuple n): GenPauliTuple n := 
+Definition inv_png {n}( a: PauliTuple n): PauliTuple n := 
   match a with
   | pair s p => (inv_phase s, inv_pn p)
   end.
@@ -516,7 +516,7 @@ Qed.
 Print mult_pn.
 
 Lemma mult_pn_cons n:
-  forall (hx hy: PauliOp) (tx ty: PauliTuple n),
+  forall (hx hy: PauliBase) (tx ty: PauliTupleBase n),
     mult_pn [tuple of hx :: tx] [tuple of hy :: ty] = 
     [tuple of mult_p1 hx hy :: mult_pn tx ty]
     .
@@ -534,7 +534,7 @@ Proof.
 Qed.
 
 Lemma get_phase_pn_cons n:
-  forall (hx hy: PauliOp) (tx ty: PauliTuple n),
+  forall (hx hy: PauliBase) (tx ty: PauliTupleBase n),
   get_phase_pn [tuple of hx :: tx] [tuple of hy :: ty] = 
   mult_phase (get_phase hx hy) (get_phase_pn tx ty).
 Proof.
@@ -551,7 +551,7 @@ Qed.
 
 
 Lemma get_phase_png_cons {n: nat} :
-  forall px py hx hy (tx ty: PauliTuple n),
+  forall px py hx hy (tx ty: PauliTupleBase n),
     get_phase_png (px, [tuple of (hx :: tx)]) (py, [tuple of (hy :: ty)])
   = mult_phase (get_phase hx hy) (get_phase_png (px, tx) (py, ty)).
 Proof.
@@ -562,7 +562,7 @@ Qed.
 
 
 Lemma get_phase_png_assoc n:
-  forall (a b c: GenPauliTuple n),
+  forall (a b c: PauliTuple n),
   get_phase_png (get_phase_png a b, mult_pn a.2 b.2) c = 
   get_phase_png a (get_phase_png b c, mult_pn b.2 c.2).
 Proof.
@@ -598,7 +598,7 @@ Admitted. (* Need to construct some autowrite mechanism *)
 (* Do not try to attempt this! *)
 (* This is not valid *)
 Lemma get_phase_png_comm n:
-  forall (a b: GenPauliTuple n),
+  forall (a b: PauliTuple n),
   get_phase_png a b <>
   get_phase_png b a.
 Abort.
@@ -646,7 +646,7 @@ Qed.
 Check inv_png.
 
 Lemma inv_pn_pres_phase n:
-  forall (v: PauliTuple n),
+  forall (v: PauliTupleBase n),
   get_phase_pn (inv_pn v) v = One.
 Proof.
   move => v.
@@ -674,9 +674,9 @@ Section Strcture.
 
 Variable n: nat.
 
-HB.instance Definition _ := Finite.on (@GenPauliTuple n).
+HB.instance Definition _ := Finite.on (@PauliTuple n).
 HB.instance Definition _ := isMulGroup.Build
-  (@GenPauliTuple n) (@mult_png_assoc n) (@mult_png_id n) (@mult_png_left_inv n).
+  (@PauliTuple n) (@mult_png_assoc n) (@mult_png_id n) (@mult_png_left_inv n).
 
 
 
@@ -699,7 +699,7 @@ Import P1Group.
 interpretation of group p1 
 ==========================
 *)
-Definition p1_int (p : PauliOp) : Square 2 :=
+Definition p1_int (p : PauliBase) : Square 2 :=
 match p with
 | I => Matrix.I 2 
 | X => Quantum.σx
@@ -733,7 +733,7 @@ Definition phase_int (s: phase): C :=
   | NImg => - Ci
   end.
 
-Definition p1g_int(p: GenPauliOp): Square 2 :=
+Definition p1g_int(p: PauliOp): Square 2 :=
   match p with
   | pair s p => (phase_int s) .* (p1_int p)
   end.
@@ -748,8 +748,8 @@ interpretation of group pn
 Import PNGroup.
 
 
-Fixpoint pn_int {n: nat} : (n.-tuple PauliOp) -> Square (2^n) :=
-  if n is n'.+1 return (n.-tuple PauliOp) ->  Square (2^n)
+Fixpoint pn_int {n: nat} : (n.-tuple PauliBase) -> Square (2^n) :=
+  if n is n'.+1 return (n.-tuple PauliBase) ->  Square (2^n)
   then fun xs => (p1_int (thead xs)) ⊗ (pn_int (behead xs))
   else fun _ => Matrix.I 1.
 
@@ -760,9 +760,9 @@ Proof.
   rewrite kron_assoc; auto with wf_db.
 Qed.
 
-Definition id1_pn: PauliTuple 1 := [tuple I].
+Definition id1_pn: PauliTupleBase 1 := [tuple I].
 Lemma mult_pn_thead n:
-forall (hy hx: PauliOp) (ty tx: PauliTuple n), 
+forall (hy hx: PauliBase) (ty tx: PauliTupleBase n), 
   thead (mult_pn [tuple of hy :: ty] [tuple of hx :: tx]) = (mulg hy hx) .
 Proof.
   intros.
@@ -772,7 +772,7 @@ Qed.
 
 
 Lemma mult_pn_behead n:
-forall (hy hx: PauliOp) (ty tx: PauliTuple n), 
+forall (hy hx: PauliBase) (ty tx: PauliTupleBase n), 
   behead_tuple (mult_pn [tuple of hy :: ty] [tuple of hx :: tx]) = (mulg ty tx) .
 Proof.
   intros.
@@ -803,13 +803,13 @@ interpretation of group png
 
 Import PNGGroup.
 
-Definition png_int {n:nat} (p: GenPauliTuple n): Square (2^n) :=
+Definition png_int {n:nat} (p: PauliTuple n): Square (2^n) :=
   match p with
   | (phase, tuple) => (phase_int phase) .* (pn_int tuple)
   end.
 
 Lemma png_int_one n:
-  forall (pt: PauliTuple n),
+  forall (pt: PauliTupleBase n),
   pn_int pt = png_int (One, pt).
 Proof.
   move => pt.
@@ -827,7 +827,7 @@ Qed.
 Print get_phase_pn.
 
 Lemma get_phase_pn_behead n:
-  forall x y (tx ty: PauliTuple n),
+  forall x y (tx ty: PauliTupleBase n),
   (get_phase_pn [tuple of y :: ty] [tuple of x :: tx]) = 
     mult_phase (get_phase y x) (get_phase_pn ty tx).
 Proof.
@@ -843,7 +843,7 @@ Proof.
 Qed.
 
 
-Lemma pn_int_Mmult n: forall (x y: PauliTuple n),
+Lemma pn_int_Mmult n: forall (x y: PauliTupleBase n),
 phase_int (get_phase_pn x y) .* pn_int (mult_pn x y) =
 (pn_int x × pn_int y).
 Proof.
@@ -861,7 +861,7 @@ Qed.
     
 
 Lemma png_int_Mmult n:
-  forall (x y: GenPauliTuple n),
+  forall (x y: PauliTuple n),
   png_int x × png_int y = png_int (mulg x y).
 Proof.
   move  => [sx x] [sy y].

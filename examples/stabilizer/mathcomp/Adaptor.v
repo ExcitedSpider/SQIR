@@ -1,7 +1,7 @@
 (*
 TODO: use PauliGroup.v to refactor PauliString
-- [x] imports PauliTuple
-- [x] make a convert function for PauliTuple <-> PauliString ?
+- [x] imports PauliTupleBase
+- [x] make a convert function for PauliTupleBase <-> PauliString ?
 - [ ] completly wipe out Coq.Vector stuff
 *)
 
@@ -20,8 +20,8 @@ Import VectorNotations.
 
 (* This module is a copy old definition of barebone.PauliString  *)
 Module PauliString.
-Definition PauliVector n := Vector.t PauliOp n.
-Definition PVector0 := Vector.nil PauliOp.
+Definition PauliVector n := Vector.t PauliBase n.
+Definition PVector0 := Vector.nil PauliBase.
 
 Fixpoint pvmul {n: nat} (a b : PauliVector n) : phase * PauliVector n :=
   (* Looks like dark magic *)
@@ -169,7 +169,7 @@ Proof.
     f_equal.
 Qed.
 
-(* Translate a GenPauliOp vector into a matrix *)
+(* Translate a PauliOp vector into a matrix *)
 Fixpoint pvec_to_matrix {n:nat} (p: PauliVector n) : Square (2^n) :=
 match p with
 | [] => Matrix.I 1
@@ -375,8 +375,8 @@ Proof.
 Qed.
 
 Lemma op_prod_clousre_pauli: 
-  forall (oa ob: PauliOp),
-  exists (p: GenPauliOp),
+  forall (oa ob: PauliBase),
+  exists (p: PauliOp),
   (op_to_matrix oa) × (op_to_matrix ob) = pauli_to_matrix p.
 Proof.
   intros.
@@ -404,24 +404,24 @@ Import PauliString.
 From Coq Require Import ssreflect.
 
 (* This one does work but the type is inconvinient*)
-Definition TtoV_l {n:nat} (l: PauliTuple n): PauliVector (size l) :=
+Definition TtoV_l {n:nat} (l: PauliTupleBase n): PauliVector (size l) :=
   of_list l.
 
 (* I can prove n = (size l) in tupleToVector *)
 Lemma tuple_size:
-  forall (n:nat) (tuple: PauliTuple n),
+  forall (n:nat) (tuple: PauliTupleBase n),
   size tuple = n.
 Proof.
   by move => *; rewrite size_tuple.
 Qed.
 
 
-Fixpoint tupleToVector {n}: (PauliTuple n) -> PauliVector n :=
-  if n is S n return n.-tuple PauliOp -> PauliVector n 
+Fixpoint tupleToVector {n}: (PauliTupleBase n) -> PauliVector n :=
+  if n is S n return n.-tuple PauliBase -> PauliVector n 
   then fun xs => (thead xs)::(tupleToVector (behead_tuple xs))
   else fun xs => PVector0.
 
-Fixpoint vectorToTuple {n} (v : PauliVector n) : PauliTuple n :=
+Fixpoint vectorToTuple {n} (v : PauliVector n) : PauliTupleBase n :=
   match v with
   | nil => List.nil
   | cons h _ t => List.cons h (vectorToTuple t)
@@ -451,7 +451,7 @@ Proof.
 Qed.
 
 Theorem tupleToVector_correct n:
-  forall tup: PauliTuple n,
+  forall tup: PauliTupleBase n,
   pn_int tup = pvec_to_matrix (tupleToVector tup).
 Proof.
   move => tup.
@@ -463,12 +463,12 @@ Proof.
 Qed.
 
 
-Definition pngToPString {n} (png: GenPauliTuple n): PString n :=
+Definition pngToPString {n} (png: PauliTuple n): PString n :=
   match png with
   |  (phase, tuple) => (phase, tupleToVector tuple)
   end.
 
-Definition pstringToTupleG {n} (pstr: PString n): GenPauliTuple n :=
+Definition pstringToTupleG {n} (pstr: PString n): PauliTuple n :=
   match pstr with 
   | (phase, vector) => (phase, vectorToTuple vector)
   end.
@@ -494,7 +494,7 @@ Proof.
 Qed.
 
 Theorem pngToPstring_correct n:
-  forall tupg: GenPauliTuple n,
+  forall tupg: PauliTuple n,
   png_int tupg = pstr_to_matrix (pngToPString tupg).
 Proof.
   move => tupg.
