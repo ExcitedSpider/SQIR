@@ -1,11 +1,18 @@
-(*
-The Group Definition of 
-- P1: 1-qubit Pauli Group without Phase (p1/z4)
-- P1G: 1-qubit Pauli Group
-- Pn: n-qubit Pauli Group wihtout phase (pn/z4)
-- PnG: n-qubit Pauli Group
+ (*
+The formalism of Pauli Groups and their quotient groups
+In quantum computing, quotied pauli groups are pauligroups without phase
+Key Definitions:
+- PauliBase: The 1-qubit Pauli quotient group
+- phase: The phase {-1, i, -1, -i} and they forms a group
+- PauliOp: The 1-qubit Pauli group
+- PauliTupleBase: The n-qubit Pauli quotient group
+- PauliTuple: The n-qubit Pauli group
 
-All formalisms are absed on MathComp
+You can use all canonical definitions in mathcomp: oneg, mulg, invg, idg
+
+This file also contains interpretation:
+f: PauliGroup n ->  Matrix 2^n
+To bridge group with quantumlib 
 *)
 From mathcomp Require Import all_ssreflect fingroup.
 From HB Require Import structures.
