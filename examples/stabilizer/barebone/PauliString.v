@@ -1,5 +1,26 @@
+(* 
+This file is the formalism of n-qubit Pauli group.
+
+Key Definitions:
+  - BasePauliString: The base type of Pauli strings, represented as a vector of PauliBase elements.
+  - PauliString: The type of Pauli strings, represented as a pair of a phase and a base Pauli string.
+  - pvmul: The multiplication operation for Pauli strings, returning a phase and a new base Pauli string.
+  - psmul: The multiplication operation for Pauli strings, returning a new Pauli string.
+  - pstr_to_matrix: The function that converts a Pauli string to its corresponding matrix representation.
+  - pstr_identity: The identity Pauli string.
+  - pstr_negate_phase: The negation of the phase of a Pauli string.
+  - pstr_inv: The inverse of a Pauli string.
+  - compose_pstring: The function that composes two Pauli strings into a new Pauli string.
+
+Key theories:
+  - pvmul_correct: The correctness of the pvmul operation, showing that it corresponds to matrix multiplication.
+  - psmul_correct: The correctness of the psmul operation, showing that it corresponds to matrix multiplication.
+  - compose_pstring_correct: The correctness of the compose_pstring operation, showing that it corresponds to matrix multiplication.
+  - pstr_id_to_matrix: The identity Pauli string corresponds to the identity matrix.
+  - compose_pstring_correct: The correctness of the compose_pstring operation, showing that it corresponds to matrix multiplication.
+*)
+
 Require Import Pauli.
-(* This line helps to write X instead of Pauli.X *)
 Import Pauli.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
@@ -635,65 +656,6 @@ Proof.
     rewrite IHn0.
     destruct h; simpl; reflexivity.
 Qed.
-
-From HB Require Import structures.
-
-(* 
-HB: FinGroup is a factory for the following mixins:
-	- isMulBaseGroup
-  - choice.hasChoice
-  - choice.Choice_isCountable
-  - hasDecEq
-  - isFinite
-  - BaseFinGroup_isGroup
-*)
-HB.about FinGroup.
-(*
-HB: isMulBaseGroup operations and axioms are:
-	- mulg_subdef
-  - oneg_subdef
-  - invg_subdef
-  - mulgA_subproof
-  - mul1g_subproof
-  - invgK_subproof
-  - invMg_subproof
-*)
-HB.about isMulBaseGroup.
-Print mulg_subdef.
-Locate mulg_subdef.
-Locate isMulBaseGroup.
-Locate "isMulBaseGroup".
-(* 
-Check BasePauliString. *)
-
-(* Coq cannot figure out dependent types  *)
-(* I'm going to use Mathcomp tuples *)
-(* Fail HB.instance Definition _ := Finite.on (BasePauliString n).
-
-
-Check pvmul_v.
-
-Check pmul_v_left_id.
-
-Check left_id. 
-
-Lemma pvmul_left_id:
-  left_id e pvmul_v.
-Admitted. *)
-
-(* Do not use isMulBaseGroup. this is provided by isMulGroup *)
-(* Fail HB.instance Definition isMulBaseGroup.Type _ := 
-isMulBaseGroup.Build 
-  (BasePauliString n)
-  pvmul_v_assoc
-  pvmul_left_id
-  pninv_involutive
-  pvmul_v 
-  e 
-  pvmul_v_assoc 
-  pvmul_v_id_correct. *)
-
-(* Definition sort := BasePauliString n. *)
 
 
 End PnZ4Group.

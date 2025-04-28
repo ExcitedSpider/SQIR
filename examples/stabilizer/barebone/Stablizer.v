@@ -1,6 +1,23 @@
-(* TODO:
-   - [] make a similar properties based on PauliGroup.v
- *)
+(* 
+This file contains an attempt to define the stabilizer group.
+However, due to the lack of a proper definition of group,
+it becomes hard to define the stabilizer and need to prove a bunch of lemmas that
+are not already known in math.
+For example, we need the notion of subgroup and generators. 
+
+We turned to use mathcomp to define the stabilizer group.
+
+Key Definitions:
+- stb: The stabilizer proposition, which checks if a Pauli string stabilizes a given state.
+  PString ∝1 ψ means PString stabilizes ψ.
+
+Key Lemmas:
+- stb_compose: The composition of two stabilizers results in a new stabilizer.
+- stb_closed: The closure property of the stabilizer group, showing that the product of two stabilizers is also a stabilizer.
+- stb_group_no_m1: The stabilizer group does not contain the negation of the identity.
+- stb_by_id: The identity Pauli string stabilizes any state.
+- stb_addition: The addition of two stabilizers results in a new stabilizer.
+*)
 
 Require Import PauliString.
 Require Import SQIR.UnitaryOps.
