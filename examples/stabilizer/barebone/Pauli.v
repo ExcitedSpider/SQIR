@@ -3,15 +3,15 @@ Old self-contained definition for P1 group
 There is no mathcomp
 *)
 
-Require Export SQIR.UnitaryOps.
-Require Export QuantumLib.Matrix.
+Require Import SQIR.UnitaryOps.
+Require Import QuantumLib.Matrix.
 Require Import Group.
 From mathcomp Require Import ssrfun fingroup eqtype fintype.
 
 Module Pauli.
 
 (* 
-  Complete PauliTerm group (operations with scalars) 
+  Complete PauliOp group (operations with scalars) 
   However, we expect it will not be used in the stabilizer formalism
   because for stabilizer, scalars are useless. It only acts as unneccesary
   complexity. 
@@ -19,28 +19,28 @@ Module Pauli.
   But it's still valueable to have this complete formalism
 *)
 
-(* The PauliOperator *)
-Inductive PauliOp : Type :=
-| I : PauliOp
-| X : PauliOp
-| Y : PauliOp
-| Z : PauliOp.
+(* The PauliBaseerator *)
+Inductive PauliBase : Type :=
+| I : PauliBase
+| X : PauliBase
+| Y : PauliBase
+| Z : PauliBase.
 
-Inductive Scalar : Type :=
-| One : Scalar      (* 1 *)
-| Iphase : Scalar   (* i *)
-| NegOne : Scalar   (* -1 *)
-| NegIphase : Scalar. (* -i *)
+Inductive Phase : Type :=
+| One : Phase      (* 1 *)
+| Img : Phase   (* i *)
+| NOne : Phase   (* -1 *)
+| NImg : Phase. (* -i *)
 
 (* A Pauli Term is a scaled Pauli Operator *)
-Inductive PauliTerm : Type :=
-| ScaledOp : Scalar -> PauliOp -> PauliTerm.
+Inductive PauliOp : Type :=
+| ScaledOp : Phase -> PauliBase -> PauliOp.
 
 (* Define a custom notation for elements of the Pauli group *)
 Notation "s · p" := (ScaledOp s p) (at level 40, left associativity).
 
 Check One · X.
-Check Iphase · Z.
+Check Img · Z.
 
 Lemma pauli_eq_comp:
 forall sa pa sb pb,
@@ -51,15 +51,15 @@ subst.
 reflexivity.
 Qed.
 
-Definition scalar_to_complex (s : Scalar) : C :=
+Definition scalar_to_complex (s : Phase) : C :=
 match s with
 | One => 1
-| Iphase => Ci
-| NegOne => -1
-| NegIphase => - Ci 
+| Img => Ci
+| NOne => -1
+| NImg => - Ci 
 end.
 
-Definition op_to_matrix (p : PauliOp) : Square 2 :=
+Definition op_to_matrix (p : PauliBase) : Square 2 :=
 match p with
 | I => QuantumLib.Matrix.I 2 
 | X => σx
@@ -67,16 +67,16 @@ match p with
 | Z => σz
 end.
 
-Definition pauli_to_matrix (p: PauliTerm): Square 2 := 
+Definition pauli_to_matrix (p: PauliOp): Square 2 := 
   match p with
     | ScaledOp s op => (scalar_to_complex s) .* (op_to_matrix op)
   end.
 
-Example negY: pauli_to_matrix (NegOne · Y) = -1 .* σy.
+Example negY: pauli_to_matrix (NOne · Y) = -1 .* σy.
 Proof. reflexivity. Qed.
 
 
-Example negIX: pauli_to_matrix (NegIphase · X) = -Ci .* σx.
+Example negIX: pauli_to_matrix (NImg · X) = -Ci .* σx.
 Proof. reflexivity. Qed.
 
 Lemma pauli_to_matrix_determinsitic: forall a b c,
@@ -229,10 +229,10 @@ split.
 }
 Qed.
 
-(* The operation on the PauliTerm group *)
+(* The operation on the PauliOp group *)
 (* Define the operation as relation makes it so hard *)
-Inductive pmultrel: PauliTerm -> PauliTerm -> PauliTerm -> Prop := 
-| PauliMultRel: forall (a b c: PauliTerm),
+Inductive pmultrel: PauliOp -> PauliOp -> PauliOp -> Prop := 
+| PauliMultRel: forall (a b c: PauliOp),
   (pauli_to_matrix a) × (pauli_to_matrix b) = pauli_to_matrix c ->
   pmultrel a b c.
 
@@ -247,7 +247,7 @@ Qed.
 Definition ID := (One · I).
 
 Lemma pauli_op_wf: 
-forall (a: PauliTerm), WF_Matrix (pauli_to_matrix a).
+forall (a: PauliOp), WF_Matrix (pauli_to_matrix a).
 Proof.
 intros.
 destruct a.
@@ -257,7 +257,7 @@ auto with wf_db.
 Qed.
 
 Lemma pauli_identity_correct_left:
-forall (a: PauliTerm), pmultrel ID a a.
+forall (a: PauliOp), pmultrel ID a a.
 Proof.
 intros.
 apply PauliMultRel.
@@ -273,7 +273,7 @@ apply mat_equiv_eq.
 Qed.
 
 Lemma pauli_identity_correct:
-forall (a: PauliTerm), pmultrel a ID a.
+forall (a: PauliOp), pmultrel a ID a.
 Proof.
 intros.
 apply PauliMultRel; simpl.
@@ -286,7 +286,7 @@ apply mat_equiv_eq.
 - apply Mmult_1_r_mat_eq.
 Qed.
 
-Definition inverse_op (op: PauliOp): PauliOp := 
+Definition inverse_op (op: PauliBase): PauliBase := 
 match op with
 | I => I
 | X => X
@@ -296,21 +296,21 @@ end.
 
 
 
-Definition inverse_scalar (sc: Scalar): Scalar := 
+Definition inverse_scalar (sc: Phase): Phase := 
 match sc with
 | One => One
-| Iphase => NegIphase
-| NegOne => NegOne
-| NegIphase => Iphase 
+| Img => NImg
+| NOne => NOne
+| NImg => Img 
 end.
 
-Definition pinv (p : PauliTerm) : PauliTerm :=
+Definition pinv (p : PauliOp) : PauliOp :=
 match p with
 | ScaledOp s op => ScaledOp (inverse_scalar s) (inverse_op op)
 end.
 
 Lemma pinv_correct:
-forall (a: PauliTerm), exists (a': PauliTerm),
+forall (a: PauliOp), exists (a': PauliOp),
 pmultrel a a' ID.
 Proof.
 intros.
@@ -324,7 +324,7 @@ Qed.
 
 Lemma pauli_closure:
 forall a b,
-exists (c: PauliTerm), pmultrel a b c.
+exists (c: PauliOp), pmultrel a b c.
 Proof.
 intros a b.
 destruct a as [sa pa], b as [sb pb].
@@ -333,16 +333,16 @@ Abort. (* 256 cases. not feasible to prove directly *)
 
 Lemma scalar_closure:
 forall a b,
-exists (c: Scalar), 
+exists (c: Phase), 
   (scalar_to_complex a) * (scalar_to_complex b) = (scalar_to_complex c).
 Proof.
 intros.
 destruct a, b.
 all: simpl.
 all: try (exists One; simpl; lca).
-all: try (exists Iphase; simpl; lca).
-all: try (exists NegOne; simpl; lca).
-all: try (exists NegIphase; simpl; lca).
+all: try (exists Img; simpl; lca).
+all: try (exists NOne; simpl; lca).
+all: try (exists NImg; simpl; lca).
 Qed.
 
 Ltac MRefl :=
@@ -354,7 +354,7 @@ try (exists op, scale; MRefl).
 
 Lemma op_closure:
 forall a b,
-exists (c: PauliOp) (s: Scalar), 
+exists (c: PauliBase) (s: Phase), 
   (op_to_matrix a) × (op_to_matrix b) = (scalar_to_complex s) .* (op_to_matrix c).
 Proof.
 intros a b.
@@ -367,15 +367,15 @@ MReflExists One Y.
 MReflExists One Z.
 MReflExists One X.
 MReflExists One I.
-MReflExists Iphase Z.
-MReflExists NegIphase Y.
+MReflExists Img Z.
+MReflExists NImg Y.
 MReflExists One Y.
-MReflExists NegIphase Z.
+MReflExists NImg Z.
 MReflExists One I.
-MReflExists Iphase X.
+MReflExists Img X.
 MReflExists One Z.
-MReflExists Iphase Y.
-MReflExists NegIphase X.
+MReflExists Img Y.
+MReflExists NImg X.
 MReflExists One I.
 Qed.
 
@@ -383,7 +383,7 @@ Qed.
 (* This one succeed by using two lemmas *)
 Lemma pauli_closure':
 forall a b,
-exists (c: PauliTerm), pmultrel a b c.
+exists (c: PauliOp), pmultrel a b c.
 Proof.
 intros a b.
 destruct a as [sa pa], b as [sb pb].
@@ -407,7 +407,7 @@ rewrite Mscale_assoc.
 reflexivity.
 Qed.
 
-Lemma pmultrel_assoc : forall a b ab c abc : PauliTerm,
+Lemma pmultrel_assoc : forall a b ab c abc : PauliOp,
 pmultrel a b ab ->
 pmultrel ab c abc ->
 exists bc, pmultrel b c bc /\ pmultrel a bc abc.
@@ -429,7 +429,7 @@ split.
   reflexivity.
 Qed.
 
-(* The PauliTerm operator forms a group *)
+(* The PauliOp operator forms a group *)
 Theorem PauliGroupProperties:
 (forall a, pmultrel ID a a) /\
 (forall a, exists a', pmultrel a a' ID) /\
@@ -446,15 +446,15 @@ split. apply pauli_closure'.
 apply pmultrel_assoc.
 Qed.
 
-(* Definition inverse_scalar (op: Scalar): Scalar := 
+(* Definition inverse_scalar (op: Phase): Phase := 
 match op with
 | One => One
-| Iphase => NegIphase
-| NegOne => NegOne
-| NegIphase => Iphase 
+| Img => NImg
+| NOne => NOne
+| NImg => Img 
 end.
 
-Definition pinv (p : PauliTerm) : PauliTerm :=
+Definition pinv (p : PauliOp) : PauliOp :=
 match p with
 | ScaledOp s op => ScaledOp (inverse_scalar s) (inverse_op op)
 end. *)
@@ -470,7 +470,7 @@ it will be much easier now.
 =======================================================
 *)
 
-Definition op_prod_op(a b: PauliOp): PauliOp :=
+Definition op_prod_op(a b: PauliBase): PauliBase :=
   match a, b with
   | I, p => p
   | p, I => p  
@@ -499,7 +499,7 @@ Proof.
 Qed.
 
 
-Definition op_prod_s(a b: PauliOp): Scalar :=
+Definition op_prod_s(a b: PauliBase): Phase :=
   match a, b with
   | I, p => One
   | p, I => One
@@ -508,17 +508,17 @@ Definition op_prod_s(a b: PauliOp): Scalar :=
   | Y, Y => One
   | Z, Z => One
 
-  | X, Y => Iphase
-  | Y, X => NegIphase
+  | X, Y => Img
+  | Y, X => NImg
 
-  | Y, Z => Iphase
-  | Z, Y => NegIphase
+  | Y, Z => Img
+  | Z, Y => NImg
 
-  | Z, X => Iphase
-  | X, Z => NegIphase 
+  | Z, X => Img
+  | X, Z => NImg 
 end.
 
-Definition op_prod(a b: PauliOp): (Scalar * PauliOp) :=
+Definition op_prod(a b: PauliBase): (Phase * PauliBase) :=
   match a, b with  
   | I, p => (One, p)
   | p, I => (One, p)  
@@ -527,18 +527,18 @@ Definition op_prod(a b: PauliOp): (Scalar * PauliOp) :=
   | Y, Y => (One, I) 
   | Z, Z => (One, I)
 
-  | X, Y => (Iphase, Z) 
-  | Y, X => (NegIphase, Z)
+  | X, Y => (Img, Z) 
+  | Y, X => (NImg, Z)
 
-  | Y, Z => (Iphase, X)
-  | Z, Y => (NegIphase, X)
+  | Y, Z => (Img, X)
+  | Z, Y => (NImg, X)
 
-  | Z, X => (Iphase, Y)
-  | X, Z => (NegIphase, Y) 
+  | Z, X => (Img, Y)
+  | X, Z => (NImg, Y) 
   end.
 
 (* Easier to use in verificaition *)
-Definition op_prod_alt(a b: PauliOp): (Scalar * PauliOp) := 
+Definition op_prod_alt(a b: PauliBase): (Phase * PauliBase) := 
   ( op_prod_s a b, op_prod_op a b).
 
 Lemma op_prod_alt_correct: 
@@ -550,19 +550,19 @@ Proof.
 Qed.
 
 
-Definition s_prod(a b: Scalar): Scalar := 
+Definition s_prod(a b: Phase): Phase := 
 match a, b with
   | One, s => s
   | s, One => s
-  | NegOne, Iphase => NegIphase
-  | Iphase, NegOne => NegIphase
-  | NegOne, NegOne => One
-  | NegOne, NegIphase => Iphase
-  | NegIphase, NegOne => Iphase
-  | Iphase, NegIphase => One
-  | NegIphase, Iphase => One
-  | Iphase, Iphase => NegOne
-  | NegIphase, NegIphase => NegOne
+  | NOne, Img => NImg
+  | Img, NOne => NImg
+  | NOne, NOne => One
+  | NOne, NImg => Img
+  | NImg, NOne => Img
+  | Img, NImg => One
+  | NImg, Img => One
+  | Img, Img => NOne
+  | NImg, NImg => NOne
 end.
 
 Lemma inverse_scalar_correct:
@@ -581,12 +581,12 @@ Proof.
   destruct s1, s2.
   all: simpl.
   all: try(exists One; reflexivity).
-  all: try(exists Iphase ; reflexivity).
-  all: try(exists NegOne  ; reflexivity).
-  all: try(exists NegIphase  ; reflexivity).
+  all: try(exists Img ; reflexivity).
+  all: try(exists NOne  ; reflexivity).
+  all: try(exists NImg  ; reflexivity).
 Qed.
 
-Definition combined_scalars (s1 s2 s3: Scalar) : Scalar := 
+Definition combined_scalars (s1 s2 s3: Phase) : Phase := 
 s_prod s1 (s_prod s2 s3).
 
 Lemma combined_scalars_total:
@@ -599,7 +599,7 @@ Proof.
   apply s_prod_total.
 Qed.
 
-Definition pmul (a b: PauliTerm): PauliTerm := 
+Definition pmul (a b: PauliOp): PauliOp := 
 match a, b with
 | ScaledOp sa pa, ScaledOp sb pb => 
     let (sab, pab) := (op_prod pa pb) in
@@ -689,14 +689,14 @@ Proof.
 Qed.
 
 
-Definition apply_s (s: Scalar) (p: PauliTerm): PauliTerm :=
+Definition apply_s (s: Phase) (p: PauliOp): PauliOp :=
 match p with
   | ScaledOp s0 op => ScaledOp (s_prod s s0) op
 end.
 
-Definition pneg (p: PauliTerm): PauliTerm := apply_s (NegOne) p.
+Definition pneg (p: PauliOp): PauliOp := apply_s (NOne) p.
 
-Definition pmul_alt (a b: PauliTerm): PauliTerm := 
+Definition pmul_alt (a b: PauliOp): PauliOp := 
 match a, b with
 | ScaledOp sa pa, ScaledOp sb pb => 
     let (sab, pab) := (op_prod pa pb) in
@@ -719,7 +719,7 @@ all: reflexivity.
 Qed. 
 
 (* verify our function version of pmultrel is correct *)
-Lemma pmul_correct_r: forall (a b c: PauliTerm),
+Lemma pmul_correct_r: forall (a b c: PauliOp),
 (pmul a b) = c -> pmultrel a b c. 
 Proof.
 intros.
@@ -735,7 +735,7 @@ all: try(rewrite Mmult_1_l).
 all: try(solve_matrix).
 Qed.
 
-Lemma pmul_correct_l: forall (a b c: PauliTerm),
+Lemma pmul_correct_l: forall (a b c: PauliOp),
 pmultrel a b c -> (pmul a b) = c. 
 Proof.
 intros.
@@ -745,7 +745,7 @@ rewrite pauli_to_matrix_injective in H0.
 assumption.
 Qed.
 
-Theorem pmul_prod_eq: forall (a b c: PauliTerm),
+Theorem pmul_prod_eq: forall (a b c: PauliOp),
 pmultrel a b c <-> (pmul a b) = c. 
 Proof.
 split.
@@ -754,23 +754,23 @@ apply pmul_correct_r.
 Qed.
 
 (* 
-The commute / anticommute are two very important properties in stabilizer formalism. we want to show that Scalar does not affect commute / anticommute relation.
+The commute / anticommute are two very important properties in stabilizer formalism. we want to show that Phase does not affect commute / anticommute relation.
 We also hope to inspect how our new defined prod function can simplify the proof.
 *)
 
-Inductive commute: PauliTerm -> PauliTerm -> Prop :=
-| CommuteRel: forall (pa pb: PauliTerm),
+Inductive commute: PauliOp -> PauliOp -> Prop :=
+| CommuteRel: forall (pa pb: PauliOp),
   (pmul pa pb) = (pmul pb pa) -> commute pa pb.
 
 Lemma commute_self:
-forall (p: PauliTerm), commute p p.
+forall (p: PauliOp), commute p p.
 Proof.
 intros.
 apply CommuteRel. reflexivity.
 Qed.
 
 Lemma commute_identity:
-forall (p: PauliTerm), commute p ID.
+forall (p: PauliOp), commute p ID.
 Proof.
 intros.
 apply CommuteRel.
@@ -804,9 +804,9 @@ Qed.
 (* 
 the definition has a slight issue: it depends on how `apply_s` is defiend. Although `apply_s` is straightforward, but it is not certified. 
 *)
-Inductive anticommute: PauliTerm -> PauliTerm -> Prop :=
-| AnticommuteRel: forall (pa pb: PauliTerm),
-  (pmul pa pb) = apply_s (NegOne) (pmul pb pa) -> anticommute pa pb.
+Inductive anticommute: PauliOp -> PauliOp -> Prop :=
+| AnticommuteRel: forall (pa pb: PauliOp),
+  (pmul pa pb) = apply_s (NOne) (pmul pb pa) -> anticommute pa pb.
 
 Example anticommute_exp0:
 anticommute (One · X) (One · Y).
@@ -855,7 +855,7 @@ to reasoing about (anti)commute. so we can throw them away.
 *)
 
 Example anticommute_exp3:
-anticommute (NegIphase · X) (Iphase · Z).
+anticommute (NImg · X) (Img · Z).
 Proof.
 apply scalar_does_not_affect_anticommute.
 apply AnticommuteRel.
@@ -904,7 +904,7 @@ Proof.
 Qed.
 
 (* Have some troubles proving function inequalities*)
-(* But this is a known simple fact in math that all PauliTerm operators are orthogonal*)
+(* But this is a known simple fact in math that all PauliOp operators are orthogonal*)
 (* So we skip this proof *)
 Lemma pauli_orthogonal:
   forall sa opa sb opb,
@@ -1083,7 +1083,7 @@ Proof.
   all: destruct s, s0, s1; easy.
 Qed.
 
-Definition e: PauliTerm :=  ScaledOp One I.
+Definition e: PauliOp :=  ScaledOp One I.
 
 Lemma pmul_left_id: left_id e pmul.
 Proof.

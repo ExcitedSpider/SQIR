@@ -8,7 +8,7 @@ Require Import Pauli.
 Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 
-Locate PauliString_legacy.PString.
+Locate PauliString_legacy.PauliString.
 Import Pauli.
 
 (* 
@@ -17,7 +17,7 @@ An operator S (pauli string) stabilizes a (non-zero) ψ ∣ψ⟩
 if S∣ψ⟩ = ∣ψ⟩ 
 *)
 (* TODO: update this to make it only works on well formed vector *)
-Definition stb {n: nat} (pstring: PString n) (ψ: Vector (2^n))
+Definition stb {n: nat} (pstring: PauliString n) (ψ: Vector (2^n))
   : Prop := (pstr_to_matrix pstring) × ψ = ψ.
 
 (* A fancy symbol for "stabilize" *)
@@ -35,7 +35,7 @@ Qed.
 
 (* -Z stabilises ∣1⟩ *)
 Example stb_nz0:
-  (NegOne, Z::[]) ∝1 ∣1⟩.
+  (NOne, Z::[]) ∝1 ∣1⟩.
 Proof.
   unfold stb.
   simpl; Qsimpl.
@@ -105,7 +105,7 @@ Qed.
 
 (* If S∣ψ⟩=∣ψ⟩, then (S^(-1))∣ψ⟩=∣ψ⟩ *)
 Lemma inv_stb:
-  forall {n: nat} (pstr: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr: PauliString n) (ψ:  Vector (2^n)),
   WF_Matrix ψ -> stb pstr ψ -> stb (pstr_inv pstr) ψ.
 Proof.
   intros n pstr ψ Hwf Hstb.
@@ -124,7 +124,7 @@ Print Vector.
 If we take the tensor product of a two states, with stabiliser groups A and B (respectively), then the resulting tensor product state has stabiliser group given by the cartesian product A × B. 
 *)
 Theorem stb_compose:
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ1 ψ2:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliString n) (ψ1 ψ2:  Vector (2^n)),
   let cpstring := compose_pstring pstr1 pstr2 in
   pstr1 ∝1 ψ1 ->
   pstr2 ∝1 ψ2 ->
@@ -168,7 +168,7 @@ Proof.
 Qed.
 
 Theorem stb_closed: 
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliString n) (ψ:  Vector (2^n)),
   pstr1 ∝1 ψ ->
   pstr2 ∝1 ψ ->
   psmul pstr1 pstr2 ∝1 ψ
@@ -241,7 +241,7 @@ Admitted.
 
 (* there is no -1 in any stabilizer group *)
 Theorem stb_group_no_m1: 
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliString n) (ψ:  Vector (2^n)),
   pstr1 ∝1 ψ ->
   pstr2 ∝1 ψ ->
   WF_Matrix ψ ->
@@ -263,7 +263,7 @@ Qed.
 Require Import ExtraSpecs.
 
 Theorem stabilizer_must_commute: 
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliString n) (ψ:  Vector (2^n)),
   pstr1 ∝1 ψ ->
   pstr2 ∝1 ψ ->
   commute_at psmul pstr1 pstr2.
@@ -301,7 +301,7 @@ How to encode the idea of stabilizer group?
 *)
 
 Theorem stb_compose_alt:
-  forall {n m: nat} (pstr1: PString n) (pstr2: PString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
+  forall {n m: nat} (pstr1: PauliString n) (pstr2: PauliString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
   let cpstring := compose_pstring pstr1 pstr2 in
   pstr1 ∝1 ψ1 ->
   pstr2 ∝1 ψ2 ->
@@ -320,7 +320,7 @@ Proof.  (* similar to stb_compose *)
 Qed.
 
 Lemma stb_addition:
-  forall {n: nat} (pstr: PString n) (ψ1 ψ2:  Vector (2^n)),
+  forall {n: nat} (pstr: PauliString n) (ψ1 ψ2:  Vector (2^n)),
   pstr ∝1 ψ1 ->
   pstr ∝1 ψ2 ->
   pstr ∝1 (ψ1 .+ ψ2).
@@ -361,8 +361,8 @@ Check
   (∣0,0,0⟩ .+ ∣1,1,1⟩) ⊗ 
   (2 ⨂ (∣0,0,0⟩ .+ ∣1,1,1⟩)).
 
-Check (One, p[Z, Z]): PString 2.
-Check (One, p[I]): PString 1.
+Check (One, p[Z, Z]): PauliString 2.
+Check (One, p[I]): PauliString 1.
 
 Ltac by_compose_stb s1 s2 :=
   apply (stb_compose_alt s1 s2); Qsimpl;

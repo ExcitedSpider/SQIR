@@ -5,14 +5,14 @@ Require Import Coq.Vectors.Vector.
 Import VectorNotations.
 From mathcomp Require Import ssrfun fingroup eqtype fintype.
 
-Locate PauliOp.
+Locate PauliBase.
 
 Module PauliString.
-Definition PauliVector n := Vector.t PauliOp n.
+Definition BasePauliString n := Vector.t PauliBase n.
 
-Fixpoint pvmul {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
+Fixpoint pvmul {n: nat} (a b : BasePauliString n) : Phase * BasePauliString n :=
   (* Looks like dark magic *)
-  match a in Vector.t _ n return Vector.t _ n -> Scalar * PauliVector n  with 
+  match a in Vector.t _ n return Vector.t _ n -> Phase * BasePauliString n  with 
   | ha :: ta => fun b => 
     let hb := Vector.hd b in
     let tb := Vector.tl b in 
@@ -22,8 +22,8 @@ Fixpoint pvmul {n: nat} (a b : PauliVector n) : Scalar * PauliVector n :=
   | [] => fun _ => (One, [])
   end b.
 
-Fixpoint pvmul_v {n: nat} (a b : PauliVector n) : PauliVector n :=
-  match a in Vector.t _ n return Vector.t _ n -> PauliVector n  with 
+Fixpoint pvmul_v {n: nat} (a b : BasePauliString n) : BasePauliString n :=
+  match a in Vector.t _ n return Vector.t _ n -> BasePauliString n  with 
   | ha :: ta => fun b => 
     let hb := Vector.hd b in
     let tb := Vector.tl b in 
@@ -33,9 +33,9 @@ Fixpoint pvmul_v {n: nat} (a b : PauliVector n) : PauliVector n :=
   | [] => fun _ => []
   end b.
 
-Fixpoint pvmul_s {n: nat} (a b : PauliVector n) : Scalar  :=
+Fixpoint pvmul_s {n: nat} (a b : BasePauliString n) : Phase  :=
     (* Looks like dark magic *)
-    match a in Vector.t _ n return Vector.t _ n -> Scalar with 
+    match a in Vector.t _ n return Vector.t _ n -> Phase with 
     | ha :: ta => fun b => 
       let hb := Vector.hd b in
       let tb := Vector.tl b in 
@@ -46,11 +46,11 @@ Fixpoint pvmul_s {n: nat} (a b : PauliVector n) : Scalar  :=
     end b.
 
 (* Easier to use in verification *)
-Definition pvmul_alt  {n: nat} (a b : PauliVector n) : Scalar * PauliVector n 
+Definition pvmul_alt  {n: nat} (a b : BasePauliString n) : Phase * BasePauliString n 
   := (pvmul_s a b, pvmul_v a b).
 
 Lemma pvmul_alt_correct: 
-  forall n (pa pb: PauliVector n),
+  forall n (pa pb: BasePauliString n),
   pvmul_alt pa pb = pvmul pa pb.
 Proof.
   intros.
@@ -73,14 +73,14 @@ Proof.
 Qed.
 
 Example pstring_prod_exp: 
-  pvmul (Z::X::X::I::[]) (X::X::Y::Y::[]) = (NegOne, (Y::I::Z::Y::[])).
+  pvmul (Z::X::X::I::[]) (X::X::Y::Y::[]) = (NOne, (Y::I::Z::Y::[])).
 Proof.
   simpl.
   reflexivity.
 Qed.
 
 (* The Pauli String *)
-Definition PString (n : nat) : Set := Scalar * PauliVector n.
+Definition PauliString (n : nat) : Set := Phase * BasePauliString n.
 
 (* [X;Y;Z] has been occupied by QuantumLib *)
 (* We defined a new annotation here Use a prefix `p` to avoid mess up *)
@@ -90,26 +90,26 @@ Notation "p[ x , y , .. , z ]" := (cons _ x _ (cons _ y _ .. (cons _ z _ (nil _)
 
 Notation "p[ x ]" := (x :: []) (at level 60).
 
-Definition pstring_example0 : PString 3 :=
+Definition pstring_example0 : PauliString 3 :=
   (One, p[X, Y, Z]).
 
 (* `::` is interpreted correctly *)
-Definition pstring_example1 : PString 3 :=
+Definition pstring_example1 : PauliString 3 :=
   (One, X::Y::Z::[]).
 
-Definition pstring_example2 : PString 0 :=
+Definition pstring_example2 : PauliString 0 :=
   (One, []).
 
-Definition pstring_example3 : PString 1 :=
+Definition pstring_example3 : PauliString 1 :=
   (One, p[X]).
 
-Definition psmul {n: nat} (a b: PString n) : PString n :=
+Definition psmul {n: nat} (a b: PauliString n) : PauliString n :=
   let (sa, va) := a in
   let (sb, vb) := b in
   let (sab, vab) := pvmul va vb in 
   ((combined_scalars sab sa sb), vab).
 
-Definition apply_s {n: nat} (s: Scalar) (pstr: PString n): PString n :=
+Definition apply_s {n: nat} (s: Phase) (pstr: PauliString n): PauliString n :=
   let (s', pv) := pstr in
   (s_prod s s', pv).
 
@@ -119,20 +119,20 @@ Definition apply_s {n: nat} (s: Scalar) (pstr: PString n): PString n :=
 (* Good !*)
 Example pauli_calc0:
   psmul (One, (p[X,X,Y,Y])) (One, (p[Z,X,X,I]))
-  = (NegOne, (p[Y,I,Z,Y])).
+  = (NOne, (p[Y,I,Z,Y])).
 Proof.
   simpl.
   reflexivity.
 Qed.
 
 (* Simpler definition *)
-Definition psmul_alt {n: nat} (a b: PString n) : PString n :=
+Definition psmul_alt {n: nat} (a b: PauliString n) : PauliString n :=
   let (sa, va) := a in
   let (sb, vb) := b in
   ((combined_scalars (pvmul_s va vb)  sa sb), pvmul_v va vb).
 
 Lemma psmul_alt_correct: 
-  forall n (pa pb: PString n),
+  forall n (pa pb: PauliString n),
   psmul_alt pa pb = psmul pa pb.
 Proof.
   intros.
@@ -157,8 +157,8 @@ Proof.
     f_equal.
 Qed.
 
-(* Translate a PauliTerm vector into a matrix *)
-Fixpoint pvec_to_matrix {n:nat} (p: PauliVector n) : Square (2^n) :=
+(* Translate a PauliOp vector into a matrix *)
+Fixpoint pvec_to_matrix {n:nat} (p: BasePauliString n) : Square (2^n) :=
 match p with
 | [] => Matrix.I 1
 | x::xs => (pauli_to_matrix (ScaledOp One x)) ⊗ (pvec_to_matrix xs)
@@ -173,12 +173,12 @@ Proof.
   reflexivity.
 Qed.
 
-Definition pstr_to_matrix {n: nat} (pstr: PString n): Square (2^n) :=
+Definition pstr_to_matrix {n: nat} (pstr: PauliString n): Square (2^n) :=
 let (s, pvec) := pstr in
 (scalar_to_complex s) .* (pvec_to_matrix pvec).
 
 Lemma pstr_to_matrix_WF n: 
-  forall (pstr: PString n),
+  forall (pstr: PauliString n),
   WF_Matrix (pstr_to_matrix pstr).
 Proof.
   intros.
@@ -203,7 +203,7 @@ Qed.
 
 
 Example pstr_interpret:
-pstr_to_matrix (NegOne, (X::X::Y::Y::[])) = -1 .* σx ⊗ σx ⊗ σy ⊗ σy.
+pstr_to_matrix (NOne, (X::X::Y::Y::[])) = -1 .* σx ⊗ σx ⊗ σy ⊗ σy.
 Proof. 
   simpl.
   Qsimpl.
@@ -223,11 +223,11 @@ Proof.
 Qed.
 
 Lemma length_0_pvector:
-  forall (p: PauliVector 0), p = [].
+  forall (p: BasePauliString 0), p = [].
 Proof. apply length_0_vector. Qed.
 
 Lemma p_prod_one_step:
-  forall n (p1 p2: PauliVector (S n)) h1 tl1 h2 tl2,
+  forall n (p1 p2: BasePauliString (S n)) h1 tl1 h2 tl2,
   p1 = h1::tl1 ->
   p2 = h2::tl2 ->
   (pvec_to_matrix p1) × (pvec_to_matrix p2) = 
@@ -247,7 +247,7 @@ inversion H as [HC];
 contradict HC;
 lra. *)
 
-Lemma scalar_to_complex_deterministic: forall (a b: Scalar),
+Lemma scalar_to_complex_deterministic: forall (a b: Phase),
   scalar_to_complex a = scalar_to_complex b ->
   a = b.
 Proof.
@@ -264,7 +264,7 @@ Qed.
 
 
 (* Move these four to Pauli.v *)
-Lemma s_prod_correct_eq: forall (a b c: Scalar),
+Lemma s_prod_correct_eq: forall (a b c: Phase),
   s_prod a b = c <->
   (scalar_to_complex a ) * (scalar_to_complex b) = (scalar_to_complex c).
 Proof.
@@ -276,7 +276,7 @@ Proof.
     assumption.
 Qed.
 
-Lemma s_prod_comm: forall (a b c: Scalar),
+Lemma s_prod_comm: forall (a b c: Phase),
   s_prod a b = c <->
   s_prod b a = c.
 Proof.
@@ -289,7 +289,7 @@ Proof.
 Qed.
 
 Lemma pvec_head:
-  forall (n: nat) (va vb: PauliVector (S n)) s v hab sab,
+  forall (n: nat) (va vb: BasePauliString (S n)) s v hab sab,
   (s, v) = pvmul va vb ->
   (sab, hab) = op_prod (Vector.hd va) (Vector.hd vb) ->
   Vector.hd v = hab.
@@ -309,7 +309,7 @@ Qed.
 
 
 Lemma pvec_tail:
-  forall (n: nat) (va vb: PauliVector (S n)) s v vtl stl,
+  forall (n: nat) (va vb: BasePauliString (S n)) s v vtl stl,
   (s, v) = pvmul va vb ->
   (stl, vtl) = pvmul (Vector.tl va) (Vector.tl vb) ->
   Vector.tl v = vtl.
@@ -328,7 +328,7 @@ Proof.
 Qed.
 
 Lemma pvec_to_matrix_one_step:
-  forall (n: nat) (pvector: PauliVector (S n)) h t,
+  forall (n: nat) (pvector: BasePauliString (S n)) h t,
   Vector.hd pvector = h ->
   Vector.tl pvector = t ->
   pvec_to_matrix pvector = op_to_matrix h ⊗ pvec_to_matrix t.
@@ -343,7 +343,7 @@ Qed.
 
 
 Lemma pvec_prod_scalar_comb:
-  forall (n:nat) (va vb: PauliVector (S n)) sab vab ha hb sh hab stl tlab,
+  forall (n:nat) (va vb: BasePauliString (S n)) sab vab ha hb sh hab stl tlab,
   (sab, vab) = pvmul va vb ->
   Vector.hd va = ha ->
   Vector.hd vb = hb ->
@@ -373,8 +373,8 @@ Proof.
 Qed.
 
 Lemma op_prod_clousre_pauli: 
-  forall (oa ob: PauliOp),
-  exists (p: PauliTerm),
+  forall (oa ob: PauliBase),
+  exists (p: PauliOp),
   (op_to_matrix oa) × (op_to_matrix ob) = pauli_to_matrix p.
 Proof.
   intros.
@@ -388,7 +388,7 @@ Qed.
 
 (* assert (H3: exists sx opx, pauli_to_matrix x = (scalar_to_complex sx) .* (op_to_matrix opx)). *)
 Lemma pauli_construct:
-  forall (p: PauliTerm),
+  forall (p: PauliOp),
   exists s op,
   pauli_to_matrix p = (scalar_to_complex s) .* (op_to_matrix op).
 Proof.
@@ -399,7 +399,7 @@ Proof.
 Qed.
 
 Lemma pvec_prod_correct_ind_correct:
-  forall (n: nat) (ls1 ls2: PauliVector (S n))
+  forall (n: nat) (ls1 ls2: BasePauliString (S n))
   tl1 h1 tl2 h2 sprod vprod stl vtl,
   (h1::tl1) = ls1 ->
   (h2::tl2) = ls2 ->
@@ -466,7 +466,7 @@ Proof.
 Qed.
 
 Lemma pvmul_correct:
-  forall (n: nat) (p1 p2: PauliVector n) sc vecc, 
+  forall (n: nat) (p1 p2: BasePauliString n) sc vecc, 
   (sc, vecc) = pvmul p1 p2 ->
   (pvec_to_matrix p1) × (pvec_to_matrix p2) = (scalar_to_complex sc) .* (pvec_to_matrix vecc).
 Proof.
@@ -496,9 +496,9 @@ Proof.
     + assumption.
 Qed.  
 
-(* multiplication on PauliTerm string respects with matrix multiplication *)
+(* multiplication on PauliOp string respects with matrix multiplication *)
 Theorem psmul_correct:
-  forall (n: nat) (p1 p2: PString n), 
+  forall (n: nat) (p1 p2: PauliString n), 
   (pstr_to_matrix p1) × (pstr_to_matrix p2) = pstr_to_matrix (psmul p1 p2).
 Proof.
   intros.
@@ -528,7 +528,7 @@ Qed.
 
 
 Lemma psmul_implies_Mmult:
-  forall (n:nat) (a b c: PString n),
+  forall (n:nat) (a b c: PauliString n),
   psmul a b = c -> 
   (pstr_to_matrix a) × (pstr_to_matrix b) = pstr_to_matrix c.
 Proof.
@@ -580,7 +580,7 @@ Proof.
 Qed.
 
 (* the unit element *)
-Definition pmul_id (n:nat): PauliVector n :=
+Definition pmul_id (n:nat): BasePauliString n :=
   Vector.const I n.
 
 Definition e := pmul_id n.
@@ -595,14 +595,14 @@ Proof.
   - dependent destruction x.
     reflexivity.
   - simpl.
-    unfold PauliVector in x.
+    unfold BasePauliString in x.
     rewrite IHn'.
     apply caseS with (v := x).
     intros.
     reflexivity.
 Qed.
 
-Definition pninv (p: PauliVector n): PauliVector n :=
+Definition pninv (p: BasePauliString n): BasePauliString n :=
   map inverse_op p.
 
 Lemma pvmul_v_id_correct:
@@ -664,11 +664,11 @@ Locate mulg_subdef.
 Locate isMulBaseGroup.
 Locate "isMulBaseGroup".
 (* 
-Check PauliVector. *)
+Check BasePauliString. *)
 
 (* Coq cannot figure out dependent types  *)
 (* I'm going to use Mathcomp tuples *)
-(* Fail HB.instance Definition _ := Finite.on (PauliVector n).
+(* Fail HB.instance Definition _ := Finite.on (BasePauliString n).
 
 
 Check pvmul_v.
@@ -684,7 +684,7 @@ Admitted. *)
 (* Do not use isMulBaseGroup. this is provided by isMulGroup *)
 (* Fail HB.instance Definition isMulBaseGroup.Type _ := 
 isMulBaseGroup.Build 
-  (PauliVector n)
+  (BasePauliString n)
   pvmul_v_assoc
   pvmul_left_id
   pninv_involutive
@@ -693,7 +693,7 @@ isMulBaseGroup.Build
   pvmul_v_assoc 
   pvmul_v_id_correct. *)
 
-(* Definition sort := PauliVector n. *)
+(* Definition sort := BasePauliString n. *)
 
 
 End PnZ4Group.
@@ -701,11 +701,11 @@ End PnZ4Group.
 Definition pstr_identity (n: nat) := (One, Vector.const I n).
 Notation "𝟙" := pstr_identity (at level 40).
 
-Definition pstr_negate_phase (n: nat) := (NegOne, Vector.const I n).
+Definition pstr_negate_phase (n: nat) := (NOne, Vector.const I n).
 Notation "~𝟙" := pstr_negate_phase (at level 40).
 
 (* negation by .*-1 *)
-Definition psneg {n: nat}(pstr: PString n): PString n :=
+Definition psneg {n: nat}(pstr: PauliString n): PauliString n :=
   psmul (~𝟙 n) pstr.
 
 Lemma pstr_id_interprete n:
@@ -761,7 +761,7 @@ induction n.
 Qed.
 
 Lemma psneg_correct :
-forall {n: nat} (pstr: PString n),
+forall {n: nat} (pstr: PauliString n),
   pstr_to_matrix (psneg pstr) = -1 .* pstr_to_matrix pstr.
 Proof.
   intros.
@@ -788,7 +788,7 @@ Qed.
 Section PStrGroup.
 
 Lemma pvmul_id_correct:
-forall n (pvec: PauliVector  n), pvmul (pmul_id n) pvec = (One, pvec)
+forall n (pvec: BasePauliString  n), pvmul (pmul_id n) pvec = (One, pvec)
 .
 Proof.
   intros.
@@ -849,7 +849,7 @@ Proof.
   unfold left_id, pstr_identity; intros n [sx vx].
   simpl.
   replace (const I n) with (pmul_id n) by reflexivity.
-  assert (Hid: forall n (pvec: PauliVector  n), pvmul (pmul_id n) pvec = (One, pvec)) by apply pvmul_id_correct.
+  assert (Hid: forall n (pvec: BasePauliString  n), pvmul (pmul_id n) pvec = (One, pvec)) by apply pvmul_id_correct.
   rewrite Hid.
   simpl.
   reflexivity.
@@ -857,13 +857,13 @@ Qed.
 
 Locate pstr.
 
-Definition pstr_inv {n: nat} (pstr: PString n)
-: (PString n) :=
+Definition pstr_inv {n: nat} (pstr: PauliString n)
+: (PauliString n) :=
   let (sp, vp) := pstr in
   ((inverse_scalar sp), (pninv n vp)).
 
 Lemma pstr_inv_correct:
-  forall n (pstr: PString n),
+  forall n (pstr: PauliString n),
   psmul (pstr_inv pstr) pstr = (pstr_identity n)
 .
   intros n [sp vp].
@@ -880,33 +880,33 @@ Qed.
 
 (* Definition of how to compose two PStrings *)
 
-Definition extract_scalar {n: nat} (ps : PString n) : Scalar :=
+Definition extract_scalar {n: nat} (ps : PauliString n) : Phase :=
   fst ps.
 
-Definition s_prod_of_pstrings {n: nat} {m: nat} (ps1: PString n) (ps2: PString m) : Scalar :=
+Definition s_prod_of_pstrings {n: nat} {m: nat} (ps1: PauliString n) (ps2: PauliString m) : Phase :=
   let s1 := extract_scalar ps1 in
   let s2 := extract_scalar ps2 in
   s_prod s1 s2.
 
 (* Example *)
-Check s_prod_of_pstrings (One, p[X, Z]) (Iphase, p[Y, X]) = Iphase.
+Check s_prod_of_pstrings (One, p[X, Z]) (Img, p[Y, X]) = Img.
 
-Definition compose_pstring {n m: nat} (ps1 : PString n) (ps2 : PString m) : PString (n + m) :=
+Definition compose_pstring {n m: nat} (ps1 : PauliString n) (ps2 : PauliString m) : PauliString (n + m) :=
   let s := s_prod_of_pstrings ps1 ps2 in
   let v := (snd ps1) ++ (snd ps2) in
   (s, v).
 
-Check compose_pstring (One, p[X, Z]) (Iphase, p[Y, X]) = (Iphase, p[ X, Z, Y, X]).
+Check compose_pstring (One, p[X, Z]) (Img, p[Y, X]) = (Img, p[ X, Z, Y, X]).
 
 (* Hard to prove due to dependent type *)
 Lemma pvec_concat_correct:
-  forall {n m: nat}  (pv1: PauliVector  n) (pv2: PauliVector  m),
+  forall {n m: nat}  (pv1: BasePauliString  n) (pv2: BasePauliString  m),
   pvec_to_matrix (pv1 ++ pv2) = pvec_to_matrix pv1 ⊗ pvec_to_matrix pv2.
 Admitted.
 
 
 Theorem compose_pstring_correct: 
-  forall {n m: nat}  (ps1: PString n) (ps2: PString m),
+  forall {n m: nat}  (ps1: PauliString n) (ps2: PauliString m),
   pstr_to_matrix (compose_pstring ps1 ps2) =
   pstr_to_matrix ps1 ⊗ pstr_to_matrix ps2.
 Proof.
@@ -944,12 +944,12 @@ Section PStringProperties.
 
 Require Import ExtraSpecs.
 
-Print PString.
+Print PauliString.
 
 (* Hard to make type correct due to dependent type *)
 Fail Lemma pstring_tail n: 
-  forall (pstr: PString (n + 1)),
-  exists (ptail: PString n) (ph: PauliOp),
+  forall (pstr: PauliString (n + 1)),
+  exists (ptail: PauliString n) (ph: PauliBase),
     let (s, pv) := ptail in
     pstr = (s, shiftin ph pv).
 
