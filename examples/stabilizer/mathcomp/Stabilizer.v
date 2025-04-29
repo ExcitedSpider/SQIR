@@ -445,21 +445,6 @@ Proof.
   by rewrite Mplus_comm.
 Qed.
   
-(* This is part of the [4,4,2] codewords which has to be proved *)
-(* by stb_symm_perm *)
-Example stb_422_part0:
-  [p1 X,X,X,X] ∝1  (∣ 0, 0, 1, 1 ⟩ .+ ∣ 1, 1, 0, 0 ⟩).
-Proof.
-  apply stb_symm_perm.
-  - rewrite /= /apply_n /=; Qsimpl. 
-    repeat rewrite kron_assoc;  auto with wf_db.
-    rewrite kron_mixed_product; Qsimpl.
-    by rewrite !MmultX1 !MmultX0.
-  - rewrite /= /apply_n /=. Qsimpl. 
-    repeat rewrite kron_assoc;  auto with wf_db.
-    rewrite kron_mixed_product; Qsimpl.
-    by rewrite !MmultX1 !MmultX0.
-Qed.
   
 (* Cannot do this because quantumlib do not provide a computable process *)
 (* of Mmult *)

@@ -226,19 +226,6 @@ by solve_stab1. Qed.
 Lemma Z1_stab: stab act_1 (p1g_of NOne Z) ∣1⟩.
 by solve_stab1. Qed.
 
-Section Assumption.
-
-Variable (aT: finGroupType).
-Variable (D : {set aT}).
-Variable (n: nat).
-
-Check (action aT D n).
-Variable (to: action aT D n).
-
-
-
-End Assumption.
-
 (* Theories about -1 * pt%g *)
 Module Commutativity.
 
