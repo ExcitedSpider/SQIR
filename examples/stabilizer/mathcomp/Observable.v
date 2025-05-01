@@ -23,15 +23,17 @@ Definition meas_to {n} (m: C) (M: Square (2^n)) (psi: Vector (2^n)) :=
   and if we want to achieve verification, we neeed to map
   the state and result to computational basis based on 
   the observable. 
+
   Which i find very hard to do because:
   - it involves a lot of theories in linear algebra, which we don't have in quantumlib
   - the theory is non-trivial. 
   - i don't have much time
+  - The projective measurement postulate itself can be considered as an axiom,
+    i.e. it is more foundamental in theory.
+  
   And also, i find it is not our focus of research. 
-  It will be more suitable to be considerred as a foundational change to quantumlib
-  measurement .
 
-  I leave this section here for someone who want to have a good challenge
+  It will be more suitable to be considerred as a foundational change to quantumlib.
 *)
 Section QuantumLibMeas.
 
