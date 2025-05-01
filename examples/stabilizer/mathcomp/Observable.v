@@ -30,6 +30,9 @@ Definition meas_to {n} (m: C) (M: Square (2^n)) (psi: Vector (2^n)) :=
   - i don't have much time
   - The projective measurement postulate itself can be considered as an axiom,
     i.e. it is more foundamental in theory.
+  - Quantumlib does not have sparse measurement primitive.
+    e.g. for 4 qubits, only measure the 2nd and the 4th 
+      (related to observables like Z2Z4 )
   
   And also, i find it is not our focus of research. 
 
@@ -47,7 +50,10 @@ Variable proj_basis: Square (2^n) -> Vector (2^n) -> Vector (2^n).
 (* Map the eigenvalue measurement result to a basic bitstring *)
 Variable proj_result: Square (2^n) -> C -> Vector (2^n).
 
-(* This one proves a general  *)
+(* 
+  This theorem tris verifies that measurement by observable
+  can be converted to measurement on basis state by projection
+ *)
 Theorem meas_to_correct:
   forall (m: C) (M: Square (2^n)) (psi psi': Vector (2^n)) ,
   meas_to m M psi ->

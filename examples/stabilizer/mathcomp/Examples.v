@@ -15,6 +15,7 @@ Require Import Action.
 Require Import PauliGroup.
 Import all_pauligroup.
 Require Import WellForm.
+Require Import Observable.
 
 Module FourQubitDetection.
 
@@ -122,8 +123,13 @@ Proof.
   }
 Qed.
 
+Definition L00 := ∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩.
+Definition L01 := ∣ 0, 0, 1, 1 ⟩ .+ ∣ 1, 1, 0, 0 ⟩.
+Definition L10 := ∣ 0, 1, 0, 1 ⟩ .+ ∣ 1, 0, 1, 0 ⟩.
+Definition L11 := ∣ 0, 1, 1, 0 ⟩ .+ ∣ 1, 0, 0, 1 ⟩.
+
 Lemma zzzz_stb:
-  zzzz ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
+  zzzz ∝1 (L00).
 Proof.
   rewrite /zzzz.
   apply stb_addition.
@@ -137,7 +143,7 @@ Qed.
 
 
 Lemma xxxx_stb:
-  xxxx ∝1 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
+  xxxx ∝1 (L00).
 Proof.
   rewrite /xxxx.
 apply stb_symm_perm.
@@ -152,7 +158,7 @@ apply stb_symm_perm.
 Qed.
 
 Theorem is_stb_set_g422':
-  is_stb_set_spec g422 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩).
+  is_stb_set_spec g422 L00.
 Proof.
   rewrite /is_stb_set_spec /is_stb_set /= => x Hx.
   move: (stb_generator g422 (∣ 0, 0, 0, 0 ⟩ .+ ∣ 1, 1, 1, 1 ⟩)) => H.
@@ -189,6 +195,34 @@ Theorem g422_dimension_2:
   dimension _ g422 = 2%nat.
 Proof.
   by rewrite /dimension cards2 /=.
+Qed.
+
+Definition Error_X1 := [p1 X, I, I, I].
+
+Definition E00X1 := apply_n _ L00 Error_X1.
+
+(* 
+  An X1 error (single bit-flip on first qubit)
+  can be detected by measurment ZZZZ
+*)
+Theorem error_x1_syndrome:
+  (meas_p_to (-C1) zzzz E00X1).
+Proof.
+(* This proof is still ugly *)
+(* I am thinking speed up the computation of pauli operator application 
+  on basis state.
+  It might be very lovely in thesis  
+*)
+  rewrite /meas_p_to /zzzz /=.
+  Qsimpl.
+  rewrite /E00X1 /L00 /Error_X1 /apply_n /=.
+  Qsimpl.
+  repeat (distribute_plus;
+          repeat rewrite <- kron_assoc by auto with wf_db;
+          restore_dims).
+  repeat rewrite kron_mixed_product. Qsimpl.
+  autorewrite with ket_db. 
+  solve_matrix.
 Qed.
 
 End FourQubitDetection.
