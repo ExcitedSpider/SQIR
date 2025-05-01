@@ -883,7 +883,7 @@ Qed.
 End Interpretation.
 
 
-Module all_pauligroup.
+Module Export all_pauligroup.
   Export P1Group.
   Export P1GGroup.
   Export PNGroup.

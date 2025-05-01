@@ -13,16 +13,8 @@ Require Import Stabilizer.
 Require Import SQIR.UnitaryOps.
 Require Import Action.
 Require Import PauliGroup.
-Import P1Group.
-Import P1GGroup.
-Import PNGroup.
-Import PNGGroup.
+Import all_pauligroup.
 Require Import WellForm.
-
-Open Scope ucom.
-
-(* 4 + 2 ancillas for error correction *)
-Definition dim : nat := 4.
 
 Module FourQubitDetection.
 

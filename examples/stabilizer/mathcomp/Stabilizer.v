@@ -580,3 +580,7 @@ Lemma not_detactable n:
 Admitted. (* Related to generated group *)
 
 
+Lemma stb_generator {n}:
+  forall (g: { set (PString n) }) (v: Vector (2^n)), 
+    (forall x, x \in g -> x ∝1 v) -> forall y, y \in <<g>> -> y ∝1 v.
+Admitted. (* Related to generated group *)
