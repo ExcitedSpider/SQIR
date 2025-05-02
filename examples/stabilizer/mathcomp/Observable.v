@@ -111,7 +111,10 @@ Proof.
   rewrite H. by Qsimpl.
 Qed.
 
-(* an alternative meas_to definition for pauli operators  *)
+(* 
+  What we are really interesting is to use pauli operator
+  as observables.
+ *)
 Definition meas_p_to {n} (m: C) (P: PauliOperator n) (psi: Vector (2^n)) :=
   (pn_int P) × psi = m .* psi.
 

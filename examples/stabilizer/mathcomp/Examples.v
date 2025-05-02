@@ -227,3 +227,116 @@ Proof.
 Qed.
 
 End FourQubitDetection.
+
+Require Export SQIR.UnitaryOps.
+
+Section ThreeQubitCorrectionCode.
+
+Open Scope ucom.
+
+Definition dim:nat := 3.
+
+Definition encode : base_ucom dim := 
+  CNOT 0 1; CNOT 0 2.
+
+Definition L0 := ∣0,0,0⟩.
+Definition L1 := ∣1,1,1⟩.
+
+(* This should be make more generic *)
+Lemma encode_by_component: forall (α β : C) (u: Square (2^dim)),
+  (u) × (∣0⟩ ⊗ ∣0,0⟩) = L0 ->
+  (u) × (∣1⟩ ⊗ ∣0,0⟩) = L1 ->
+  (u) × ((α .* ∣0⟩ .+ β .* ∣1⟩) ⊗ ∣0,0⟩)
+   = α .* L0.+ β .* L1.
+Proof.
+  move => a b H0 H1 H2.
+  rewrite kron_plus_distr_r Mmult_plus_distr_l.
+  rewrite !Mscale_kron_dist_l !Mscale_mult_dist_r.
+  by rewrite H1 H2.
+Qed.
+
+Set Bullet Behavior "Strict Subproofs".
+
+(* The encoding program is correct *)
+Theorem encode_correct : forall (α β : C),
+  (uc_eval encode) × ((α .* ∣0⟩ .+ β .* ∣1⟩) ⊗ ∣0,0⟩ )
+  = α .* L0 .+ β .* L1.
+Proof.
+  move => a b.
+  rewrite /= /L0 /L1.
+  apply encode_by_component;
+  autorewrite with eval_db; simpl; Qsimpl.
+  all: repeat (
+    distribute_plus;
+    repeat rewrite <- kron_assoc by auto with wf_db;
+    restore_dims
+  );
+  repeat rewrite kron_mixed_product; Qsimpl;
+  by autorewrite with ket_db.
+Qed.
+
+(* After verifing the encoding circuit, we can 
+  work sorely on abstract codespace and pauli operator
+*)
+
+Require Import PauliGroup.
+
+
+Notation "[ 'set' a1 , a2 , .. , an ]" := (setU .. (a1 |: [set a2]) .. [set an]) (at level 200): form_scope.
+
+Definition setexample := [set true, false, true ].
+
+(* Notation Just for readability *)
+Notation ErrorOperator := PauliOperator.
+Notation Observable := PauliOperator.
+
+(* Set of single-qubit bit-flip error *)
+Definition BitFlipError: {set ErrorOperator 3 } := 
+  [set ([p X, I, I]), ([p I, X, I]), ([p I, I, X])].
+
+Definition SyndromeMeas: {set Observable 3} :=
+  [set ([p Z, Z, I]), ([p I, Z, Z])].
+
+(* Simply Goals like (pn_int _ × _) *)
+Ltac SimplApplyPauli := 
+    rewrite ?/png_int ?/pn_int /=;
+    Qsimpl;
+    repeat (
+      distribute_plus;
+      repeat rewrite <- kron_assoc by auto with wf_db;
+      restore_dims
+    );
+    rewrite !kron_mixed_product; Qsimpl;
+    autorewrite with ket_db.
+
+(* Syndrome Measurement Does not change the correct code *)
+Theorem SyndromeMeas_stab :forall (α β : C),
+  forall (M: Observable dim),
+  let psi := (α .* L0 .+ β .* L1) in
+    M \in SyndromeMeas -> 'Meas M on psi --> 1.
+Proof.
+  move => a b M psi.
+  rewrite !inE => Hm.
+  case/orP: Hm => Hm;
+  move/eqP: Hm => Hm;
+  rewrite Hm /meas_p_to /psi;
+  rewrite !Mmult_plus_distr_l !Mscale_mult_dist_r;
+  rewrite /L0 /L1;
+  SimplApplyPauli.
+  - by replace (b * (-1) * (-1)) with (b) by lca.
+  - by replace (b * (-1) * (-1)) with (b) by lca.
+Qed.
+
+(* Notation for applying an operator on a state *)
+Notation "''Apply' P 'on' psi" := (apply_n _ psi P) (at level 200).
+
+(* Apply any error in BitFlipError, there is at least one SyndromeMeas can detect it *)
+Theorem measure_m1_on_error : forall (α β : C),
+  forall (E: ErrorOperator dim) (M: Observable dim),
+  E \in BitFlipError ->
+  let psi' := 'Apply E on (α .* L0 .+ β .* L1) in
+    exists M, M \in SyndromeMeas -> 'Meas M on psi' --> -1.
+Abort.
+
+
+End ThreeQubitCorrectionCode.

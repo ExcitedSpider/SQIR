@@ -139,5 +139,27 @@ Proof. Admitted.
 End Generator.
 
 
+From mathcomp Require Import all_ssreflect fingroup finset ssrnat seq tuple.
+
+Section Generator2.
+
+Variable (gT : finGroupType) (a b: gT).
+
+Variable P: gT -> Prop.
+
+Hypothesis fact_P_a : P a.
+Hypothesis fact_P_b : P a.
+Hypothesis lemma_P_comp: 
+  forall (x y: gT), P x -> P y -> P (x * y).
+
+Theorem p_ab_gen:
+  forall (e: gT), e \in (generated [set a; b]) -> P e.
+Proof.
+  move => e He.
+  (* Search (_ \in generated _).
+  Search mem generated. *)
+  rewrite generated.unlock in He.
+Abort.
 
 
+End Generator2.
