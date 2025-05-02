@@ -206,7 +206,7 @@ Definition E00X1 := apply_n _ L00 Error_X1.
   can be detected by measurment ZZZZ
 *)
 Theorem error_x1_syndrome:
-  (meas_p_to (-C1) (snd zzzz) E00X1).
+  'Meas (snd zzzz) on E00X1 --> -C1.
 Proof.
 (* This proof is still ugly *)
 (* I am thinking speed up the computation of pauli operator application 
