@@ -5,14 +5,15 @@ Require Import PauliGroup.
 Require Import Stabilizer.
 Require Import WellForm.
 Open Scope form_scope.
+Set Bullet Behavior "Strict Subproofs".
 
 (* An operator is hermitian if it is self-adjoint   *)
 Definition hermitian {n:nat} (H: Square (2^n)): Prop :=
-  H† == H.
+  H† = H.
 
 (* meas_to m M ψ captures the projective measurement postulate:
   if ψ is an eigenvector of Hermitian observable M with eigenvalue m, 
-  then measuring M on ψ yields m with certainty. *)
+  then measuring M on ψ yields m with certainty (probability = 1). *)
 Definition meas_to {n} (m: C) (M: Square (2^n)) (psi: Vector (2^n)) :=
   WF_Matrix M /\ hermitian M /\ M × psi = m .* psi.
 
@@ -67,43 +68,71 @@ End QuantumLibMeas.
   they can all be viewed as observable *)
 Notation PauliObservable := PauliTuple.
 
+Lemma pauli_base_hermitian:
+  forall (p: PauliBase),
+  @hermitian 1%nat (p1_int p).
+Proof.
+  move => p.
+  rewrite /hermitian.
+  case p; simpl.
+  apply id_adjoint_eq.
+  apply σx_hermitian.
+  apply σy_hermitian.
+  apply σz_hermitian.
+Qed.
+
 Fact pauli_hermitian {n} :
-  forall (operator: PauliTuple n), hermitian (png_int operator).
-Admitted. (* refer to Quantum.Quantum *)
+  forall (operator: PauliTupleBase n), hermitian (pn_int operator).
+Proof.
+  rewrite /hermitian /png_int /PauliObservable //= => pt.
+  induction n.
+  - by rewrite tuple0 /= id_adjoint_eq.
+  - case: pt / tupleP => hx tx.
+    rewrite /= theadCons .
+    restore_dims.
+    by rewrite kron_adjoint IHn pauli_base_hermitian.
+Qed.
+
+
 
 (* 
 If a quantum state ψ is stabilized by a Pauli operator p (i.e., p ψ = ψ), 
 then measuring the corresponding observable yields outcome 1 with certainty.
 *)
 Theorem stabilizer_meas_to_1 {n}:
-  forall (p: PauliTuple n) (psi: Vector (2^n)),
-  p ∝1 psi -> meas_to 1 (png_int p) psi.
+  forall (p: PauliOperator n) (psi: Vector (2^n)),
+  (One, p) ∝1 psi -> meas_to 1 (pn_int p) psi.
 Proof.
   move => p psi H.
   rewrite /meas_to.
-Admitted. (* easy, do it later. now focus on the structure *)
+  split. apply pn_int_wf.
+  split. apply pauli_hermitian.
+  apply PauliOperator_stb in H.
+  rewrite H. by Qsimpl.
+Qed.
 
 (* an alternative meas_to definition for pauli operators  *)
-Definition meas_p_to {n} (m: C) (P: PauliTuple n) (psi: Vector (2^n)) :=
-  (png_int P) × psi = m .* psi.
+Definition meas_p_to {n} (m: C) (P: PauliOperator n) (psi: Vector (2^n)) :=
+  (pn_int P) × psi = m .* psi.
 
 Lemma meas_p_to_correct {n}:
-  forall (m:C) (P: PauliTuple n) (psi: Vector (2^n)),
-  meas_p_to m P psi <-> meas_to m (png_int P) psi.
+  forall (m:C) (P: PauliOperator n) (psi: Vector (2^n)),
+  meas_p_to m P psi <-> meas_to m (pn_int P) psi.
 Proof.
   move => m P psi.
   rewrite /meas_p_to /meas_to.
   split.
   - move => H.
-    split => //. apply png_int_wf.
+    split => //. apply pn_int_wf.
     split => //. apply pauli_hermitian.
   - move => [_ [_ H]].
     exact H.
 Qed. 
 
 Theorem stabilizer_meas_to_1' {n}:
-  forall (p: PauliTuple n) (psi: Vector (2^n)),
-  p ∝1 psi -> meas_p_to 1 p psi.
+  forall (p: PauliOperator n) (psi: Vector (2^n)),
+  (* Maybe make a notation for (One, p) ∝1 psi *)
+  (One, p) ∝1 psi -> meas_p_to 1 p psi.
 Proof.
   move => p psi H.
   apply meas_p_to_correct.

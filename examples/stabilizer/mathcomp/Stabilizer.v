@@ -16,7 +16,22 @@ Require Import WellForm.
 Require Import Assumption.
 
 Require Import Operations.
-Notation PString := PauliTuple.
+
+(* An n-qubit Pauli operator is a Hermitian element of the 
+n-qubit Pauli group P_n *)
+(* One detail to notice is that we only consider phase +1.
+Technically, phase -1 also makes an element of P_n hermitian
+But they are not very useful *)
+Notation PauliOperator := PauliTupleBase.
+
+(* We use PauliElement to refer to all elements in pauli groups
+  note that not all elements are pauli operator
+  for phase in {-i, i}, these elements are not hermitian
+*)
+Notation PauliElement := PauliTuple.
+
+Definition PauliOpToElem {n} (x : PauliOperator n) : PauliElement n := (One,x).
+Coercion PauliOpToElem : PauliOperator >-> PauliElement.
 
 Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200): form_scope.
 
@@ -29,19 +44,30 @@ Notation "[ 'pi' x1 , .. , xn ]" := (Img, [tuple of x1 :: .. [:: xn] ..]) (at le
 
 Notation "[ 'p-i' x1 , .. , xn ]" := (NImg, [tuple of x1 :: .. [:: xn] ..]) (at level 200): form_scope.
 
-Definition stb {n:nat} (pstring: PString n) (psi: Vector (2^n)):= 
+Definition stb {n:nat} (pstring: PauliElement n) (psi: Vector (2^n)):= 
   act_n n psi pstring = psi.
-
 (* A fancy symbol for "stabilize" *)
 Notation "pstring ∝1 ψ" := (stb pstring ψ) (at level 50).
+
+(* TODO: Move to stabiliser.v *)
+Section HermitianOperator.
+
+Lemma PauliOperator_stb {n}:
+  forall (p: PauliOperator n) (psi: Vector (2^n)),
+  p ∝1 psi -> (pn_int p) × psi = psi. 
+Proof.
+  rewrite /stb /= /Action.apply_n /png_int /= => p psi.
+  move => H.
+  rewrite Mscale_1_l in H.
+  by exact H.
+Qed.
+
+End HermitianOperator.
 
 Ltac simpl_stbn := 
   rewrite /stb /act_n /apply_n /=;
   Qsimpl;
   try (lma'; try (apply apply_n_wf);auto with wf_db).
-
-Check [p Z, Z, X, Y].
-Check [p1 Z, Z, X, Y].
 
 (* Z stabilises ∣0⟩ *)
 Example stb_z0:
@@ -110,7 +136,7 @@ Qed.
 
 (* If S∣ψ⟩=∣ψ⟩, then (S^(-1))∣ψ⟩=∣ψ⟩ *)
 Lemma inv_stb:
-  forall {n: nat} (pstr: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr: PauliElement n) (ψ:  Vector (2^n)),
   WF_Matrix ψ -> stb pstr ψ -> stb (pstr^-1) ψ.
 Proof.
   intros n pstr ψ Hwf Hstb.
@@ -135,7 +161,7 @@ rewrite /stb /act_n /apply_n /=.
 If we take the tensor product of a two states, with stabiliser groups A and B (respectively), then the resulting tensor product state has stabiliser group given by the cartesian product A × B. 
 *)
 Theorem stb_compose:
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ1 ψ2:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliElement n) (ψ1 ψ2:  Vector (2^n)),
   let cpstring := compose_pstring pstr1 pstr2 in
   pstr1 ∝1 ψ1 ->
   pstr2 ∝1 ψ2 ->
@@ -180,7 +206,7 @@ Proof.
 Qed.
 
 Theorem stb_closed: 
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliElement n) (ψ:  Vector (2^n)),
   pstr1 ∝1 ψ ->
   pstr2 ∝1 ψ ->
   mulg pstr1 pstr2 ∝1 ψ
@@ -196,7 +222,7 @@ Import Commutativity.
 
 (* there is no -1 in any stabilizer group *)
 Theorem stb_group_no_m1: 
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliElement n) (ψ:  Vector (2^n)),
   pstr1 ∝1 ψ ->
   pstr2 ∝1 ψ ->
   WF_Matrix ψ ->
@@ -220,7 +246,7 @@ Require Import ExtraSpecs.
 
 
 Theorem stabilizer_must_commute: 
-  forall {n: nat} (pstr1 pstr2: PString n) (ψ:  Vector (2^n)),
+  forall {n: nat} (pstr1 pstr2: PauliElement n) (ψ:  Vector (2^n)),
   pstr1 ∝1 ψ ->
   pstr2 ∝1 ψ ->
   fingroup.commute pstr1 pstr2.
@@ -250,7 +276,7 @@ Qed.
 (* TODO This is not so efficient *)
 (* Try using seq.take and drop  *)
 Theorem stb_compose_alt:
-  forall {n m: nat} (pstr1: PString n) (pstr2: PString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
+  forall {n m: nat} (pstr1: PauliElement n) (pstr2: PauliElement m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
   let cpstring := compose_pstring pstr1 pstr2 in
   pstr1 ∝1 ψ1 ->
   pstr2 ∝1 ψ2 ->
@@ -270,7 +296,7 @@ Qed.
 
 
 Lemma stb_addition:
-  forall {n: nat} (pstr: PString n) (ψ1 ψ2:  Vector (2^n)),
+  forall {n: nat} (pstr: PauliElement n) (ψ1 ψ2:  Vector (2^n)),
   pstr ∝1 ψ1 ->
   pstr ∝1 ψ2 ->
   pstr ∝1 (ψ1 .+ ψ2).
@@ -314,7 +340,7 @@ Qed.
 (* but it is more efficient in computing *)
 Theorem stb_compose_alt':
   forall {n m: nat} 
-    (substr1: PString n) (substr2: PString m) (pstr: PString (n + m))
+    (substr1: PauliElement n) (substr2: PauliElement m) (pstr: PauliElement (n + m))
     (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
     (pstr = compose_pstring substr1 substr2) ->
    substr1 ∝1 ψ1 -> substr2 ∝1 ψ2 -> pstr ∝1 (ψ1 ⊗ ψ2).
@@ -382,7 +408,7 @@ the symmetry of stabilizers under certain transformations. *)
 (* Section MoreProps. *)
 
 (* aka anti-stabilizer *)
-Definition flip_sign {n: nat} (pstring: PString n) (psi: Vector (2^n)) :=
+Definition flip_sign {n: nat} (pstring: PauliElement n) (psi: Vector (2^n)) :=
   act_n n psi pstring = -1 .* psi.
 
 (* A fancy symbol for "stabilize" *)
@@ -402,7 +428,7 @@ Check ∣ 1, 0, 1 ⟩: Square 8.
 
 (* two anti-stabilizers combine into a stabilizer under the tensor product *)
 Theorem stb_even_slign_flip:
-  forall {n m: nat} (pstr1: PString n) (pstr2: PString m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
+  forall {n m: nat} (pstr1: PauliElement n) (pstr2: PauliElement m) (ψ1:  Vector (2^n)) (ψ2:  Vector (2^m)),
   let cpstring := compose_pstring pstr1 pstr2 in
   pstr1 ∝-1 ψ1 ->
   pstr2 ∝-1 ψ2 ->
@@ -433,7 +459,7 @@ Proof.
 Qed.
 
 Theorem stb_symm_perm:
-  forall {n: nat} (pstr: PString n) (ψ1 ψ2:  Vector (2^n)),
+  forall {n: nat} (pstr: PauliElement n) (ψ1 ψ2:  Vector (2^n)),
   act_n n ψ1 pstr =  ψ2 ->
   act_n n ψ2 pstr =  ψ1 ->
   pstr ∝1 (ψ1 .+ ψ2).
@@ -453,7 +479,7 @@ Fail Definition stb_s {n: nat} (psi: Vector (2^n)) :=
 
 (* Instead, we can define using Coq subtype  *)
 Definition stb_s {n: nat} (psi: Vector (2^n)) := { 
-  op: PString n | op ∝1 psi \/ exists (a b:PString n), a ∝1 psi /\ b ∝1 psi /\ op = mulg a b 
+  op: PauliElement n | op ∝1 psi \/ exists (a b:PauliElement n), a ∝1 psi /\ b ∝1 psi /\ op = mulg a b 
 }.
 
 Theorem stb_s_correct n:
@@ -470,16 +496,16 @@ Qed.
 
 (* an n-qubit stabilizer group is any subgroup of P^n that is 
 abelian (commutative) and dos not contain -1  *)
-Definition is_stb_set {n} (S: { set PString n }) :=
+Definition is_stb_set {n} (S: { set PauliElement n }) :=
   forall a b, a \in <<S>> -> b \in <<S>> -> mulg a b = mulg b a /\ 
   ~~ (minus_id_png n \in << S >>).
 
-Definition is_stb_set_spec {n} (S: {set PString n}) (v: Vector (2^n)):=
+Definition is_stb_set_spec {n} (S: {set PauliElement n}) (v: Vector (2^n)):=
   forall x, x \in << S >> -> x ∝1 v.
 
 (* TODO: consider make this equivalent *)
 Theorem is_stb_set_correct:
-  forall {n} (S: {set PString n}),
+  forall {n} (S: {set PauliElement n}),
   (exists v, WF_Matrix v /\ is_stb_set_spec S v) <-> is_stb_set S.
 Proof.
   move => n S.
@@ -531,16 +557,16 @@ Section Syndrome.
 (* The number of physical qubits *)
 Variable n: nat.
 (* The generator set *)
-Variable g: {set PString n}.
+Variable g: {set PauliElement n}.
 Hypothesis H: is_stb_set g.
 
-Definition with_1 (pt: PauliTupleBase n): PString n := (One, pt).
+Definition with_1 (pt: PauliTupleBase n): PauliElement n := (One, pt).
 
 (* an detectable error is an error that  *)
 (* note that we usually require the phase of error operator to be 1 *)
 (* Otherwise, it will be Z (negate phase) *)
 Definition detectable (E: PauliTupleBase n) := 
-  exists (pstr: PString n), pstr \in g /\ 
+  exists (pstr: PauliElement n), pstr \in g /\ 
   (mulg pstr (with_1 E) != mulg (with_1 E) pstr).
 
 
@@ -572,8 +598,8 @@ Definition distance_s (d: nat):=
 End Syndrome.
 
 Lemma not_detactable n:
-  forall (E: PauliTupleBase n) (s: {set PString n}),
-  ( exists (pstr: PString n), 
+  forall (E: PauliTupleBase n) (s: {set PauliElement n}),
+  ( exists (pstr: PauliElement n), 
     pstr \in s /\  mulg pstr (with_1 _ E) = mulg (with_1 _ E) pstr)
     -> not (detectable _ s E) 
     .
@@ -581,6 +607,6 @@ Admitted. (* Related to generated group *)
 
 
 Lemma stb_generator {n}:
-  forall (g: { set (PString n) }) (v: Vector (2^n)), 
+  forall (g: { set (PauliElement n) }) (v: Vector (2^n)), 
     (forall x, x \in g -> x ∝1 v) -> forall y, y \in <<g>> -> y ∝1 v.
 Admitted. (* Related to generated group *)

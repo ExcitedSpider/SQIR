@@ -23,10 +23,10 @@ Module FourQubitDetection.
 (* 2. Prove number of detectable errors by showing distance=2 *)
 (* 3. Prove Syndrome Detection *)
 
-Definition zzzz := [p1 Z, Z, Z, Z]: PString 4.
-Definition xxxx := [p1 X, X, X, X]: PString 4.
-Definition iiii := [p1 I, I, I, I]: PString 4.
-Definition yyyy := [p1 Y, Y, Y, Y]: PString 4.
+Definition zzzz := [p1 Z, Z, Z, Z]: PauliElement 4.
+Definition xxxx := [p1 X, X, X, X]: PauliElement 4.
+Definition iiii := [p1 I, I, I, I]: PauliElement 4.
+Definition yyyy := [p1 Y, Y, Y, Y]: PauliElement 4.
 
 (* We can use the stabilizer generator to generate the stabilizer group. *)
 
@@ -52,7 +52,7 @@ Proof.
      apply /group_setP.
      rewrite /=.
      split.
-     -  have: (oneg (PString 4) = id_png 4) by apply /eqP.
+     -  have: (oneg (PauliElement 4) = id_png 4) by apply /eqP.
         move => ->. 
         by rewrite !inE.
       - move => x y.
@@ -206,7 +206,7 @@ Definition E00X1 := apply_n _ L00 Error_X1.
   can be detected by measurment ZZZZ
 *)
 Theorem error_x1_syndrome:
-  (meas_p_to (-C1) zzzz E00X1).
+  (meas_p_to (-C1) (snd zzzz) E00X1).
 Proof.
 (* This proof is still ugly *)
 (* I am thinking speed up the computation of pauli operator application 

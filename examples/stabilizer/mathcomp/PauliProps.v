@@ -791,3 +791,14 @@ Proof.
   by rewrite Mscale_1_l id_pn_int.
 Qed.
 
+Check pn_int.
+
+From mathcomp Require Import seq tuple.
+
+Lemma pn_int_cons:
+  forall {n: nat} (pt: PauliTupleBase n) (p: PauliBase),
+  pn_int [tuple of p::pt] = (p1_int p) ⊗ pn_int pt.
+Proof.
+  rewrite /=  => n pt p.
+  rewrite theadCons.
+Admitted. (* Dependent type issues *)
