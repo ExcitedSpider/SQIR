@@ -156,10 +156,11 @@ Theorem p_ab_gen:
   forall (e: gT), e \in (generated [set a; b]) -> P e.
 Proof.
   move => e He.
-  (* Search (_ \in generated _).
-  Search mem generated. *)
+  (* This is a useful lemma according to freindly online people *)
+  Check gen_prodgP.
   rewrite generated.unlock in He.
 Abort.
+(*  *)
 
 
 End Generator2.
