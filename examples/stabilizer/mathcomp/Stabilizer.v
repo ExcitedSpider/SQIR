@@ -610,3 +610,20 @@ Lemma stb_generator {n}:
   forall (g: { set (PauliElement n) }) (v: Vector (2^n)), 
     (forall x, x \in g -> x ∝1 v) -> forall y, y \in <<g>> -> y ∝1 v.
 Admitted. (* Related to generated group *)
+
+Check kron_mixed_product.
+
+Check ∣ 0, 0 ⟩: Vector 4.
+Check ∣ 0 ⟩.
+
+Lemma pn_int_apply_cons:
+  forall {n} (p: PauliBase) (operator: PauliOperator n)  
+    (head: Vector 2) (tail: Vector (2^(n))),
+  (* A ⊗ B *)
+  pn_int ([tuple of p::operator]) × (head ⊗ tail) = 
+  ((p1_int p) × head) ⊗ ((pn_int operator) × tail).
+Proof.
+  move => n p pt vh vt.
+  rewrite PauliProps.pn_int_cons.
+  by rewrite kron_mixed_product.
+Qed.

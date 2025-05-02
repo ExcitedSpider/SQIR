@@ -221,8 +221,10 @@ Proof.
           repeat rewrite <- kron_assoc by auto with wf_db;
           restore_dims).
   repeat rewrite kron_mixed_product. Qsimpl.
-  autorewrite with ket_db. 
-  solve_matrix.
+  autorewrite with ket_db.
+  replace (((-1) * (-1)) * (-1)) with (RtoC (-1)) by lca.
+  replace (-C1) with (RtoC (-1)) by lca.
+  by [].
 Qed.
 
 End FourQubitDetection.

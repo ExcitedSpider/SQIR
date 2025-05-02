@@ -138,3 +138,14 @@ Proof.
   apply meas_p_to_correct.
   by apply stabilizer_meas_to_1.
 Qed.
+
+Notation "''Meas' P 'on' psi '-->' m " := (meas_p_to m P psi)
+ (at level 8) : form_scope.
+
+(* Example: Measure Z1Z2 on 00 yields 1. *)
+Goal 'Meas [p Z, Z] on ∣ 0, 0 ⟩ --> 1.
+Proof.
+  rewrite /meas_p_to.
+  Qsimpl.
+  autorewrite with ket_db.
+Abort.
