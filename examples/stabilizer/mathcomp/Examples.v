@@ -217,13 +217,12 @@ Proof.
   Qsimpl.
   rewrite /E00X1 /L00 /Error_X1 /apply_n /=.
   Qsimpl.
-  repeat (distribute_plus;
-          repeat rewrite <- kron_assoc by auto with wf_db;
-          restore_dims).
+  rewrite -!kron_assoc; auto with wf_db.
   repeat rewrite kron_mixed_product. Qsimpl.
+  restore_dims.
   autorewrite with ket_db.
-  replace (((-1) * (-1)) * (-1)) with (RtoC (-1)) by lca.
   replace (-C1) with (RtoC (-1)) by lca.
+  replace (((-1) * (-1)) * (-1)) with (RtoC (-1)) by lca.
   by [].
 Qed.
 
