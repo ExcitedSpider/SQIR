@@ -8,11 +8,12 @@ Proof.
   rewrite map_rev.
   rewrite revK.
   by rewrite size_map.
+Qed.
 
 
-Example seq_on_tuple n (t : n.-tuple nat) :
+Example seq_on_tuple' n (t : n.-tuple nat) :
   size (rev [seq 2 * x | x <- rev t]) = size t.
-Proof. by rewrite !size_tuple.
+Proof. by rewrite !size_tuple. Qed.
 
 Definition t1 := [tuple 1; 2].
 Definition t2 := [tuple 3; 4].
@@ -87,6 +88,7 @@ Proof.
   apply mem_gen.
   apply set22.
 Qed.
+
 
 Section NactionDef.
 
