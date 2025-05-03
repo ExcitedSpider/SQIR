@@ -37,3 +37,11 @@ Lemma phase_change_state' n:
   forall (ψ:  Vector n) (c1 c2: C),
   c1 <> c2 -> c1 .* ψ <> c2 .* ψ.
 Admitted.
+
+(* If P^2 = I, all eigenvalues λ of P satisfy λ^2 = 1 *)
+Lemma involutive_eigenvalue n:
+  forall (A: Square (2^n)) (psi: Vector (2^n)) (lambda: C),
+    A × A = I (2^n) ->
+    A × psi = lambda .* psi ->
+    lambda = 1 \/ lambda = -1.
+Admitted.

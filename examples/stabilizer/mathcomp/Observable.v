@@ -4,12 +4,14 @@ Important Definition:
 - "'Meas P on psi --> m" := measuring P on state psi yields m
 *)
 From QuantumLib Require Import Quantum.
-From mathcomp Require Import seq tuple.
+From mathcomp Require Import seq tuple fingroup eqtype.
 From mathcomp Require Import ssreflect ssrbool.
 Require Import PauliGroup.
 Require Import Action.
+Require Import Assumption.
 Require Import Stabilizer.
 Require Import WellForm.
+Require Import PauliProps.
 Open Scope form_scope.
 Set Bullet Behavior "Strict Subproofs".
 
@@ -145,10 +147,68 @@ Qed.
 Notation "''Meas' P 'on' psi '-->' m " := (meas_p_to m P psi)
  (at level 8) : form_scope.
 
+(* this line is required *)
+Import all_pauligroup. 
+
 (* Example: Measure Z1Z2 on 00 yields 1. *)
-Goal 'Meas [p Z, Z] on ∣ 0, 0 ⟩ --> 1.
+Check 'Meas ([p Z, Z]) on ∣ 0, 0 ⟩ --> 1.
+
+Section Eigenvalue. 
+
+Lemma p1_involutive :
+  forall (p: PauliBase), mulg p p = I.
+Proof. by move => p; case p. Qed.
+
+(* 
+  this one should be moved to PauliProps.v
+  However, the apply/eqP does not work there.
+  and I don't know why.
+*)
+Lemma pauli_involutive {n}:
+  forall (op: PauliTupleBase n),
+  (mulg op op) = (id_pn n).
 Proof.
-  rewrite /meas_p_to.
+  move => op.
+  induction n.
+  rewrite tuple0 /id_pn /=. 
+  by apply /eqP.
+  case: op / tupleP => h t.
+  rewrite /mulg /= mult_pn_cons.
+  rewrite /mulg /= in IHn.
+  rewrite IHn.
+  change mult_p1 with (@mulg PauliBase). 
+  rewrite pn_idP.
+  by rewrite p1_involutive.
+Qed.
+
+Lemma get_phase_pn_involutive n:
+  forall (op: PauliTupleBase n),
+  get_phase_pn op op = One.
+Proof.
+  move => op.
+  induction n.
+    by rewrite tuple0; apply /eqP.
+   case: op / tupleP => h t.
+   rewrite get_phase_pn_cons IHn.
+   by case h.
+Qed.
+
+(* Pauli operators *)
+Theorem operator_eigenvalue {n}:
+  forall (op: PauliOperator n) (psi: Vector (2^n)) (lambda: C),
+    applyP psi op = lambda .* psi ->
+    lambda = 1 \/ lambda = -1.
+Proof.
+  move => op psi lambda Happ.
+  rewrite /applyP in Happ.
+  remember (png_int _) as m.
+  apply (involutive_eigenvalue _ m psi).
+  subst.
+  move: (pauli_involutive op).
+  rewrite /mulg /= => H.
   Qsimpl.
-  autorewrite with ket_db.
-Abort.
+  rewrite -pn_int_Mmult H get_phase_pn_involutive PauliProps.id_pn_int //=. 
+  by Qsimpl. by [].
+Qed.
+
+End Eigenvalue.

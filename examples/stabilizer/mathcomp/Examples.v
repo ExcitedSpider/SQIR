@@ -351,7 +351,7 @@ Notation "''Apply' P 'on' psi" := (applyP psi P) (at level 200).
   The measurement result is 1.
   Therefore, if we find any other measurement result, 
   we say the error is _detectable_.
-  For pauli operators, the eigenvalue is always +-1 (TODO: Prove this fact)
+  For pauli operators, the eigenvalue is always +-1 see `operator_eigenvalue` 
   so a error is detectable -> syndrome measurement is -1
 *)
 Definition detectable E := 
