@@ -100,16 +100,20 @@ Qed.
 If a quantum state ψ is stabilized by a Pauli operator p (i.e., p ψ = ψ), 
 then measuring the corresponding observable yields outcome 1 with certainty.
 *)
-Theorem stabilizer_meas_to_1 {n}:
+Theorem stb_meas_to_1 {n}:
   forall (p: PauliOperator n) (psi: Vector (2^n)),
-  (One, p) ∝1 psi -> meas_to 1 (pn_int p) psi.
+  p ∝1 psi <-> meas_to 1 (pn_int p) psi.
 Proof.
-  move => p psi H.
-  rewrite /meas_to.
-  split. apply pn_int_wf.
-  split. apply pauli_hermitian.
-  apply PauliOperator_stb in H.
-  rewrite H. by Qsimpl.
+  split => H.
+  - rewrite /meas_to.
+    split. apply pn_int_wf.
+    split. apply pauli_hermitian.
+    apply PauliOperator_stb in H.
+    rewrite H. by Qsimpl.
+  - move: H. 
+    rewrite /meas_to => [[_ [_ H]]].
+    rewrite /stb /act_n /applyP /=. Qsimpl.
+    rewrite H. by Qsimpl.
 Qed.
 
 (* 
@@ -132,16 +136,6 @@ Proof.
   - move => [_ [_ H]].
     exact H.
 Qed. 
-
-Theorem stabilizer_meas_to_1' {n}:
-  forall (p: PauliOperator n) (psi: Vector (2^n)),
-  (* Maybe make a notation for (One, p) ∝1 psi *)
-  (One, p) ∝1 psi -> meas_p_to 1 p psi.
-Proof.
-  move => p psi H.
-  apply meas_p_to_correct.
-  by apply stabilizer_meas_to_1.
-Qed.
 
 Notation "''Meas' P 'on' psi '-->' m " := (meas_p_to m P psi)
  (at level 8) : form_scope.
