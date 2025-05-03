@@ -35,7 +35,7 @@ Implicit Type (x: Vector (2^dim)).
 
 (* compatibility *)
 Definition act_comp to x := 
-  forall (a b: aT), WF_Matrix x -> to x (mulg b a) = to (to x a) b.
+  forall (a b: aT), to x (mulg b a) = to (to x a) b.
 
 (* identity *)
 Definition act_id to := forall x, WF_Matrix x -> to x (oneg aT) = x.
@@ -126,10 +126,13 @@ Proof.
   }
 Qed.
 
-(* Interestingly, Coq can infer all types that depend on the final one. *)
-Canonical act_1 := (Action _ _ _ _ act_1_is_action).
 
-Locate X.
+Check Action.
+
+(* Coq can infer these that depend on the final one. *)
+Arguments Action {aT D dim act}.
+
+Canonical act_1 := (Action act_1_is_action).
 
 (* Sancheck *)
 Goal act_1 ∣0⟩ (% X) = ∣1⟩.
@@ -149,38 +152,25 @@ Set Bullet Behavior "Strict Subproofs".
 Definition aTsn := [set: PauliTuple n].
 
 
-Fact act_n_is_action:
+Fact applyP_is_action:
   is_action _ aTsn _ applyP.
 Proof.
-  rewrite /is_action /act_id.
+  rewrite /is_action /act_id /=.
   split.
   {
-    (* identity *)
     intros x Hwf.
-    (* TODO: solve dependency issue of PNProps. *)
     rewrite /act_id /applyP id_png_int.
     by rewrite Mmult_1_l.
   }
   {
-    (* compatibility *)
-    intros x.
-    rewrite /act_comp /applyP /= => [[pa ta] [pb tb]] _ _ Hwf.
-    induction n.
-    - rewrite (tuple0 ta) (tuple0 tb) /=.
-      case pa; case pb; simpl; Qsimpl.
-      all: try easy.
-      all: lma'.
-    (* Need to find a way to do decomposition of x *)
-    (* Mathematically, x can be represented by a linear combination *)
-    (* of basic vectors in the Vector space *)
-    (* x = Sum_i alpha_i x_i *)
-    (* where { x_i } is the set of basic vectors *)
-    (* But it's hard to do it in Coq *)
-    - admit.
+    move => x.
+    rewrite /act_comp /= /applyP.
+    move => *.
+    by rewrite -png_int_Mmult Mmult_assoc.
   }
-Admitted. (* Need a lemma to decomposite x = Sum_i alpha_i x_i *)
+Qed.
 
-Canonical act_n := (Action _ _ _ _ act_n_is_action).
+Canonical act_n := (Action applyP_is_action).
 
 (* Had to close here awardly because we don't want n to remain variable *)
 End QuantumActions.
@@ -512,3 +502,18 @@ Lemma applyP_mscale { n: nat }:
   (applyP (a .* st) operator) = 
   a.* (applyP st operator) .
 Proof. move => *. by rewrite /applyP Mscale_mult_dist_r. Qed.
+
+Lemma applyP_comb {n : nat }:
+  forall (op1 op2: PauliTuple n) (st: Vector (2^n)),
+  applyP (applyP st op1) op2 = 
+  applyP st (mulg op2 op1).
+Proof.
+  move: (applyP_is_action n) => [_ H] op1 op2 st.
+  move: (H st) => H1.
+  clear H.
+  rewrite /act_comp /= in H1.
+  move: (H1 op1 op2) => H.
+  clear H1.
+  symmetry. apply H; 
+  by rewrite inE.
+Qed.

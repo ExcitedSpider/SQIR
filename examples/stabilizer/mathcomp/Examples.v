@@ -291,8 +291,11 @@ Notation ErrorOperator := PauliOperator.
 Notation Observable := PauliOperator.
 
 (* Set of single-qubit bit-flip error *)
+Definition X1: PauliOperator 3 := [p X, I, I].
+Definition X2: PauliOperator 3 := [p I, X, I].
+Definition X3: PauliOperator 3 := [p I, I, X].
 Definition BitFlipError: {set ErrorOperator 3 } := 
-  [set ([p X, I, I]), ([p I, X, I]), ([p I, I, X])].
+  [set X1, X2, X3].
 
 (* Syndrome measurement *)
 Definition Z12 := [p Z, Z, I].
@@ -302,6 +305,7 @@ Definition SyndromeMeas: {set Observable 3} :=
 
 (* Simply Goals like (pn_int _ × _) *)
 Ltac SimplApplyPauli := 
+    rewrite ?applyP_plus ?applyP_mscale;
     rewrite ?/meas_p_to ?/applyP ?/png_int ?/pn_int /=;
     Qsimpl;
     repeat (
@@ -346,7 +350,7 @@ Notation "''Apply' P 'on' psi" := (applyP psi P) (at level 200).
 (* Apply any error in BitFlipError, there is at least one Syndrome Measurement
  can detect it *)
 
-Theorem detectable_single_error : forall (α β : C),
+Theorem detectable_bit_flip : forall (α β : C),
   forall (E: ErrorOperator dim),
   E \in BitFlipError ->
   let psi' := 'Apply E on (α .* L0 .+ β .* L1) in
@@ -365,6 +369,22 @@ Proof.
     split. by rewrite !inE eqxx. lma.
   - exists Z23. SimplApplyPauli.
     split. by rewrite !inE eqxx. lma.
+Qed.
+
+
+Definition PhaseFlip0: PauliOperator 3 := [p Z, I, I].
+
+(* This code is unable to detect phase flip *)
+Fact undetectable_phase_flip_0: 
+  forall (α β : C) (M: PauliOperator 3),
+  let psi' := 'Apply PhaseFlip0 on (α .* L0 .+ β .* L1) in
+    M \in SyndromeMeas -> 'Meas M on psi' --> 1.
+Proof.
+  rewrite /= => a b M.
+  (* ssreflect magic *)
+  rewrite !inE => /orP [/eqP -> | /eqP ->].
+  - SimplApplyPauli. lma.
+  - SimplApplyPauli. lma.
 Qed.
 
 
