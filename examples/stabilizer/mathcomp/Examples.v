@@ -236,20 +236,27 @@ Open Scope ucom.
 
 Definition dim:nat := 3.
 
+Variable (α β : C).
+
 Definition encode : base_ucom dim := 
   CNOT 0 1; CNOT 0 2.
 
-Definition L0 := ∣0,0,0⟩.
-Definition L1 := ∣1,1,1⟩.
 
-(* This should be make more generic *)
-Lemma encode_by_component: forall (α β : C) (u: Square (2^dim)),
-  (u) × (∣0⟩ ⊗ ∣0,0⟩) = L0 ->
-  (u) × (∣1⟩ ⊗ ∣0,0⟩) = L1 ->
-  (u) × ((α .* ∣0⟩ .+ β .* ∣1⟩) ⊗ ∣0,0⟩)
-   = α .* L0.+ β .* L1.
+(* The state before encoding, labeled by 'b' *)
+Notation psi_b := ((α .* ∣0⟩ .+ β .* ∣1⟩)).
+
+Definition L0 := ∣0,0,0⟩. (* Logical 0 *)
+Definition L1 := ∣1,1,1⟩. (* Logical 1 *)
+(* The state after encoding *)
+Notation psi := (α .* L0.+ β .* L1).
+
+(* This should be make more generic, but i did not find a good one *)
+Lemma encode_by_component: forall (u: Square (2^dim)),
+  u × (∣0⟩ ⊗ ∣0,0⟩) = L0 ->
+  u × (∣1⟩ ⊗ ∣0,0⟩) = L1 ->
+  u × (psi_b ⊗ ∣0,0⟩) = psi.
 Proof.
-  move => a b H0 H1 H2.
+  move => H0 H1 H2.
   rewrite kron_plus_distr_r Mmult_plus_distr_l.
   rewrite !Mscale_kron_dist_l !Mscale_mult_dist_r.
   by rewrite H1 H2.
@@ -258,11 +265,10 @@ Qed.
 Set Bullet Behavior "Strict Subproofs".
 
 (* The encoding program is correct *)
-Theorem encode_correct : forall (α β : C),
+Theorem encode_correct :
   (uc_eval encode) × ((α .* ∣0⟩ .+ β .* ∣1⟩) ⊗ ∣0,0⟩ )
   = α .* L0 .+ β .* L1.
 Proof.
-  move => a b.
   rewrite /= /L0 /L1.
   apply encode_by_component;
   autorewrite with eval_db; simpl; Qsimpl.
@@ -317,12 +323,11 @@ Ltac SimplApplyPauli :=
     autorewrite with ket_db.
 
 (* Syndrome Measurement Does not change the correct code *)
-Theorem SyndromeMeas_stab :forall (α β : C),
+Theorem SyndromeMeas_stab :
   forall (M: Observable dim),
-  let psi := (α .* L0 .+ β .* L1) in
     M \in SyndromeMeas -> 'Meas M on psi --> 1.
 Proof.
-  move => a b M psi.
+  move => M.
   rewrite !inE => Hm.
   case/orP: Hm => Hm;
   move/eqP: Hm => Hm;
@@ -330,34 +335,43 @@ Proof.
   rewrite !Mmult_plus_distr_l !Mscale_mult_dist_r;
   rewrite /L0 /L1;
   SimplApplyPauli.
-  - by replace (b * (-1) * (-1)) with (b) by lca.
-  - by replace (b * (-1) * (-1)) with (b) by lca.
+  - by replace (β * (-1) * (-1)) with (β) by lca.
+  - by replace (β * (-1) * (-1)) with (β) by lca.
 Qed.
 
-
 Notation I2 := (Matrix.I 2).
-
-(* This seems not useful *)
-(* Lemma apply_basic { n: nat }:
-  forall ph (pt: PauliOperator n) (sh: Vector 2) (st: Vector (2^n)),
-  let operator : PauliOperator (n.+1) := [tuple of ph :: pt] in
-  (applyP (n.+1) (sh ⊗ st) operator) = 
-  (apply_1 sh ph) ⊗ applyP _ st pt.
-Admitted. *)
   
 (* Notation for applying an operator on a state *)
 Notation "''Apply' P 'on' psi" := (applyP psi P) (at level 200).
 (* Apply any error in BitFlipError, there is at least one Syndrome Measurement
  can detect it *)
 
-Theorem detectable_bit_flip : forall (α β : C),
+(* 
+  SyndromeMeas_stab shows that for all codewords,
+  The measurement result is 1.
+  Therefore, if we find any other measurement result, 
+  we say the error is _detectable_.
+  For pauli operators, the eigenvalue is always +-1 (TODO: Prove this fact)
+  so a error is detectable -> syndrome measurement is -1
+*)
+Definition detectable E := 
+  let psi' := 'Apply E on psi in
+    exists M,  M \in SyndromeMeas /\ 'Meas M on psi' --> -1.
+
+(* Undetectable is that the error state has the same measurement
+  as the codespace
+  There is an implicit requirement that E should be non-trivial (not I)
+*)
+Definition undetectable E := 
+  let psi' := 'Apply E on psi in
+    forall M,  M \in SyndromeMeas -> 'Meas M on psi' --> 1.
+
+Theorem detectable_bit_flip :
   forall (E: ErrorOperator dim),
-  E \in BitFlipError ->
-  let psi' := 'Apply E on (α .* L0 .+ β .* L1) in
-    exists M,( M \in SyndromeMeas /\ 'Meas M on psi' --> -1).
+  E \in BitFlipError -> detectable E.
 Proof.
-  move => a b E.
-  rewrite !inE -orb_assoc => memE.
+  move => E.
+  rewrite !inE -orb_assoc /detectable => memE.
   case/or3P: memE => HE;
   move/eqP: HE => HE;
   rewrite /=; subst;
@@ -371,21 +385,17 @@ Proof.
     split. by rewrite !inE eqxx. lma.
 Qed.
 
-
 Definition PhaseFlip0: PauliOperator 3 := [p Z, I, I].
 
 (* This code is unable to detect phase flip *)
 Fact undetectable_phase_flip_0: 
-  forall (α β : C) (M: PauliOperator 3),
-  let psi' := 'Apply PhaseFlip0 on (α .* L0 .+ β .* L1) in
-    M \in SyndromeMeas -> 'Meas M on psi' --> 1.
+  undetectable PhaseFlip0.
 Proof.
-  rewrite /= => a b M.
+  rewrite /undetectable /= => M.
   (* ssreflect magic *)
   rewrite !inE => /orP [/eqP -> | /eqP ->].
   - SimplApplyPauli. lma.
   - SimplApplyPauli. lma.
 Qed.
-
 
 End ThreeQubitCorrectionCode.
