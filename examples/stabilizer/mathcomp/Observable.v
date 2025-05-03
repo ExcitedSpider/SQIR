@@ -1,3 +1,8 @@
+(* 
+This file describe pauli operator as quantum observale.
+Important Definition:
+- "'Meas P on psi --> m" := measuring P on state psi yields m
+*)
 From QuantumLib Require Import Quantum.
 From mathcomp Require Import seq tuple.
 From mathcomp Require Import ssreflect ssrbool.
