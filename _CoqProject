@@ -5,4 +5,3 @@
 -R _build/default/VOQC VOQC
 -R _build/default/examples/stabilizer/mathcomp StabilizerMC
 -R _build/default/examples/stabilizer/barebone Stabilizer
--R _build/default/VOQC VOQC

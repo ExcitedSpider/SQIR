@@ -28,10 +28,9 @@ Definition meas_to {n} (m: C) (M: Square (2^n)) (psi: Vector (2^n)) :=
 (* 
   This section verifies the meas_to is consistent 
   with quantumlib measurement definition .
-  Quantumlib only defines measurement in computational basis
-  and if we want to achieve verification, we neeed to map
-  the state and result to computational basis based on 
-  the observable. 
+  Quantumlib only defines measurement in computational basis and if we 
+  want to achieve verification, we neeed to map the state and result to 
+  computational basis based on the observable.  
 
   Which i find very hard to do because:
   - it involves a lot of theories in linear algebra, which we don't have in quantumlib
@@ -42,10 +41,18 @@ Definition meas_to {n} (m: C) (M: Square (2^n)) (psi: Vector (2^n)) :=
   - Quantumlib does not have sparse measurement primitive.
     e.g. for 4 qubits, only measure the 2nd and the 4th 
       (related to observables like Z2Z4 )
-  
-  And also, i find it is not our focus of research. 
+  - And also, i find it is not our focus of research. 
+
+  A better way of doing this is that, make a more fundamental definition of 
+  measurement. 
+  For example, we can have _Quantum Measurement Postulate_[1], and then use this
+  definition to verify both measurements are correct, that is, they are be proved
+  by the postulate.
 
   It will be more suitable to be considerred as a foundational change to quantumlib.
+
+  [1]: Nielsen, M. A., & Chuang, I. L. (2010). Quantum computation and quantum information. 
+  Cambridge university press. Page 87.
 *)
 Section QuantumLibMeas.
 
