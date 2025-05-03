@@ -3,6 +3,8 @@ This file includes the formalization of
   - quantum group action.
   - phase negation
   - commutativity of Pauli operators
+Key definitions:
+  - applyP := apply a pauli operator
 *)
 
 (* Refer to https://math-comp.github.io/htmldoc_2_2_0/mathcomp.fingroup.action.html *)
@@ -139,7 +141,7 @@ Qed.
 
 Variable (n: nat).
 
-Definition apply_n : Vector (2^n) -> PauliTuple n -> Vector (2^n) :=
+Definition applyP : Vector (2^n) -> PauliTuple n -> Vector (2^n) :=
   fun psi op => (png_int op) × psi.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -148,7 +150,7 @@ Definition aTsn := [set: PauliTuple n].
 
 
 Fact act_n_is_action:
-  is_action _ aTsn _ apply_n.
+  is_action _ aTsn _ applyP.
 Proof.
   rewrite /is_action /act_id.
   split.
@@ -156,13 +158,13 @@ Proof.
     (* identity *)
     intros x Hwf.
     (* TODO: solve dependency issue of PNProps. *)
-    rewrite /act_id /apply_n id_png_int.
+    rewrite /act_id /applyP id_png_int.
     by rewrite Mmult_1_l.
   }
   {
     (* compatibility *)
     intros x.
-    rewrite /act_comp /apply_n /= => [[pa ta] [pb tb]] _ _ Hwf.
+    rewrite /act_comp /applyP /= => [[pa ta] [pb tb]] _ _ Hwf.
     induction n.
     - rewrite (tuple0 ta) (tuple0 tb) /=.
       case pa; case pb; simpl; Qsimpl.
@@ -183,7 +185,7 @@ Canonical act_n := (Action _ _ _ _ act_n_is_action).
 (* Had to close here awardly because we don't want n to remain variable *)
 End QuantumActions.
 
-(* Arguments apply_n {n}. *)
+Arguments applyP {n}.
 
 
 
@@ -192,7 +194,7 @@ Definition xxx: PauliTuple 3 := (One, [tuple of X :: X :: X :: []]).
 (* sancheck *)
 Goal act_n _ ∣0,0,0⟩ xxx = ∣1,1,1⟩.
 Proof.
-  rewrite /act_n /apply_n /=.
+  rewrite /act_n /applyP /=.
   Qsimpl.
   lma'.
 Qed.
@@ -499,14 +501,14 @@ Qed.
 End Commutativity.
 
 
-Lemma apply_plus { n: nat }:
+Lemma applyP_plus { n: nat }:
   forall (operator: PauliTuple n) (st1 st2: Vector (2^n)),
-  (apply_n _ (st1 .+ st2) operator) = 
-  (apply_n _ st1 operator) .+ (apply_n _ st2 operator).
-Proof. move => *; by rewrite /apply_n Mmult_plus_distr_l. Qed.
+  (applyP (st1 .+ st2) operator) = 
+  (applyP st1 operator) .+ (applyP st2 operator).
+Proof. move => *; by rewrite /applyP Mmult_plus_distr_l. Qed.
 
-Lemma apply_phase { n: nat }:
+Lemma applyP_mscale { n: nat }:
   forall (operator: PauliTuple n) (st: Vector (2^n)) (a: C),
-  (apply_n _ (a .* st) operator) = 
-  a.* (apply_n _ st operator) .
-Proof. move => *. by rewrite /apply_n Mscale_mult_dist_r. Qed.
+  (applyP (a .* st) operator) = 
+  a.* (applyP st operator) .
+Proof. move => *. by rewrite /applyP Mscale_mult_dist_r. Qed.

@@ -68,10 +68,10 @@ Qed.
 
 Lemma apply_n_wf n:
   forall (op: PauliTuple n) (v: Vector (2^n)),
-  WF_Matrix v -> WF_Matrix (apply_n _ v op).
+  WF_Matrix v -> WF_Matrix (applyP v op).
 Proof.
   move => op v.
-  rewrite /apply_n.
+  rewrite /applyP.
   apply WF_mult.
   apply png_int_wf.
 Qed.

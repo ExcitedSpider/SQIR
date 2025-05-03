@@ -147,11 +147,11 @@ Lemma xxxx_stb:
 Proof.
   rewrite /xxxx.
 apply stb_symm_perm.
-  - rewrite /act_n /apply_n /=. Qsimpl.  
+  - rewrite /act_n /applyP /=. Qsimpl.  
     repeat rewrite kron_assoc;  auto with wf_db.
     rewrite kron_mixed_product; Qsimpl.
     by rewrite !MmultX0.
-  - rewrite /act_n /apply_n /=. Qsimpl.  
+  - rewrite /act_n /applyP /=. Qsimpl.  
     repeat rewrite kron_assoc;  auto with wf_db.
     rewrite kron_mixed_product; Qsimpl.
     by rewrite !MmultX1.
@@ -199,7 +199,7 @@ Qed.
 
 Definition Error_X1 := [p1 X, I, I, I].
 
-Definition E00X1 := apply_n _ L00 Error_X1.
+Definition E00X1 := applyP L00 Error_X1.
 
 (* 
   An X1 error (single bit-flip on first qubit)
@@ -215,7 +215,7 @@ Proof.
 *)
   rewrite /meas_p_to /zzzz /=.
   Qsimpl.
-  rewrite /E00X1 /L00 /Error_X1 /apply_n /=.
+  rewrite /E00X1 /L00 /Error_X1 /applyP /=.
   Qsimpl.
   rewrite -!kron_assoc; auto with wf_db.
   repeat rewrite kron_mixed_product. Qsimpl.
@@ -302,7 +302,7 @@ Definition SyndromeMeas: {set Observable 3} :=
 
 (* Simply Goals like (pn_int _ × _) *)
 Ltac SimplApplyPauli := 
-    rewrite ?/meas_p_to ?/apply_n ?/png_int ?/pn_int /=;
+    rewrite ?/meas_p_to ?/applyP ?/png_int ?/pn_int /=;
     Qsimpl;
     repeat (
       distribute_plus;
@@ -337,12 +337,12 @@ Notation I2 := (Matrix.I 2).
 (* Lemma apply_basic { n: nat }:
   forall ph (pt: PauliOperator n) (sh: Vector 2) (st: Vector (2^n)),
   let operator : PauliOperator (n.+1) := [tuple of ph :: pt] in
-  (apply_n (n.+1) (sh ⊗ st) operator) = 
-  (apply_1 sh ph) ⊗ apply_n _ st pt.
+  (applyP (n.+1) (sh ⊗ st) operator) = 
+  (apply_1 sh ph) ⊗ applyP _ st pt.
 Admitted. *)
   
 (* Notation for applying an operator on a state *)
-Notation "''Apply' P 'on' psi" := (apply_n _ psi P) (at level 200).
+Notation "''Apply' P 'on' psi" := (applyP psi P) (at level 200).
 (* Apply any error in BitFlipError, there is at least one Syndrome Measurement
  can detect it *)
 
@@ -357,7 +357,7 @@ Proof.
   case/or3P: memE => HE;
   move/eqP: HE => HE;
   rewrite /=; subst;
-  rewrite !apply_plus !apply_phase.
+  rewrite !applyP_plus !applyP_mscale.
   - exists Z12. SimplApplyPauli.
     split. by rewrite !inE eqxx. lma.
   (* Z23 also works for X2 Error *)

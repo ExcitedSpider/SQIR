@@ -41,7 +41,7 @@ Lemma PauliOperator_stb {n}:
   forall (p: PauliOperator n) (psi: Vector (2^n)),
   p ∝1 psi -> (pn_int p) × psi = psi. 
 Proof.
-  rewrite /stb /= /Action.apply_n /png_int /= => p psi.
+  rewrite /stb /= /Action.applyP /png_int /= => p psi.
   move => H.
   rewrite Mscale_1_l in H.
   by exact H.
@@ -50,7 +50,7 @@ Qed.
 End HermitianOperator.
 
 Ltac simpl_stbn := 
-  rewrite /stb /act_n /apply_n /=;
+  rewrite /stb /act_n /applyP /=;
   Qsimpl;
   try (lma'; try (apply apply_n_wf);auto with wf_db).
 
@@ -97,7 +97,7 @@ Lemma stb_id:
   WF_Matrix psi -> [p1 I] ∝1 psi.
 Proof.
   move => psi H.
-  rewrite /stb /act_n /= /apply_n.
+  rewrite /stb /act_n /= /applyP.
   rewrite /png_int /pn_int /=.
   Qsimpl; auto.
 Qed.
@@ -127,7 +127,7 @@ Proof.
   intros n pstr ψ Hwf Hstb.
   unfold stb in *.
   rewrite <- Hstb at 1.
-  rewrite /act_n /apply_n /=.
+  rewrite /act_n /applyP /=.
   rewrite <- Mmult_assoc.
   (* Search png_int "×". *)
   rewrite png_int_Mmult.
@@ -138,7 +138,7 @@ Qed.
 Print Vector.
 
 Ltac unfold_stb := 
-rewrite /stb /act_n /apply_n /=.
+rewrite /stb /act_n /applyP /=.
 
 
 
@@ -425,7 +425,7 @@ Proof.
   restore_dims.
   rewrite H0.
   rewrite kron_mixed_product'; try by auto.
-  move: H1 H2. rewrite /flip_sign /act_n /= /apply_n => H1 H2.
+  move: H1 H2. rewrite /flip_sign /act_n /= /applyP => H1 H2.
   rewrite H1 H2 Mscale_kron_dist_r.
   restore_dims. 
   rewrite Mscale_kron_dist_l.
@@ -450,7 +450,7 @@ Theorem stb_symm_perm:
   pstr ∝1 (ψ1 .+ ψ2).
 Proof.
   unfold_stb => n pstr psi1 psi2 H0 H1.
-  rewrite /stb /act_n /= /apply_n /=.
+  rewrite /stb /act_n /= /applyP /=.
   rewrite Mmult_plus_distr_l.
   rewrite H0 H1.
   by rewrite Mplus_comm.
