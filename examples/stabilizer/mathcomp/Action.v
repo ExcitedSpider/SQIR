@@ -63,6 +63,25 @@ Require Import PauliGroup.
 Require Import PauliProps.
 
 Import all_pauligroup.
+(* An n-qubit Pauli operator is a Hermitian element of the 
+n-qubit Pauli group P_n *)
+(* One detail to notice is that we only consider phase +1.
+Technically, phase -1 also makes an element of P_n hermitian
+But they are not very useful *)
+Notation PauliOperator := PauliTupleBase.
+
+(* We use PauliElement to refer to all elements in pauli groups
+  note that not all elements are pauli operator
+  for phase in {-i, i}, these elements are not hermitian
+*)
+Notation PauliElement := PauliTuple.
+
+Definition PauliOpToElem {n} (x : PauliOperator n) : PauliElement n := (One,x).
+Coercion PauliOpToElem : PauliOperator >-> PauliElement.
+
+Definition PauliBaseToOp (x : PauliBase) : PauliOp := (One, x).
+Coercion PauliBaseToOp : PauliBase >-> PauliOp.
+
 
 Section QuantumActions. 
 
@@ -164,6 +183,9 @@ Canonical act_n := (Action _ _ _ _ act_n_is_action).
 (* Had to close here awardly because we don't want n to remain variable *)
 End QuantumActions.
 
+(* Arguments apply_n {n}. *)
+
+
 
 Definition xxx: PauliTuple 3 := (One, [tuple of X :: X :: X :: []]).
 
@@ -233,8 +255,6 @@ Require Import ExtraSpecs.
 From mathcomp Require Import eqtype ssrbool.
 Require Import Classical.
 
-Notation PString := PauliTuple.
-
 Section Prerequisites.
 
 Lemma pair_inj:
@@ -281,11 +301,11 @@ End Prerequisites.
 Section Negation.
 
 
-Definition minus_id_png n : (PString n) := (NOne , id_pn n).
+Definition minus_id_png n : (PauliTuple n) := (NOne , id_pn n).
 
 Notation "[-1]" := minus_id_png.
 
-Definition neg_png n (p: PString n) : PString n :=
+Definition neg_png n (p: PauliTuple n) : PauliTuple n :=
   match p with
   | (phase, tuple) => (mulg NOne phase, tuple)
   end.
@@ -323,7 +343,7 @@ Proof.
 Qed. 
 
 Lemma pstring_neg_implies: 
-forall n (x y: PString n), 
+forall n (x y: PauliTuple n), 
   png_int x = -C1 .* png_int y -> x = mult_png (NOne, id_pn n) y.
 Proof.
   move => n [px tx] [py ty].
@@ -415,7 +435,7 @@ Qed.
 (* TODO: the definition of anticommute is too loose. *)
 (* find something in mathcomp to make it work *)
 Theorem pstring_bicommute n:
-  forall (x y: PString n), commute_at mulg x y \/ 
+  forall (x y: PauliTuple n), commute_at mulg x y \/ 
   png_int (mulg x y) = -C1 .* png_int (mulg y x).
 Proof.
   induction n.
@@ -477,3 +497,16 @@ Proof.
 Qed.
 
 End Commutativity.
+
+
+Lemma apply_plus { n: nat }:
+  forall (operator: PauliTuple n) (st1 st2: Vector (2^n)),
+  (apply_n _ (st1 .+ st2) operator) = 
+  (apply_n _ st1 operator) .+ (apply_n _ st2 operator).
+Proof. move => *; by rewrite /apply_n Mmult_plus_distr_l. Qed.
+
+Lemma apply_phase { n: nat }:
+  forall (operator: PauliTuple n) (st: Vector (2^n)) (a: C),
+  (apply_n _ (a .* st) operator) = 
+  a.* (apply_n _ st operator) .
+Proof. move => *. by rewrite /apply_n Mscale_mult_dist_r. Qed.

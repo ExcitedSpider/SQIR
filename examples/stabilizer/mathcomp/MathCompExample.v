@@ -164,3 +164,11 @@ Abort.
 
 
 End Generator2.
+
+Definition plainSet := [set true; false].
+
+Definition setx := [set (x, y) | x in plainSet, y in plainSet & x != y].
+
+Lemma example_setx:
+  (true, false) \in setx.
+Abort.

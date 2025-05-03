@@ -2,6 +2,7 @@ From QuantumLib Require Import Quantum.
 From mathcomp Require Import seq tuple.
 From mathcomp Require Import ssreflect ssrbool.
 Require Import PauliGroup.
+Require Import Action.
 Require Import Stabilizer.
 Require Import WellForm.
 Open Scope form_scope.

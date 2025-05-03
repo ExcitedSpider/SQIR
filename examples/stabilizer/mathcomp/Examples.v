@@ -294,19 +294,22 @@ Notation Observable := PauliOperator.
 Definition BitFlipError: {set ErrorOperator 3 } := 
   [set ([p X, I, I]), ([p I, X, I]), ([p I, I, X])].
 
+(* Syndrome measurement *)
+Definition Z12 := [p Z, Z, I].
+Definition Z23 := [p I, Z, Z].
 Definition SyndromeMeas: {set Observable 3} :=
-  [set ([p Z, Z, I]), ([p I, Z, Z])].
+  [set Z12, Z23].
 
 (* Simply Goals like (pn_int _ × _) *)
 Ltac SimplApplyPauli := 
-    rewrite ?/png_int ?/pn_int /=;
+    rewrite ?/meas_p_to ?/apply_n ?/png_int ?/pn_int /=;
     Qsimpl;
     repeat (
       distribute_plus;
       repeat rewrite <- kron_assoc by auto with wf_db;
       restore_dims
     );
-    rewrite !kron_mixed_product; Qsimpl;
+    rewrite ?Mmult_plus_distr_l ?kron_mixed_product; Qsimpl;
     autorewrite with ket_db.
 
 (* Syndrome Measurement Does not change the correct code *)
@@ -327,16 +330,42 @@ Proof.
   - by replace (b * (-1) * (-1)) with (b) by lca.
 Qed.
 
+
+Notation I2 := (Matrix.I 2).
+
+(* This seems not useful *)
+(* Lemma apply_basic { n: nat }:
+  forall ph (pt: PauliOperator n) (sh: Vector 2) (st: Vector (2^n)),
+  let operator : PauliOperator (n.+1) := [tuple of ph :: pt] in
+  (apply_n (n.+1) (sh ⊗ st) operator) = 
+  (apply_1 sh ph) ⊗ apply_n _ st pt.
+Admitted. *)
+  
 (* Notation for applying an operator on a state *)
 Notation "''Apply' P 'on' psi" := (apply_n _ psi P) (at level 200).
+(* Apply any error in BitFlipError, there is at least one Syndrome Measurement
+ can detect it *)
 
-(* Apply any error in BitFlipError, there is at least one SyndromeMeas can detect it *)
-Theorem measure_m1_on_error : forall (α β : C),
-  forall (E: ErrorOperator dim) (M: Observable dim),
+Theorem detectable_single_error : forall (α β : C),
+  forall (E: ErrorOperator dim),
   E \in BitFlipError ->
   let psi' := 'Apply E on (α .* L0 .+ β .* L1) in
-    exists M, M \in SyndromeMeas -> 'Meas M on psi' --> -1.
-Abort.
+    exists M,( M \in SyndromeMeas /\ 'Meas M on psi' --> -1).
+Proof.
+  move => a b E.
+  rewrite !inE -orb_assoc => memE.
+  case/or3P: memE => HE;
+  move/eqP: HE => HE;
+  rewrite /=; subst;
+  rewrite !apply_plus !apply_phase.
+  - exists Z12. SimplApplyPauli.
+    split. by rewrite !inE eqxx. lma.
+  (* Z23 also works for X2 Error *)
+  - exists Z12. SimplApplyPauli.
+    split. by rewrite !inE eqxx. lma.
+  - exists Z23. SimplApplyPauli.
+    split. by rewrite !inE eqxx. lma.
+Qed.
 
 
 End ThreeQubitCorrectionCode.

@@ -17,21 +17,6 @@ Require Import Assumption.
 
 Require Import Operations.
 
-(* An n-qubit Pauli operator is a Hermitian element of the 
-n-qubit Pauli group P_n *)
-(* One detail to notice is that we only consider phase +1.
-Technically, phase -1 also makes an element of P_n hermitian
-But they are not very useful *)
-Notation PauliOperator := PauliTupleBase.
-
-(* We use PauliElement to refer to all elements in pauli groups
-  note that not all elements are pauli operator
-  for phase in {-i, i}, these elements are not hermitian
-*)
-Notation PauliElement := PauliTuple.
-
-Definition PauliOpToElem {n} (x : PauliOperator n) : PauliElement n := (One,x).
-Coercion PauliOpToElem : PauliOperator >-> PauliElement.
 
 Notation "[ 'p' x1 , .. , xn ]" := [tuple of x1 :: .. [:: xn] ..] (at level 200): form_scope.
 
