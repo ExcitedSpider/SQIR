@@ -507,7 +507,7 @@ Proof.
     (* - move: (stb_group_no_m1 a b v Ha Hb) => H0.
       apply H0 in Hwf; clear H0. *)
     - unfold minus_id_png.
-      Search (_ \in << _ >>).
+      (* Search (_ \in << _ >>). *)
       rewrite /negb.
       move: (stb_group_no_m1 a b v Has Hbs Hwf) => H0.
       (* Ha : a  \in <<S>>

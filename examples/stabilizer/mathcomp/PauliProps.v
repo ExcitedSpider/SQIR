@@ -791,8 +791,6 @@ Proof.
   by rewrite Mscale_1_l id_pn_int.
 Qed.
 
-Check pn_int.
-
 From mathcomp Require Import seq tuple.
 
 Lemma pn_int_cons:
@@ -801,4 +799,8 @@ Lemma pn_int_cons:
 Proof.
   rewrite /=  => n pt p.
   rewrite theadCons.
-Admitted. (* Dependent type issues *)
+  apply kron_simplify.
+  - by easy.
+  - apply f_equal .
+    by rewrite beheadCons.
+Qed.
