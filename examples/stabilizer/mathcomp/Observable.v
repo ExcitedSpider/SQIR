@@ -229,7 +229,14 @@ Section BornRule.
 
 Variable (n: nat).
 
-Definition spectrum_decomposition 
+(*  (The Born Rule) Let Pm be a projector. Upon measuring a state ψ, 
+the probability of successful measurment is ⟨ ψ | Pm | ψ ⟩. *)
+Definition prob_meas_projector 
+  (proj: Projector) (psi: Vector (2^n)) :=
+ inner_product psi ((proj.(P)) × psi).
+
+(* https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix *)
+Definition spectrual_decomposition 
 (M: Square (2^n)) (list: nat -> prod C (Projector)) (k:nat):=
   M = big_sum (
     fun k => 
@@ -238,12 +245,6 @@ Definition spectrum_decomposition
       let projector := snd item in
       m .* projector.(P) 
   ) k.
-
-(*  (The Born Rule) Let Pm be a projector. Upon measuring a state ψ, 
-the probability of successful measurment is ⟨ ψ | Pm | ψ ⟩. *)
-Definition prob_meas_projector 
-  (proj: Projector) (psi: Vector (2^n)) :=
- inner_product psi ((proj.(P)) × psi).
 
 (* This one attempt to verify the correctness of `meas_to m M psi` *)
 (* If `meas_to m M psi` holds,  *)
@@ -263,7 +264,7 @@ Definition prob_meas_projector
 Theorem meas_to_correct':
   forall m (M: Square (2^n)) (psi: Vector (2^n)) setProj k,
   meas_to m M psi ->
-  spectrum_decomposition M setProj k ->
+  spectrual_decomposition M setProj k ->
   exists (i: nat), le i k /\ fst (setProj i) = m /\
     let P := (snd (setProj i)) in
     prob_meas_projector P psi = 1.
