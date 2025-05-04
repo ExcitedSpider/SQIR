@@ -239,7 +239,8 @@ Definition dim:nat := 3.
 
 Variable (α β : C).
 
-Hypothesis norm_obligation: α * α + β * β = 1.
+(* A quantum state (α .* ∣0⟩ .+ β .* ∣1⟩) is required to have norm = 1 *)
+Hypothesis norm_obligation: α^* * α + β^* * β = 1.
 
 Definition encode : base_ucom dim := 
   CNOT 0 1; CNOT 0 2.
@@ -442,7 +443,7 @@ Lemma meas_p_to_unique {n}:
   forall (phi: Vector (2^n)) (ob: Observable n)  (r q: C),
   'Meas ob on phi --> r ->
   'Meas ob on phi --> q ->
-  phi <> Zero ->
+  phi <> Zero -> 
   r = q.
 Proof.
   move => phi ob r q.
@@ -469,13 +470,43 @@ Proof.
   by SimplApplyPauli.
 Qed.
 
+(* This one is apparent on paper but rediculusly hard  *)
+(* in coq *)
 Lemma psi_x23_nonzero:
   psi_x23 <> Zero.
-Admitted.
+Proof.
+  rewrite psi_x23_simpl => F.
+  apply inner_product_zero_iff_zero in F.
+  contradict F.
+  rewrite !inner_product_plus_l !inner_product_plus_r.
+  rewrite !inner_product_scale_l !inner_product_scale_r.
+  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
+  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
+  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
+  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
+  simpl. Csimpl.
+  rewrite norm_obligation.
+  by nonzero.
+  by auto with wf_db.
+Qed.
 
 Lemma psi_x1_nonzero:
   psi_x1 <> Zero.
-Admitted.
+Proof.
+  rewrite psi_x1_simpl => F.
+  apply inner_product_zero_iff_zero in F.
+  contradict F.
+  rewrite !inner_product_plus_l !inner_product_plus_r.
+  rewrite !inner_product_scale_l !inner_product_scale_r.
+  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
+  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
+  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
+  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
+  simpl. Csimpl.
+  rewrite norm_obligation.
+  by nonzero.
+  by auto with wf_db.
+Qed.
 
 (* the measurement of error {X1} and {X2, X3} are the same *)
 (* Therefore, this code cannot determine which error has happened *)
@@ -503,7 +534,7 @@ Proof.
       apply psi_x1_nonzero.
     }
     subst. SimplApplyPauli. lma.
-Abort.
+Qed.
 
 
 
