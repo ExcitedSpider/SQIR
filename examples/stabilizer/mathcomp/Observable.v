@@ -75,7 +75,7 @@ Theorem meas_to_correct:
   meas_to m M psi ->
   proj_basis M psi = psi' ->
   probability_of_outcome psi' (proj_result M m) = 1.
-Admitted.
+Abort.
 
 End QuantumLibMeas.
 
@@ -230,12 +230,14 @@ Section BornRule.
 Variable (n: nat).
 
 (*  (The Born Rule) Let Pm be a projector. Upon measuring a state ψ, 
-the probability of successful measurment is ⟨ ψ | Pm | ψ ⟩. *)
+the probability of successful measurment is ⟨ ψ | Pm | ψ ⟩. 
+https://en.wikipedia.org/wiki/Born_rule *)
 Definition prob_meas_projector 
   (proj: Projector) (psi: Vector (2^n)) :=
  inner_product psi ((proj.(P)) × psi).
 
-(* https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix *)
+(* Nielsen, M. A., & Chuang, I. L. (2010). Quantum computation and quantum
+ information. Cambridge university press. Page 72. *)
 Definition spectrual_decomposition 
 (M: Square (2^n)) (list: nat -> prod C (Projector)) (k:nat):=
   M = big_sum (
