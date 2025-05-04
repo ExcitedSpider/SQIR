@@ -16,6 +16,7 @@ Require Import PauliGroup.
 Import all_pauligroup.
 Require Import WellForm.
 Require Import Observable.
+Require Import Assumption.
 
 Module FourQubitDetection.
 
@@ -238,6 +239,8 @@ Definition dim:nat := 3.
 
 Variable (α β : C).
 
+Hypothesis norm_obligation: α * α + β * β = 1.
+
 Definition encode : base_ucom dim := 
   CNOT 0 1; CNOT 0 2.
 
@@ -439,9 +442,15 @@ Lemma meas_p_to_unique {n}:
   forall (phi: Vector (2^n)) (ob: Observable n)  (r q: C),
   'Meas ob on phi --> r ->
   'Meas ob on phi --> q ->
+  phi <> Zero ->
   r = q.
-Admitted.
-
+Proof.
+  move => phi ob r q.
+  rewrite /meas_p_to => H1 H2 Hnt.
+  have: (pn_int ob × phi = pn_int ob × phi) by auto.
+  rewrite {1}H1 H2.
+  by apply Mscale_cancel.
+Qed.
 
 Lemma psi_x23_simpl:
   psi_x23 = α .* ∣0,1,1⟩ .+ β .* ∣1,0,0⟩.
@@ -453,11 +462,20 @@ Proof.
   by SimplApplyPauli.
 Qed.
 
+
 Lemma psi_x1_simpl:
   psi_x1 = α .* ∣1,0,0⟩ .+ β .* ∣0,1,1⟩.
 Proof.
   by SimplApplyPauli.
 Qed.
+
+Lemma psi_x23_nonzero:
+  psi_x23 <> Zero.
+Admitted.
+
+Lemma psi_x1_nonzero:
+  psi_x1 <> Zero.
+Admitted.
 
 (* the measurement of error {X1} and {X2, X3} are the same *)
 (* Therefore, this code cannot determine which error has happened *)
@@ -473,15 +491,19 @@ Proof.
     {
       apply (meas_p_to_unique _ _ _ _ H). 
       SimplApplyPauli. lma.
+      rewrite -psi_x1_simpl.
+      apply psi_x1_nonzero.
     }
     subst. SimplApplyPauli. lma.
   - assert (m = 1).
     {
       apply (meas_p_to_unique _ _ _ _ H). 
       SimplApplyPauli. lma.
+      rewrite -psi_x1_simpl.
+      apply psi_x1_nonzero.
     }
     subst. SimplApplyPauli. lma.
-Qed.
+Abort.
 
 
 

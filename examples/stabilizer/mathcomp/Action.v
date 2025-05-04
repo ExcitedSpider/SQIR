@@ -519,9 +519,10 @@ Qed.
 
 Lemma applyP_id {n: nat} :
   forall (st: Vector (2^n)),
+  WF_Matrix st ->
   applyP st (@oneg (PauliTuple n)) = st.
 Proof.
   move: (applyP_is_action n) => [H _] st.
   rewrite /act_id /= in H.
   apply H.
-Abort.
+Qed.
