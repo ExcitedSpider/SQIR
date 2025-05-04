@@ -219,3 +219,54 @@ Proof.
 Qed.
 
 End Eigenvalue.
+
+Require Import ExtraSpecs.
+
+(* The Born rule is a postulate of quantum mechanics that gives 
+the probability that a measurement of a quantum system will yield 
+a given result. *)
+Section BornRule.
+
+Variable (n: nat).
+
+Definition spectrum_decomposition 
+(M: Square (2^n)) (list: nat -> prod C (Projector)) (k:nat):=
+  M = big_sum (
+    fun k => 
+      let item := list k in 
+      let m := fst item in
+      let projector := snd item in
+      m .* projector.(P) 
+  ) k.
+
+(*  (The Born Rule) Let Pm be a projector. Upon measuring a state ψ, 
+the probability of successful measurment is ⟨ ψ | Pm | ψ ⟩. *)
+Definition prob_meas_projector 
+  (proj: Projector) (psi: Vector (2^n)) :=
+ inner_product psi ((proj.(P)) × psi).
+
+(* This one attempt to verify the correctness of `meas_to m M psi` *)
+(* If `meas_to m M psi` holds,  *)
+(* Then the component (m, P) in the specturm decomposition of M *)
+(* have the property that *)
+(* The probability of getting the result m by measuring P is 1 *)
+(* That is, it verifies meas_to is the sufficient condition that *)
+(* Measuring P on psi yeilds m with certainty *)
+(* However it does look horrible and i don't want to attempt *)
+(* The main problem is that `big_sum` from quantumlib restricts *)
+(* the set of specturm components to be represented in nat -> matrix.  *)
+(* And this makes expression of member relation extremely complicated *)
+(* It would be better to use some advanced representation like {set} *)
+(* from mathcomp. *)
+(* But this requires a major refactor of quantumlib, which is out of the scope *)
+(* of our research *)
+Theorem meas_to_correct':
+  forall m (M: Square (2^n)) (psi: Vector (2^n)) setProj k,
+  meas_to m M psi ->
+  spectrum_decomposition M setProj k ->
+  exists (i: nat), le i k /\ fst (setProj i) = m /\
+    let P := (snd (setProj i)) in
+    prob_meas_projector P psi = 1.
+Abort.
+
+End BornRule.

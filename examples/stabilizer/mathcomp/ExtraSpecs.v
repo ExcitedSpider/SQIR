@@ -30,4 +30,15 @@ Definition commuteg (T: finGroupType) :=
 
 End commutative.
 
+From QuantumLib Require Import Quantum.
 
+Section Projector.
+
+
+Record Projector {n:nat} := ProjectorBuild {
+  P : Square (2^n)
+; is_hermitian : P† = P
+; is_idempotent : P × P = P 
+}.
+
+End Projector.
