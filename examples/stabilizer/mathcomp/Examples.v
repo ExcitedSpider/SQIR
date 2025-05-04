@@ -432,4 +432,57 @@ Fact flip0_recover_by_x0:
   (recover_by X1 X1).
 Proof. by rewrite /recover_by; apply /eqP. Qed.
 
+Notation psi_x1 := ('Apply X1 on psi).
+Notation psi_x23 := ('Apply X3 on ('Apply X2 on psi)).
+
+Lemma meas_p_to_unique {n}:
+  forall (phi: Vector (2^n)) (ob: Observable n)  (r q: C),
+  'Meas ob on phi --> r ->
+  'Meas ob on phi --> q ->
+  r = q.
+Admitted.
+
+
+Lemma psi_x23_simpl:
+  psi_x23 = α .* ∣0,1,1⟩ .+ β .* ∣1,0,0⟩.
+Proof.
+  rewrite applyP_comb.
+  assert (mult_png X3 X2 = ([p1 I, X, X])).
+   by apply /eqP.
+  rewrite /mulg /= H.
+  by SimplApplyPauli.
+Qed.
+
+Lemma psi_x1_simpl:
+  psi_x1 = α .* ∣1,0,0⟩ .+ β .* ∣0,1,1⟩.
+Proof.
+  by SimplApplyPauli.
+Qed.
+
+(* the measurement of error {X1} and {X2, X3} are the same *)
+(* Therefore, this code cannot determine which error has happened *)
+Theorem indistinguishable_meas:
+  forall (M: Observable dim) m, M \in SyndromeMeas -> 
+    ('Meas M on psi_x1 --> m) -> ('Meas M on psi_x23 --> m)
+  .
+Proof.
+  move => M m.
+  rewrite psi_x23_simpl psi_x1_simpl.
+  rewrite !inE => /orP [/eqP -> | /eqP ->] H.
+  - assert (m = -1).
+    {
+      apply (meas_p_to_unique _ _ _ _ H). 
+      SimplApplyPauli. lma.
+    }
+    subst. SimplApplyPauli. lma.
+  - assert (m = 1).
+    {
+      apply (meas_p_to_unique _ _ _ _ H). 
+      SimplApplyPauli. lma.
+    }
+    subst. SimplApplyPauli. lma.
+Qed.
+
+
+
 End ThreeQubitCorrectionCode.
