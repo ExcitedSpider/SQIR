@@ -245,10 +245,15 @@ Definition encode : base_ucom dim :=
 (* The state before encoding, labeled by 'b' *)
 Notation psi_b := ((α .* ∣0⟩ .+ β .* ∣1⟩)).
 
-Definition L0 := ∣0,0,0⟩. (* Logical 0 *)
-Definition L1 := ∣1,1,1⟩. (* Logical 1 *)
+Notation L0 := ∣0,0,0⟩. (* Logical 0 *)
+Notation L1 := ∣1,1,1⟩. (* Logical 1 *)
 (* The state after encoding *)
-Notation psi := (α .* L0.+ β .* L1).
+Definition psi: Vector (2^dim) := (α .* L0.+ β .* L1).
+
+
+Lemma psi_WF:
+  WF_Matrix psi.
+Proof. by rewrite /psi; auto with wf_db. Qed.
 
 (* This should be make more generic, but i did not find a good one *)
 Lemma encode_by_component: forall (u: Square (2^dim)),
@@ -333,7 +338,7 @@ Proof.
   move/eqP: Hm => Hm;
   rewrite Hm /meas_p_to /psi;
   rewrite !Mmult_plus_distr_l !Mscale_mult_dist_r;
-  rewrite /L0 /L1;
+  rewrite /psi;
   SimplApplyPauli.
   - by replace (β * (-1) * (-1)) with (β) by lca.
   - by replace (β * (-1) * (-1)) with (β) by lca.
@@ -406,19 +411,25 @@ Qed.
 Definition recover_by {n} (E: ErrorOperator n) (R: PauliOperator n) :=
   mult_png R E = (@oneg (PauliElement n)).
 
-(* Apply the error then apply recover, the original state psi is presented *)
-Theorem recoverable_correct {n} :
-  forall (E: ErrorOperator n) (R: PauliOperator n),
+(* Apply the error then the recover, the original state is restored *)
+Theorem recover_by_correct {n} :
+  forall (E: ErrorOperator n) (R: PauliOperator n) (phi: Vector (2^n)),
+  WF_Matrix phi ->
   recover_by E R -> 
-  let psi' := 'Apply E on psi in
-  ('Apply R on psi') = psi.
+  let phi' := 'Apply E on phi in
+  ('Apply R on phi') = phi.
 Proof.
-  rewrite /= => E R.
+  rewrite /= => E R psi Hwf.
   rewrite /recover_by.
-  rewrite applyP_comb /mulg  /=.
+  rewrite applyP_comb /= /mulg /=.
   move => ->.
   rewrite /oneg /=.
-  apply applyP_id.
+  apply (applyP_id).
+  apply Hwf.
 Qed.
+
+Fact flip0_recover_by_x0:
+  (recover_by X1 X1).
+Proof. by rewrite /recover_by; apply /eqP. Qed.
 
 End ThreeQubitCorrectionCode.
