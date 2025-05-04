@@ -387,6 +387,10 @@ Qed.
 
 Definition PhaseFlip0: PauliOperator 3 := [p Z, I, I].
 
+Fact phase_flip_error_effect:
+  ('Apply PhaseFlip0 on psi) = (α .* L0 .+ -1 * β .* L1).
+Proof. by rewrite /L0 /L1; SimplApplyPauli; lma. Qed.
+
 (* This code is unable to detect phase flip *)
 Fact undetectable_phase_flip_0: 
   undetectable PhaseFlip0.
@@ -396,6 +400,25 @@ Proof.
   rewrite !inE => /orP [/eqP -> | /eqP ->].
   - SimplApplyPauli. lma.
   - SimplApplyPauli. lma.
+Qed.
+
+(* error E can be recovered by R *)
+Definition recover_by {n} (E: ErrorOperator n) (R: PauliOperator n) :=
+  mult_png R E = (@oneg (PauliElement n)).
+
+(* Apply the error then apply recover, the original state psi is presented *)
+Theorem recoverable_correct {n} :
+  forall (E: ErrorOperator n) (R: PauliOperator n),
+  recover_by E R -> 
+  let psi' := 'Apply E on psi in
+  ('Apply R on psi') = psi.
+Proof.
+  rewrite /= => E R.
+  rewrite /recover_by.
+  rewrite applyP_comb /mulg  /=.
+  move => ->.
+  rewrite /oneg /=.
+  apply applyP_id.
 Qed.
 
 End ThreeQubitCorrectionCode.
