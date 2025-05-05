@@ -3,7 +3,6 @@
 Require Import QuantumLib.Quantum.
 Require Import Coq.Lists.List.
 From mathcomp Require Import finset.
-
 (* 
   TODO: This is apparent but actually hard to prove
   As QuantumLib does not provide any lemmas about inequality
@@ -23,4 +22,8 @@ Admitted.
 Lemma Mscale_cancel:
   forall {n m : nat} (c1 c2 : C) (A: Matrix n m),
   A <> (@Zero n m) ->  c1 .* A = c2 .* A -> c1 = c2.
+Admitted.
+
+(* 1 is not -1 *)
+Lemma C1_neq_mC1: C1 <> -C1.
 Admitted.

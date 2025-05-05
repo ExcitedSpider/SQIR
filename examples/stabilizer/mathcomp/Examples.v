@@ -230,19 +230,7 @@ Qed.
 End FourQubitDetection.
 
 Require Export SQIR.UnitaryOps.
-
-(* Simply Goals like (pn_int _ × _) *)
-Ltac SimplApplyPauli := 
-    rewrite ?applyP_plus ?applyP_mscale;
-    rewrite ?/meas_p_to ?/applyP ?/png_int ?/pn_int /=;
-    Qsimpl;
-    repeat (
-      distribute_plus;
-      repeat rewrite <- kron_assoc by auto with wf_db;
-      restore_dims
-    );
-    rewrite ?Mmult_plus_distr_l ?kron_mixed_product; Qsimpl;
-    autorewrite with ket_db.
+Require Import QECC.
 
 Module BitFlip311.
 
@@ -310,7 +298,6 @@ Qed.
 
 Require Import PauliGroup.
 
-
 Notation "[ 'set' a1 , a2 , .. , an ]" := (setU .. (a1 |: [set a2]) .. [set an]) (at level 200): form_scope.
 
 Definition setexample := [set true, false, true ].
@@ -336,10 +323,8 @@ Theorem SyndromeMeas_stab :
     M \in SyndromeMeas -> 'Meas M on psi --> 1.
 Proof.
   move => M.
-  rewrite !inE => Hm.
-  case/orP: Hm => Hm;
-  move/eqP: Hm => Hm;
-  rewrite Hm /meas_p_to /psi;
+  rewrite !inE => [/orP [/eqP ->| /eqP ->]];
+  rewrite /meas_p_to /psi;
   rewrite !Mmult_plus_distr_l !Mscale_mult_dist_r;
   rewrite /psi;
   SimplApplyPauli.
@@ -349,35 +334,21 @@ Qed.
 
 Notation I2 := (Matrix.I 2).
   
-(* Notation for applying an operator on a state *)
-Notation "''Apply' P 'on' psi" := (applyP psi P) (at level 200).
 (* Apply any error in BitFlipError, there is at least one Syndrome Measurement
  can detect it *)
 
-(* 
-  SyndromeMeas_stab shows that for all codewords,
-  The measurement result is 1.
-  Therefore, if we find any other measurement result, 
-  we say the error is _detectable_.
-  For pauli operators, the eigenvalue is always +-1 see `operator_eigenvalue` 
-  so a error is detectable -> syndrome measurement is -1
-*)
-Definition detectable E := 
-  let psi' := 'Apply E on psi in
-    exists M,  M \in SyndromeMeas /\ 'Meas M on psi' --> -1.
-
-(* Undetectable is that the error state has the same measurement
-  as the codespace
-  There is an implicit requirement that E should be non-trivial (not I)
-*)
-Definition undetectable E := 
-  let psi' := 'Apply E on psi in
-    forall M,  M \in SyndromeMeas -> 'Meas M on psi' --> 1.
-
-Theorem detectable_bit_flip :
-  forall (E: ErrorOperator dim),
-  E \in BitFlipError -> detectable E.
+Theorem obs_be_stabiliser_i :
+  obs_be_stabiliser SyndromeMeas psi.
 Proof.
+  rewrite /obs_be_stabiliser => M Mmem.
+    rewrite stb_meas_p_to_1.
+    by apply SyndromeMeas_stab.
+Qed.
+
+Theorem errors_detectable_i :
+  errors_detectable SyndromeMeas BitFlipError psi.
+Proof.
+  rewrite /errors_detectable.
   move => E.
   rewrite !inE -orb_assoc /detectable => memE.
   case/or3P: memE => HE;
@@ -393,67 +364,28 @@ Proof.
     split. by rewrite !inE eqxx. lma.
 Qed.
 
+Fact flip0_recover_by_x0:
+  (recover_by X1 X1).
+Proof. by rewrite /recover_by; apply /eqP. Qed.
+
+Definition BitFlipCode := MkECC 3 psi SyndromeMeas BitFlipError obs_be_stabiliser_i errors_detectable_i.
+
 Definition PhaseFlip0: PauliOperator 3 := [p Z, I, I].
 
 Fact phase_flip_error_effect:
   ('Apply PhaseFlip0 on psi) = (α .* L0 .+ -1 * β .* L1).
+
 Proof. by rewrite /L0 /L1; SimplApplyPauli; lma. Qed.
 
 (* This code is unable to detect phase flip *)
 Fact undetectable_phase_flip_0: 
-  undetectable PhaseFlip0.
+  undetectable BitFlipCode PhaseFlip0.
 Proof.
   rewrite /undetectable /= => M.
   (* ssreflect magic *)
   rewrite !inE => /orP [/eqP -> | /eqP ->].
   - SimplApplyPauli. lma.
   - SimplApplyPauli. lma.
-Qed.
-
-(* error E can be recovered by R *)
-Definition recover_by {n} (E: ErrorOperator n) (R: PauliOperator n) :=
-  mult_png R E = (@oneg (PauliElement n)).
-
-(* Apply the error then the recover, the original state is restored *)
-Theorem recover_by_correct {n} :
-  forall (E: ErrorOperator n) (R: PauliOperator n) (phi: Vector (2^n)),
-  WF_Matrix phi ->
-  recover_by E R -> 
-  let phi' := 'Apply E on phi in
-  ('Apply R on phi') = phi.
-Proof.
-  rewrite /= => E R psi Hwf.
-  rewrite /recover_by.
-  rewrite applyP_comb /= /mulg /=.
-  move => ->.
-  rewrite /oneg /=.
-  apply (applyP_id).
-  apply Hwf.
-Qed.
-
-Fact flip0_recover_by_x0:
-  (recover_by X1 X1).
-Proof. by rewrite /recover_by; apply /eqP. Qed.
-
-Notation psi_x1 := ('Apply X1 on psi).
-Notation psi_x23 := ('Apply X3 on ('Apply X2 on psi)).
-
-
-Lemma psi_x23_simpl:
-  psi_x23 = α .* ∣0,1,1⟩ .+ β .* ∣1,0,0⟩.
-Proof.
-  rewrite applyP_comb.
-  assert (mult_png X3 X2 = ([p1 I, X, X])).
-   by apply /eqP.
-  rewrite /mulg /= H.
-  by SimplApplyPauli.
-Qed.
-
-
-Lemma psi_x1_simpl:
-  psi_x1 = α .* ∣1,0,0⟩ .+ β .* ∣0,1,1⟩.
-Proof.
-  by SimplApplyPauli.
 Qed.
 
 (* If two basic states are identical, inner producr is 1 *)
@@ -469,27 +401,12 @@ Ltac simplify_inner_product :=
   end.
 
 
-(* This one is apparent on paper but rediculusly hard  *)
-(* in coq *)
-Lemma psi_x23_nonzero:
-  psi_x23 <> Zero.
-Proof.
-  rewrite psi_x23_simpl => F.
-  apply inner_product_zero_iff_zero in F.
-  contradict F.
-  rewrite !inner_product_plus_l !inner_product_plus_r;
-  rewrite !inner_product_scale_l !inner_product_scale_r.
-  simplify_inner_product.
-  Csimpl.
-  rewrite norm_obligation.
-  by nonzero.
-  by auto with wf_db.
-Qed.
+Definition X23 : PauliOperator 3 := mulg X2 X3.
 
-Lemma psi_x1_nonzero:
-  psi_x1 <> Zero.
+Lemma state_nonzero:
+  α .* ∣ 1, 0, 0 ⟩ .+ β .* ∣ 0, 1, 1 ⟩ <> Zero.
 Proof.
-  rewrite psi_x1_simpl => F.
+  move => F.
   apply inner_product_zero_iff_zero in F.
   contradict F.
   rewrite !inner_product_plus_l !inner_product_plus_r.
@@ -501,32 +418,32 @@ Proof.
   by auto with wf_db.
 Qed.
 
-(* the measurement of error {X1} and {X2, X3} are the same *)
-(* Therefore, this code cannot determine which error has happened *)
+(* X1 and X23 are indistinguishable errors to this code *)
 Theorem indistinguishable_errors:
-  forall (M: Observable dim) m, M \in SyndromeMeas -> 
-    ('Meas M on psi_x1 --> m) -> ('Meas M on psi_x23 --> m)
-  .
+  indistinguishable BitFlipCode
+  X1 X23.
 Proof.
   move => M m.
-  rewrite psi_x23_simpl psi_x1_simpl.
+  simpl.
+  assert (Hx1: ('Apply X1 on psi) = (α .* ∣1,0,0⟩ .+ β .* ∣0,1,1⟩)). {
+    by SimplApplyPauli.
+  }
+  rewrite Hx1; clear Hx1.
+  
+  assert (Hx1: ('Apply X23 on psi) = (α .* ∣0,1,1⟩ .+ β .* ∣1,0,0⟩)). {
+    by SimplApplyPauli.
+  }
+  rewrite Hx1; clear Hx1.
+  move: m.
   rewrite !inE => /orP [/eqP -> | /eqP ->] H.
-  - assert (m = -1).
-    {
-      apply (meas_p_to_unique _ _ _ _ H). 
-      SimplApplyPauli. lma.
-      rewrite -psi_x1_simpl.
-      apply psi_x1_nonzero.
-    }
-    subst. SimplApplyPauli. lma.
-  - assert (m = 1).
-    {
-      apply (meas_p_to_unique _ _ _ _ H). 
-      SimplApplyPauli. lma.
-      rewrite -psi_x1_simpl.
-      apply psi_x1_nonzero.
-    }
-    subst. SimplApplyPauli. lma.
+  - SimplApplyPauli. lma.
+  - contradict H => F.
+    apply C1_neq_mC1.
+    apply (meas_p_to_unique (α .* ∣ 1, 0, 0 ⟩ .+ β .* ∣ 0, 1, 1 ⟩) Z23).
+    + SimplApplyPauli; lma.
+    + move: F. replace (RtoC (-1)) with (-C1) by lca. 
+      auto.
+    + apply state_nonzero.
 Qed.
 
 End T.
@@ -536,8 +453,6 @@ End BitFlip311.
 Module PhaseFlip311.
 
 Section T.
-(* 
-Check BitFlip311.L0. *)
 
 Open Scope ucom.
 
@@ -674,11 +589,6 @@ Definition Z2: PauliOperator 3 := [p I, Z, I].
 Definition Z3: PauliOperator 3 := [p I, I, Z].
 Definition PhaseFlipError: {set ErrorOperator 3 } := 
   [set Z1, Z2, Z3].
-
-
-(* Theorem detectable_phase_flip :
-  forall (E: ErrorOperator dim),
-  E \in PhaseFlipError -> detectable E. *)
 
 End T.
 
