@@ -115,7 +115,9 @@ Definition undetectable (ecc: ErrorCorrectionCode) E :=
 (* 
 Two errors are indistinguishable when all syndrome measurment
 yields the same result
-Maybe i should enforce E1 to be in the correctable error set
+TODO: enforce E1 to be in the correctable error set
+And derive distance of codewords based on the minimul weight of 
+indistinguishable errors.
 *)
 Definition indistinguishable (ecc: ErrorCorrectionCode) E1 E2 :=
   forall M, M \in ecc.(obs) -> 

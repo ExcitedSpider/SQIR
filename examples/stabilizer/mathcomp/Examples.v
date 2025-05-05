@@ -234,7 +234,7 @@ Require Import QECC.
 
 Module BitFlip311.
 
-Section T.
+Section VarScope.
 
 Open Scope ucom.
 
@@ -446,13 +446,13 @@ Proof.
     + apply state_nonzero.
 Qed.
 
-End T.
+End VarScope.
 
 End BitFlip311.
 
 Module PhaseFlip311.
 
-Section T.
+Section VarScope.
 
 Open Scope ucom.
 
@@ -556,7 +556,7 @@ Proof.
 Qed.
 
 (* This one i'm tring to compare it stb is more easy to prove *)
-Corollary meas_stabliser :
+(* Corollary meas_stabliser :
   forall (M: Observable dim), M \in SyndromeMeas -> 
     M ∝1 psi.
 Proof.
@@ -565,19 +565,18 @@ Proof.
   rewrite /X12 /psi. 
   apply stb_addition; apply stb_scale;
    unfold_stb; Qsimpl; SimplApplyPauli.
-  - by rewrite ?MmultXMi ?MmultXPl.
+  - by rewrite ?MmultXMi ?MmultXPl; lma.
   - by rewrite ?MmultXMi ?MmultXPl; lma.
 
   apply stb_addition; apply stb_scale;
    unfold_stb; Qsimpl; SimplApplyPauli.
   - by rewrite ?MmultXMi ?MmultXPl; lma.
   - by rewrite ?MmultXMi ?MmultXPl; lma.
-Qed.
+Qed. *)
 
 (* In fact there is an easier proof *)
-Corollary meas_stabliser' :
-  forall (M: Observable dim), M \in SyndromeMeas -> 
-    M ∝1 psi.
+Corollary obs_be_stabiliser_i :
+  obs_be_stabiliser SyndromeMeas psi.
 Proof.
   move => M.
   rewrite stb_meas_p_to_1.
@@ -590,6 +589,18 @@ Definition Z3: PauliOperator 3 := [p I, I, Z].
 Definition PhaseFlipError: {set ErrorOperator 3 } := 
   [set Z1, Z2, Z3].
 
-End T.
+Theorem errors_detectable_i:
+  errors_detectable SyndromeMeas PhaseFlipError psi.
+Admitted.
+
+Definition PhaseFlipCode := MkECC 3 psi SyndromeMeas PhaseFlipError obs_be_stabiliser_i errors_detectable_i.
+
+Definition BitFlip0: PauliOperator 3:= [p X, I, I].
+
+Theorem undetectable_bitflip:
+ undetectable PhaseFlipCode BitFlip0.
+Admitted.
+
+End VarScope.
 
 End PhaseFlip311.
