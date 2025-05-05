@@ -273,3 +273,23 @@ Theorem meas_to_correct':
 Abort.
 
 End BornRule.
+
+
+(* Notation Just for readability *)
+Notation ErrorOperator := PauliOperator.
+Notation Observable := PauliOperator.
+
+Lemma meas_p_to_unique {n}:
+  forall (phi: Vector (2^n)) (ob: Observable n)  (r q: C),
+  'Meas ob on phi --> r ->
+  'Meas ob on phi --> q ->
+  phi <> Zero -> 
+  r = q.
+Proof.
+  move => phi ob r q.
+  rewrite /meas_p_to => H1 H2 Hnt.
+  have: (pn_int ob × phi = pn_int ob × phi) by auto.
+  rewrite {1}H1 H2.
+  by apply Mscale_cancel.
+Qed.
+

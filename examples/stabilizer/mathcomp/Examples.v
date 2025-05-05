@@ -231,7 +231,9 @@ End FourQubitDetection.
 
 Require Export SQIR.UnitaryOps.
 
-Section ThreeQubitCorrectionCode.
+Module BitFlip311.
+
+Section T.
 
 Open Scope ucom.
 
@@ -253,7 +255,6 @@ Notation L0 := ∣0,0,0⟩. (* Logical 0 *)
 Notation L1 := ∣1,1,1⟩. (* Logical 1 *)
 (* The state after encoding *)
 Definition psi: Vector (2^dim) := (α .* L0.+ β .* L1).
-
 
 Lemma psi_WF:
   WF_Matrix psi.
@@ -301,9 +302,6 @@ Notation "[ 'set' a1 , a2 , .. , an ]" := (setU .. (a1 |: [set a2]) .. [set an])
 
 Definition setexample := [set true, false, true ].
 
-(* Notation Just for readability *)
-Notation ErrorOperator := PauliOperator.
-Notation Observable := PauliOperator.
 
 (* Set of single-qubit bit-flip error *)
 Definition X1: PauliOperator 3 := [p X, I, I].
@@ -439,19 +437,6 @@ Proof. by rewrite /recover_by; apply /eqP. Qed.
 Notation psi_x1 := ('Apply X1 on psi).
 Notation psi_x23 := ('Apply X3 on ('Apply X2 on psi)).
 
-Lemma meas_p_to_unique {n}:
-  forall (phi: Vector (2^n)) (ob: Observable n)  (r q: C),
-  'Meas ob on phi --> r ->
-  'Meas ob on phi --> q ->
-  phi <> Zero -> 
-  r = q.
-Proof.
-  move => phi ob r q.
-  rewrite /meas_p_to => H1 H2 Hnt.
-  have: (pn_int ob × phi = pn_int ob × phi) by auto.
-  rewrite {1}H1 H2.
-  by apply Mscale_cancel.
-Qed.
 
 Lemma psi_x23_simpl:
   psi_x23 = α .* ∣0,1,1⟩ .+ β .* ∣1,0,0⟩.
@@ -470,6 +455,19 @@ Proof.
   by SimplApplyPauli.
 Qed.
 
+(* If two basic states are identical, inner producr is 1 *)
+(* Else 0 *)
+Ltac simplify_inner_product :=
+  repeat match goal with
+  | |- context[⟨ ?v, ?v ⟩] =>
+      let H := fresh in
+      assert (H: ⟨ v, v ⟩ = 1)   by lca; rewrite H; clear H
+  | |- context[⟨ ?v1, ?v2 ⟩] =>
+      let H := fresh in
+      assert (H: ⟨ v1, v2 ⟩ = 0) by lca; rewrite H; clear H
+  end.
+
+
 (* This one is apparent on paper but rediculusly hard  *)
 (* in coq *)
 Lemma psi_x23_nonzero:
@@ -478,13 +476,10 @@ Proof.
   rewrite psi_x23_simpl => F.
   apply inner_product_zero_iff_zero in F.
   contradict F.
-  rewrite !inner_product_plus_l !inner_product_plus_r.
+  rewrite !inner_product_plus_l !inner_product_plus_r;
   rewrite !inner_product_scale_l !inner_product_scale_r.
-  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
-  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
-  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
-  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
-  simpl. Csimpl.
+  simplify_inner_product.
+  Csimpl.
   rewrite norm_obligation.
   by nonzero.
   by auto with wf_db.
@@ -498,11 +493,8 @@ Proof.
   contradict F.
   rewrite !inner_product_plus_l !inner_product_plus_r.
   rewrite !inner_product_scale_l !inner_product_scale_r.
-  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
-  assert (H0: ⟨ ∣ 0, 1, 1 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
-  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 0, 1, 1 ⟩ ⟩ = 0) by lca; rewrite H0; clear H0.
-  assert (H0: ⟨ ∣ 1, 0, 0 ⟩, ∣ 1, 0, 0 ⟩ ⟩ = 1) by lca; rewrite H0; clear H0.
-  simpl. Csimpl.
+  simplify_inner_product.
+  Csimpl.
   rewrite norm_obligation.
   by nonzero.
   by auto with wf_db.
@@ -510,7 +502,7 @@ Qed.
 
 (* the measurement of error {X1} and {X2, X3} are the same *)
 (* Therefore, this code cannot determine which error has happened *)
-Theorem indistinguishable_meas:
+Theorem indistinguishable_errors:
   forall (M: Observable dim) m, M \in SyndromeMeas -> 
     ('Meas M on psi_x1 --> m) -> ('Meas M on psi_x23 --> m)
   .
@@ -536,6 +528,107 @@ Proof.
     subst. SimplApplyPauli. lma.
 Qed.
 
+End T.
 
+End BitFlip311.
 
-End ThreeQubitCorrectionCode.
+Module PhaseFlip311.
+
+Section T.
+(* 
+Check BitFlip311.L0. *)
+
+Open Scope ucom.
+
+Definition dim:nat := 3.
+
+Variable (α β : C).
+
+Hypothesis norm_obligation: α^* * α + β^* * β = 1.
+
+Definition basis_change_x: base_ucom dim :=
+  H 0; H 1; H 2.
+
+Definition encode : base_ucom dim := 
+  BitFlip311.encode;
+  basis_change_x.
+
+(* The state before encoding, labeled by 'b' *)
+Notation psi_b := ((α .* ∣0⟩ .+ β .* ∣1⟩)).
+
+Notation L0 := (∣+⟩ ⊗ ∣+⟩ ⊗ ∣+⟩). (* Logical 0 *)
+Notation L1 := (∣-⟩ ⊗ ∣-⟩ ⊗ ∣-⟩). (* Logical 1 *)
+
+Definition psi: Vector (2^dim) := (α .* L0.+ β .* L1).
+
+Notation "H^⊗3" := (hadamard ⊗ hadamard ⊗ hadamard).
+
+(* Let's prove program `encode` change psi_b to psi *)
+
+(* get the unitary semantics of basis change circuit *)
+Lemma basis_change_unitary:
+  (uc_eval basis_change_x) = H^⊗3.
+Proof.
+  rewrite /basis_change_x.
+  simpl.
+  autorewrite with eval_db; Qsimpl; simpl.
+  replace (I 4) with (I 2 ⊗ I 2) by apply id_kron.
+  restore_dims.
+  rewrite -kron_assoc; auto with wf_db.
+  by repeat rewrite kron_mixed_product; Qsimpl.
+Qed.
+
+Lemma basis_change_state:
+  forall (subprog: base_ucom dim) (encoded_b: Vector (2^dim)),
+  (uc_eval subprog) × (psi_b ⊗ ∣0,0⟩) = encoded_b ->
+  (uc_eval (subprog; basis_change_x)) × (psi_b ⊗ ∣0,0⟩) = H^⊗3 × encoded_b.
+Proof.
+  move => subprog encoded_b H.
+  replace 
+    (uc_eval (subprog; basis_change_x))
+    with ((uc_eval basis_change_x) × (uc_eval subprog))
+    by easy.
+  by rewrite Mmult_assoc H basis_change_unitary.
+Qed.
+
+Notation bit_flip_code := (α .* ∣0,0,0⟩ .+ β .* ∣1,1,1⟩).
+
+(* use privious two lemmas to help us verify this *)
+Theorem encode_correct:
+  (uc_eval encode) × (psi_b ⊗ ∣0,0⟩) = psi.
+Proof.
+  rewrite /encode.
+  assert (Hr: psi = H^⊗3 × bit_flip_code).
+  {
+    rewrite /psi Mmult_plus_distr_l !Mscale_mult_dist_r.
+    rewrite !kron_mixed_product !H0_spec !H1_spec.
+    replace (/ √ 2 .* ∣ 0 ⟩ .+   / √ 2 .* ∣ 1 ⟩) with ∣+⟩ by solve_matrix.
+    replace (/ √ 2 .* ∣ 0 ⟩ .+ - / √ 2 .* ∣ 1 ⟩) with ∣-⟩ by solve_matrix.
+    easy.
+  }
+  rewrite Hr. clear Hr.
+  apply basis_change_state.
+  apply BitFlip311.encode_correct.
+Qed.
+
+(* TODO let's talk about how stabiliser will change *)
+
+(* Theorem SyndromeMeas_stab :
+  forall (M: Observable dim),
+    M \in SyndromeMeas -> 'Meas M on psi --> 1.
+Proof.
+  move => M.
+  rewrite !inE => Hm.
+  case/orP: Hm => Hm;
+  move/eqP: Hm => Hm;
+  rewrite Hm /meas_p_to /psi;
+  rewrite !Mmult_plus_distr_l !Mscale_mult_dist_r;
+  rewrite /psi;
+  SimplApplyPauli.
+  - by replace (β * (-1) * (-1)) with (β) by lca.
+  - by replace (β * (-1) * (-1)) with (β) by lca.
+Qed. *)
+
+End T.
+
+End PhaseFlip311.
