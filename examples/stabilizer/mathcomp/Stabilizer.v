@@ -34,6 +34,9 @@ Definition stb {n:nat} (pstring: PauliElement n) (psi: Vector (2^n)):=
 (* A fancy symbol for "stabilize" *)
 Notation "pstring ∝1 ψ" := (stb pstring ψ) (at level 50).
 
+Definition stb_1 (p: PauliBase) (psi: Vector 2) :=
+  act_1 psi (One, p) = psi.
+
 (* TODO: Move to stabiliser.v *)
 Section HermitianOperator.
 
@@ -290,6 +293,34 @@ Proof.
   (* Search (_ × (_ .+ _) ). *)
   rewrite Mmult_plus_distr_l.
   by rewrite H0 H1.
+Qed.
+
+Lemma stb_scale: 
+  forall {n: nat} (pstr: PauliElement n) (ψ:  Vector (2^n)) (phase: C),
+  pstr ∝1 ψ ->
+  pstr ∝1 (phase .* ψ).
+Proof.
+  move => n pstr psi s.
+  unfold_stb.
+  rewrite Mscale_mult_dist_r.
+  by move => ->.
+Qed.
+
+Lemma stb_cons:
+  forall {n: nat} (pstr: PauliTupleBase n) (hp: PauliBase) (hv: Vector 2) (tv:  Vector (2^n)),
+  pstr ∝1 tv ->
+  stb_1 hp hv ->
+  (One, [tuple of hp::pstr]) ∝1 (hv ⊗ tv).
+Proof.
+  move => n pstr hp hv tv.
+  unfold_stb.
+  Qsimpl.
+  rewrite theadCons beheadCons.
+  rewrite kron_mixed_product'; try auto.
+  rewrite /stb_1 /act_1 /= /apply_1 /=; Qsimpl.
+  move => H1 H2.
+  rewrite H2.
+  apply kron_simplify; auto.
 Qed.
 
 Ltac normalize_kron_notation :=

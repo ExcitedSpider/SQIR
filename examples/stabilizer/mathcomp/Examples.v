@@ -231,6 +231,19 @@ End FourQubitDetection.
 
 Require Export SQIR.UnitaryOps.
 
+(* Simply Goals like (pn_int _ × _) *)
+Ltac SimplApplyPauli := 
+    rewrite ?applyP_plus ?applyP_mscale;
+    rewrite ?/meas_p_to ?/applyP ?/png_int ?/pn_int /=;
+    Qsimpl;
+    repeat (
+      distribute_plus;
+      repeat rewrite <- kron_assoc by auto with wf_db;
+      restore_dims
+    );
+    rewrite ?Mmult_plus_distr_l ?kron_mixed_product; Qsimpl;
+    autorewrite with ket_db.
+
 Module BitFlip311.
 
 Section T.
@@ -316,18 +329,6 @@ Definition Z23 := [p I, Z, Z].
 Definition SyndromeMeas: {set Observable 3} :=
   [set Z12, Z23].
 
-(* Simply Goals like (pn_int _ × _) *)
-Ltac SimplApplyPauli := 
-    rewrite ?applyP_plus ?applyP_mscale;
-    rewrite ?/meas_p_to ?/applyP ?/png_int ?/pn_int /=;
-    Qsimpl;
-    repeat (
-      distribute_plus;
-      repeat rewrite <- kron_assoc by auto with wf_db;
-      restore_dims
-    );
-    rewrite ?Mmult_plus_distr_l ?kron_mixed_product; Qsimpl;
-    autorewrite with ket_db.
 
 (* Syndrome Measurement Does not change the correct code *)
 Theorem SyndromeMeas_stab :
@@ -611,23 +612,64 @@ Proof.
   apply BitFlip311.encode_correct.
 Qed.
 
-(* TODO let's talk about how stabiliser will change *)
+Import all_pauligroup.
 
-(* Theorem SyndromeMeas_stab :
+Notation "[ 'set' a1 , a2 , .. , an ]" := (setU .. (a1 |: [set a2]) .. [set an]) (at level 200): form_scope.
+(* TODO let's talk about how stabiliser will change *)
+Definition X12 := [p X, X, I].
+Definition X23 := [p I, X, X].
+Definition SyndromeMeas: {set Observable 3} :=
+  [set X12, X23].
+
+(* move them to somewhere suits *)
+Lemma MmultXPl: σx × ∣+⟩ =       ∣+⟩. Proof. by solve_matrix. Qed.
+Lemma MmultXMi: σx × ∣-⟩ = -1 .* ∣-⟩. Proof. by solve_matrix. Qed.
+
+Theorem meas_codespace_1 :
   forall (M: Observable dim),
     M \in SyndromeMeas -> 'Meas M on psi --> 1.
 Proof.
   move => M.
-  rewrite !inE => Hm.
-  case/orP: Hm => Hm;
-  move/eqP: Hm => Hm;
-  rewrite Hm /meas_p_to /psi;
+  rewrite !inE => /orP [/eqP -> | /eqP ->];
+  rewrite /meas_p_to /psi;
   rewrite !Mmult_plus_distr_l !Mscale_mult_dist_r;
   rewrite /psi;
-  SimplApplyPauli.
-  - by replace (β * (-1) * (-1)) with (β) by lca.
-  - by replace (β * (-1) * (-1)) with (β) by lca.
-Qed. *)
+  SimplApplyPauli;
+  rewrite !MmultXMi !MmultXPl;
+  SimplApplyPauli;
+  by replace (β * (-1) * (-1)) with (β) by lca.
+Qed.
+
+Locate I.
+
+(* This one i'm tring to compare it stb is more easy to prove *)
+Corollary meas_stabliser :
+  forall (M: Observable dim), M \in SyndromeMeas -> 
+    M ∝1 psi.
+Proof.
+  move => M.
+  rewrite !inE => /orP [/eqP -> | /eqP ->].
+  rewrite /X12 /psi. 
+  apply stb_addition; apply stb_scale;
+   unfold_stb; Qsimpl; SimplApplyPauli.
+  - by rewrite ?MmultXMi ?MmultXPl.
+  - by rewrite ?MmultXMi ?MmultXPl; lma.
+
+  apply stb_addition; apply stb_scale;
+   unfold_stb; Qsimpl; SimplApplyPauli.
+  - by rewrite ?MmultXMi ?MmultXPl; lma.
+  - by rewrite ?MmultXMi ?MmultXPl; lma.
+Qed.
+
+(* In fact there is an easier proof *)
+Corollary meas_stabliser' :
+  forall (M: Observable dim), M \in SyndromeMeas -> 
+    M ∝1 psi.
+Proof.
+  move => M.
+  rewrite stb_meas_p_to_1.
+  apply meas_codespace_1.
+Qed.
 
 End T.
 
