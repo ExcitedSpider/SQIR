@@ -640,8 +640,6 @@ Proof.
   by replace (β * (-1) * (-1)) with (β) by lca.
 Qed.
 
-Locate I.
-
 (* This one i'm tring to compare it stb is more easy to prove *)
 Corollary meas_stabliser :
   forall (M: Observable dim), M \in SyndromeMeas -> 
@@ -670,6 +668,17 @@ Proof.
   rewrite stb_meas_p_to_1.
   apply meas_codespace_1.
 Qed.
+
+Definition Z1: PauliOperator 3 := [p Z, I, I].
+Definition Z2: PauliOperator 3 := [p I, Z, I].
+Definition Z3: PauliOperator 3 := [p I, I, Z].
+Definition PhaseFlipError: {set ErrorOperator 3 } := 
+  [set Z1, Z2, Z3].
+
+
+(* Theorem detectable_phase_flip :
+  forall (E: ErrorOperator dim),
+  E \in PhaseFlipError -> detectable E. *)
 
 End T.
 
